@@ -9,10 +9,11 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Tool extends Item {
-    public double durability;
+public class Player {
+    private String name;
+    private double money;
+    private int experience;
+    private int level;
+    private double stamina;
 
-    @Override
-    public void usage() {
-    }
 }
