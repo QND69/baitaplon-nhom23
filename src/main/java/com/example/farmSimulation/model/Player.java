@@ -16,4 +16,6 @@ public class Player {
     private int level;
     private double stamina;
 
+    public Player(String bob, int i, double v) {
+    }
 }

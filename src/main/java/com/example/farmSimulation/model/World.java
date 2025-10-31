@@ -1,4 +1,4 @@
 package com.example.farmSimulation.model;
 
-public class Game {
+public class World {
 }
