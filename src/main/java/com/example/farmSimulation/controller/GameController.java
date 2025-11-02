@@ -31,17 +31,19 @@ public class GameController {
             activeKeys.add(event.getCode()); // Thêm phím được ấn vào activeKeys
             /* event.getCode() lấy mã phím nhấn, rồi thêm vào activeKeys.
             Vì là HashSet, nếu phím đang nhấn rồi thì thêm lại cũng không ảnh hưởng (không bị trùng). */
+            System.out.println("Các phím đang nhấn: " + activeKeys);
         });
 
         scene.setOnKeyReleased(event -> { // được gọi khi người chơi nhả phím.
             activeKeys.remove(event.getCode()); // Lấy mã phím và xóa khỏi activeKeys.
+            System.out.println("Các phím đang nhấn: " + activeKeys);
         });
     }
 
-    // Hàm kiểm tra các phím đang ấn
+    /*/ Hàm kiểm tra các phím đang ấn
     public void getActiveKeys() {
         System.out.println("Các phím đang nhấn: " + activeKeys);
-    }
+    }*/
 
     // Hàm để GameManager (model) kiểm tra phím có đang nhấn không
     public boolean isKeyPressed(KeyCode key) {

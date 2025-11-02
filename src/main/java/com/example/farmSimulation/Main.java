@@ -33,8 +33,10 @@ public class Main extends Application {
         // Liên kết controller ↔ view (hàm này nằm ở class GameController (controller) )
         gameController.setMainGameView(mainGameView);
 
+        gameManager.setWorldPane(mainGameView.getWorldPane());
+
         // Khởi tạo game loop (hàm này nằm ở class GameManager (model) )
-        //gameManager.startGame();
+        gameManager.startGame();
         //gameController.getActiveKeys();
     }
 }

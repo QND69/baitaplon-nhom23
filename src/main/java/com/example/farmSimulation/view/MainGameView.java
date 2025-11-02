@@ -9,7 +9,11 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class MainGameView {
 
     private final double SCREEN_WIDTH = 1280; // chiều ngang màn hình
@@ -75,9 +79,4 @@ public class MainGameView {
         primaryStage.setScene(scene);
         primaryStage.show();
     }
-
-    public Pane getWorldPane() {
-        return worldPane;
-    }
-
 }

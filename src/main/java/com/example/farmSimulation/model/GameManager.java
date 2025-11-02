@@ -5,7 +5,11 @@ import com.example.farmSimulation.view.MainGameView;
 import javafx.animation.AnimationTimer;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 // Class quản lý logic game
 public class GameManager {
     private Player mainPlayer;
