@@ -1,91 +1,66 @@
 package com.example.farmSimulation.model;
 
 import com.example.farmSimulation.controller.GameController;
-import com.example.farmSimulation.view.MainGame;
+import com.example.farmSimulation.view.MainGameView;
 import javafx.animation.AnimationTimer;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 
 // Class quản lý logic game
 public class GameManager {
-
-    private GameController gameController; // Tham chiếu đến Controller để lấy input
-
-    private MainGame mainView; // Cần tham chiếu đến View
     private Player mainPlayer;
+    private GameController gameController;
+    private MainGameView mainGameView;
 
-    private Pane worldPane; // "Camera" của chúng ta
-    private double playerSpeed = 5.0;
+    private AnimationTimer gameLoop; // Khởi tạo gameLoop
+    private Pane worldPane;          // "Camera" (lấy từ MainGame)
+    private double playerSpeed = 5.0;  // Tốc độ di chuyển (pixel mỗi frame)
 
-    private AnimationTimer gameLoop;// Vòng lặp game, gọi liên tục để cập nhật input, logic, và view
-
-    public GameManager(Player player, MainGame view, GameController controller) {
+    public GameManager(Player player, GameController gameController, MainGameView mainGameView) {
         this.mainPlayer = player;
-        this.mainView = view;
-        this.gameController = controller;
+        this.gameController = gameController;
+        this.mainGameView = mainGameView;
 
-        // Lấy worldPane từ View
-        this.worldPane = mainView.getWorldPane();
+        this.worldPane = mainGameView.getWorldPane();
+        this.gameLoop = new AnimationTimer() {
 
-        // ...
-
-        // Khởi tạo game loop
-        /* AnimationTimer là công cụ JavaFX (1 abstract class) để tạo game loop, gọi lại một hàm mỗi frame (mỗi frame ~16ms cho 60 FPS) */
-        gameLoop = new AnimationTimer() { // Tạo một instance (object) ẩn danh của AnimationTimer
             @Override
-            public void handle(long now) {
-                /* Hàm handle được gọi mỗi frame
-                Tham số "now" là thời gian hiện tại (tính bằng nano giây) */
-
-                // Xử lý Input (Lấy từ Controller)
-                updateInput();
-
-                // Cập nhật Logic Game (vị trí, trạng thái, vật phẩm dựa trên input và các quy tắc game)
+            public void handle(long now) { // Hàm handle() này sẽ được gọi 60 lần mỗi giây
                 updateGameLogic();
-
-                // Vẽ lại View (View sẽ tự cập nhật, không cần gọi hàm)
-                /* (Trong JavaFX, View tự vẽ lại khi thuộc tính thay đổi, không cần gọi hàm thủ công) */
             }
         };
     }
 
-    // Hàm để Main.java gọi khi game bắt đầu
     public void startGame() {
-        gameLoop.start();
-    }
-    /* Hàm startGame gọi 1 lần duy nhất, nó sẽ khởi chạy AnimationTimer gameLoop
-    Sau đó, JavaFX engine sẽ tự động gọi gameLoop.handle(now); 60 lần mỗi giây (60 Hz) */
-
-    private void updateInput() {
-        // Lấy thông tin phím bấm từ GameController
+        gameLoop.start(); // Bắt đầu gọi hàm handle() 60 lần/giây
+        System.out.println("Game Loop đã bắt đầu!");
     }
 
-    private void updateGameLogic() {// Cập nhật logic dựa trên input
-        // Tính toán di chuyển
+    private void updateGameLogic() {
+        // Tính toán hướng di chuyển (delta X, delta Y)
         double dx = 0;
         double dy = 0;
 
+        // "Hỏi" GameController xem phím nào đang được nhấn
         if (gameController.isKeyPressed(KeyCode.W)) {
-            dy += playerSpeed; // Di chuyển world LÊN (nhân vật đi XUỐNG)
+            dy += playerSpeed; // Di chuyển WORLD đi LÊN
         }
         if (gameController.isKeyPressed(KeyCode.S)) {
-            dy -= playerSpeed; // Di chuyển world XUỐNG (nhân vật đi LÊN)
+            dy -= playerSpeed; // Di chuyển WORLD đi XUỐNG
         }
         if (gameController.isKeyPressed(KeyCode.A)) {
-            dx += playerSpeed;
+            dx += playerSpeed; // Di chuyển WORLD đi SANG TRÁI
         }
         if (gameController.isKeyPressed(KeyCode.D)) {
-            dx -= playerSpeed;
+            dx -= playerSpeed; // Di chuyển WORLD đi SANG PHẢI
         }
 
-        // CẬP NHẬT TỌA ĐỘ CỦA WORLD (CAMERA)
-        // Dùng setLayout để di chuyển Pane
+        // "Ra lệnh" cho View (MainGameView) di chuyển camera (worldPane)
         worldPane.setLayoutX(worldPane.getLayoutX() + dx);
         worldPane.setLayoutY(worldPane.getLayoutY() + dy);
 
-        // Cập nhật tọa độ logic của Player (nếu cần)
-        // mainPlayer.setWorldX(mainPlayer.getWorldX() - dx);
-        // mainPlayer.setWorldY(mainPlayer.getWorldY() - dy);
+        // Cập nhật tọa độ logic của Player
+        mainPlayer.setWorldX(mainPlayer.getWorldX() - dx);
+        mainPlayer.setWorldY(mainPlayer.getWorldY() - dy);
     }
-
 }

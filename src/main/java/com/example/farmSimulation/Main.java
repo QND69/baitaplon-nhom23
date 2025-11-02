@@ -3,33 +3,38 @@ package com.example.farmSimulation;
 import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.model.GameManager;
 import com.example.farmSimulation.model.Player;
-import com.example.farmSimulation.view.MainGame;
+import com.example.farmSimulation.view.MainGameView;
 import javafx.application.Application;
 import javafx.stage.Stage;
 
 public class Main extends Application {
+    public static void main(String[] args) {
+        launch(args);
+    }
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Farm Simulation");
-        //  primaryStage.show();
 
-        // 1. Tạo Model
-        Player mainPlayer = new Player("Bob", 100, 100.0);
-        MainGame mainView = new MainGame(); // View
-        GameController gameController = new GameController(); // Controller
+        Player mainPlayer = new Player(); // Tạo người chơi
 
-        // 2. Tạo GameManager và "tiêm" các thành phần kia vào
-        GameManager gameManager = new GameManager(mainPlayer, mainView, gameController);
+        GameController gameController = new GameController(); // Tạo controller (điều khiển input và logic)
 
-        // 3. Khởi tạo UI (sẽ tự động gán Input Listener)
-        mainView.initUI(primaryStage, gameController);
+        MainGameView mainGameView = new MainGameView(); // Tạo view (UI game chính)
 
-        // 4. BẮT ĐẦU GAME
-        gameManager.startGame();
-    }
+        GameManager gameManager = new GameManager(mainPlayer, gameController, mainGameView); // Tạo bộ não quản lý logic game (GameManager)
 
-    public static void main(String[] args) {
-        launch(args);
+
+        // ---  BẮT ĐẦU GAME  ---
+
+
+        // Khởi tạo giao diện (hàm này nằm ở class MainGame (view) )
+        mainGameView.initUI(primaryStage, gameController);
+
+        // Liên kết controller ↔ view (hàm này nằm ở class GameController (controller) )
+        gameController.setMainGameView(mainGameView);
+
+        // Khởi tạo game loop (hàm này nằm ở class GameManager (model) )
+        //gameManager.startGame();
+        //gameController.getActiveKeys();
     }
 }

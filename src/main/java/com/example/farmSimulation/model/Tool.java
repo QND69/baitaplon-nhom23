@@ -12,7 +12,4 @@ import lombok.Setter;
 public class Tool extends Item {
     public double durability;
 
-    @Override
-    public void usage() {
-    }
 }

@@ -10,10 +10,12 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public abstract class Item {
+    private String id;
     private String name;
     private String description;
+    private int maxStack;
     private double buyPrice;
     private double sellPrice;
 
-    public abstract void usage();
+    //public abstract void usage();
 }

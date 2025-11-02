@@ -5,14 +5,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Inventory {
-    private final static int MAX_SLOTS = 9;
-    private List<Slot> slots;
-    private int selectedSlot;
+public class Slot {
+    private Item item;
+    private int quantity;
 }
