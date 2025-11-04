@@ -31,12 +31,9 @@ public class Main extends Application {
         mainGameView.initUI(primaryStage, gameController);
 
         // Liên kết controller ↔ view (hàm này nằm ở class GameController (controller) )
-        gameController.setMainGameView(mainGameView);
-
-        gameManager.setWorldPane(mainGameView.getWorldPane());
+        //gameController.setMainGameView(mainGameView);
 
         // Khởi tạo game loop (hàm này nằm ở class GameManager (model) )
         gameManager.startGame();
-        //gameController.getActiveKeys();
     }
 }

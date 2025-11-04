@@ -20,7 +20,11 @@ public class MainGameView {
     private final double SCREEN_HEIGHT = 720; // chiều dọc màn hình
     private final double TILE_SIZE = 50; // kích thước 1 ô (n x n)
 
+    private Pane rootPane;    // Root pane
     private Pane worldPane;   // Pane "thế giới" (chứa map)
+
+    private PlayerView playerView;
+
 
     private String grassPath = "/assets/images/world/grassDraft.png"; // URL của grass
     private Image grassTexture = new Image(getClass().getResourceAsStream(grassPath));// texture của grass
@@ -29,12 +33,43 @@ public class MainGameView {
 
     public void initUI(Stage primaryStage, GameController gameController) {
 
-        worldPane = new Pane();
-
-        int numCols = (int) (SCREEN_WIDTH / TILE_SIZE) + 1; // Số cột ( +1 để không bị hở)
-        int numRows = (int) (SCREEN_HEIGHT / TILE_SIZE) + 1; // Số hàng
+        this.rootPane = new Pane();
+        this.worldPane = new Pane();
+        this.playerView = new PlayerView();
 
         //System.out.println("Đang vẽ map: " + numCols + " cột và " + numRows + " hàng");
+
+        rootPane.getChildren().add(worldPane);
+
+        drawMap(); // Vẽ map 1 lần duy nhất
+
+        // Đặt nhân vật ĐỨNG YÊN ở giữa màn hình
+        playerView.getSprite().setLayoutX(SCREEN_WIDTH / 2 - playerView.getWidth() / 2);
+        playerView.getSprite().setLayoutY(SCREEN_HEIGHT / 2 - playerView.getHeight() / 2);
+
+        // Thêm nhân vật vào "lớp trên"
+        rootPane.getChildren().add(playerView.getSprite());
+
+        primaryStage.getIcons().add(logo); // logo game
+
+        primaryStage.setTitle("Farm Simulation"); // đặt tên game
+
+        primaryStage.setFullScreen(false); // toàn màn hình
+
+        primaryStage.setResizable(false); // kéo dãn cửa sổ
+
+
+        Scene scene = new Scene(rootPane, SCREEN_WIDTH, SCREEN_HEIGHT, Color.GREENYELLOW); // khởi tạo obj scene
+
+        gameController.setupInputListeners(scene); // Giao "Scene" cho "Controller" để nó bắt đầu lắng nghe phím
+
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    private void drawMap() {
+        int numCols = (int) (SCREEN_WIDTH / TILE_SIZE) + 1; // Số cột ( +1 để không bị hở)
+        int numRows = (int) (SCREEN_HEIGHT / TILE_SIZE) + 1; // Số hàng
 
         for (int row = 0; row < numRows; row++) {
             for (int col = 0; col < numCols; col++) {
@@ -56,27 +91,13 @@ public class MainGameView {
                 tileStack.setLayoutY(row * TILE_SIZE);
 
                 grassBorder.setVisible(true); // hiển thị viền ô grass
-
-                //grassTile.setX(col * TILE_SIZE);
-                //grassTile.setY(row * TILE_SIZE);
-
                 worldPane.getChildren().add(tileStack);
+
+                /*grassTile.setX(col * TILE_SIZE);
+                grassTile.setY(row * TILE_SIZE);
+
+                worldPane.getChildren().add(grassTile);*/
             }
         }
-
-        primaryStage.getIcons().add(logo); // logo game
-
-        primaryStage.setTitle("Farm Simulation"); // đặt tên game
-
-        primaryStage.setFullScreen(false); // toàn màn hình
-
-        primaryStage.setResizable(false); // kéo dãn cửa sổ
-
-
-        Scene scene = new Scene(worldPane, SCREEN_WIDTH, SCREEN_HEIGHT, Color.GREENYELLOW); // khởi tạo obj scene
-
-        gameController.setupInputListeners(scene); // Giao "Scene" cho "Controller" để nó bắt đầu lắng nghe phím
-        primaryStage.setScene(scene);
-        primaryStage.show();
     }
 }

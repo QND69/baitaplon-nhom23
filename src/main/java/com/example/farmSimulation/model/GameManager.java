@@ -12,32 +12,38 @@ import lombok.Setter;
 @Setter
 // Class quản lý logic game
 public class GameManager {
+    private final static int WORLD_WIDTH = 10000; // Độ rộng thế giới
     private Player mainPlayer;
     private GameController gameController;
     private MainGameView mainGameView;
 
+    private WorldMap worldMap;
+
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
-    private Pane worldPane;          // "Camera" (lấy từ MainGame)
+    private Pane worldPane;          // Map (lấy từ MainGameView)
     private double playerSpeed = 5.0;  // Tốc độ di chuyển (pixel mỗi frame)
 
     public GameManager(Player player, GameController gameController, MainGameView mainGameView) {
         this.mainPlayer = player;
         this.gameController = gameController;
         this.mainGameView = mainGameView;
+        this.worldMap = new WorldMap(WORLD_WIDTH, WORLD_WIDTH);
+    }
 
+    public void startGame() {
+        // Lấy worldPane từ View (gọi sau initUI)
         this.worldPane = mainGameView.getWorldPane();
-        this.gameLoop = new AnimationTimer() {
 
+
+
+        this.gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) { // Hàm handle() này sẽ được gọi 60 lần mỗi giây
                 updateGameLogic();
             }
         };
-    }
-
-    public void startGame() {
         gameLoop.start(); // Bắt đầu gọi hàm handle() 60 lần/giây
-        System.out.println("Game Loop đã bắt đầu!");
+        System.out.println("Game Started!");
     }
 
     private void updateGameLogic() {
@@ -59,7 +65,7 @@ public class GameManager {
             dx -= playerSpeed; // Di chuyển WORLD đi SANG PHẢI
         }
 
-        // "Ra lệnh" cho View (MainGameView) di chuyển camera (worldPane)
+        // Cập nhật Map
         worldPane.setLayoutX(worldPane.getLayoutX() + dx);
         worldPane.setLayoutY(worldPane.getLayoutY() + dy);
 
