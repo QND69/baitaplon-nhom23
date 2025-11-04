@@ -1,6 +1,7 @@
 package com.example.farmSimulation.view;
 
 import com.example.farmSimulation.controller.GameController;
+import com.example.farmSimulation.model.WorldMap;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -22,6 +23,8 @@ public class MainGameView {
 
     private Pane rootPane;    // Root pane
     private Pane worldPane;   // Pane "thế giới" (chứa map)
+
+    private WorldMap worldMap;
 
     private PlayerView playerView;
 

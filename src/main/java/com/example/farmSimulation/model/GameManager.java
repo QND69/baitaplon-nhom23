@@ -34,7 +34,13 @@ public class GameManager {
         // Lấy worldPane từ View (gọi sau initUI)
         this.worldPane = mainGameView.getWorldPane();
 
+        mainGameView.setWorldMap(worldMap);
 
+        // *** Đặt vị trí khởi đầu của worldPane (camera) ***
+        // Sao cho người chơi (ở giữa màn hình) nhìn vào tọa độ logic (worldX, worldY) của player
+        // Vị trí worldPane = -Tọa độ player + (Nửa màn hình)
+        worldPane.setLayoutX(-mainPlayer.getWorldX() + mainGameView.getSCREEN_WIDTH() / 2 - mainGameView.getPlayerView().getWidth() / 2);
+        worldPane.setLayoutY(-mainPlayer.getWorldY() + mainGameView.getSCREEN_HEIGHT() / 2 - mainGameView.getPlayerView().getHeight() / 2);
 
         this.gameLoop = new AnimationTimer() {
             @Override
