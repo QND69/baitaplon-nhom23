@@ -12,35 +12,31 @@ import lombok.Setter;
 @Setter
 // Class quản lý logic game
 public class GameManager {
-    private final static int WORLD_WIDTH = 10000; // Độ rộng thế giới
     private Player mainPlayer;
     private GameController gameController;
     private MainGameView mainGameView;
 
-    private WorldMap worldMap;
-
+    private Pane worldPane;          // lấy từ MainGameView
+    private WorldMap worldMap;       // lấy từ MainGameView
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
-    private Pane worldPane;          // Map (lấy từ MainGameView)
     private double playerSpeed = 5.0;  // Tốc độ di chuyển (pixel mỗi frame)
 
     public GameManager(Player player, GameController gameController, MainGameView mainGameView) {
         this.mainPlayer = player;
         this.gameController = gameController;
         this.mainGameView = mainGameView;
-        this.worldMap = new WorldMap(WORLD_WIDTH, WORLD_WIDTH);
     }
 
     public void startGame() {
-        // Lấy worldPane từ View (gọi sau initUI)
+        // Lấy worldPane và worldMap từ View (gọi sau initUI)
         this.worldPane = mainGameView.getWorldPane();
-
-        mainGameView.setWorldMap(worldMap);
+        this.worldMap = mainGameView.getWorldMap();
 
         // *** Đặt vị trí khởi đầu của worldPane (camera) ***
-        // Sao cho người chơi (ở giữa màn hình) nhìn vào tọa độ logic (worldX, worldY) của player
-        // Vị trí worldPane = -Tọa độ player + (Nửa màn hình)
-        worldPane.setLayoutX(-mainPlayer.getWorldX() + mainGameView.getSCREEN_WIDTH() / 2 - mainGameView.getPlayerView().getWidth() / 2);
-        worldPane.setLayoutY(-mainPlayer.getWorldY() + mainGameView.getSCREEN_HEIGHT() / 2 - mainGameView.getPlayerView().getHeight() / 2);
+        // Sao cho người chơi (ở giữa màn hình) nhìn vào tọa độ logic (tileX, tileY) của player
+        // Vị trí worldPane = -Tọa độ player + (Nửa màn hình) - (Độ dài nhân vật)
+        worldPane.setLayoutX(-mainPlayer.getTileX() + mainGameView.getSCREEN_WIDTH() / 2 - mainGameView.getPlayerView().getWidth() / 2);
+        worldPane.setLayoutY(-mainPlayer.getTileY() + mainGameView.getSCREEN_HEIGHT() / 2 - mainGameView.getPlayerView().getHeight() / 2);
 
         this.gameLoop = new AnimationTimer() {
             @Override
@@ -76,7 +72,11 @@ public class GameManager {
         worldPane.setLayoutY(worldPane.getLayoutY() + dy);
 
         // Cập nhật tọa độ logic của Player
-        mainPlayer.setWorldX(mainPlayer.getWorldX() - dx);
-        mainPlayer.setWorldY(mainPlayer.getWorldY() - dy);
+        mainPlayer.setTileX(mainPlayer.getTileX() - dx);
+        mainPlayer.setTileY(mainPlayer.getTileY() - dy);
+
+        // *** YÊU CẦU VIEW VẼ LẠI MAP DỰA TRÊN VỊ TRÍ MỚI ***
+        // Truyền vào vị trí offset (dịch chuyển) của worldPane
+        mainGameView.updateMap(worldPane.getLayoutX(), worldPane.getLayoutY());
     }
 }

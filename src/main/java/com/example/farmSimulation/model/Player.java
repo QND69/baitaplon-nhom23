@@ -13,13 +13,13 @@ public class Player {
     private int level;
     private double stamina;
 
-    // Tọa độ logic của người chơi trong thế giới (không phải trên màn hình)
-    private double worldX;
-    private double worldY;
+    // Tọa độ logic của người chơi trong thế giới
+    private double tileX;
+    private double tileY;
 
     // Constructor
     public Player() {
-        this.worldX = 0;
-        this.worldY = 0;
+        this.tileX = 0;
+        this.tileY = 0;
     }
 }
