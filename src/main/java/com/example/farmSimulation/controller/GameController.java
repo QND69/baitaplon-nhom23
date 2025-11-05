@@ -1,8 +1,10 @@
 package com.example.farmSimulation.controller;
 
+import com.example.farmSimulation.model.GameManager;
 import com.example.farmSimulation.view.MainGameView;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,8 +15,8 @@ import java.util.HashSet;
 @Setter
 @NoArgsConstructor
 public class GameController {
-
     private MainGameView mainGameView;
+    private GameManager gameManager;
 
     // 2 biến lưu tọa độ chuột
     private double mouseX;
@@ -25,7 +27,6 @@ public class GameController {
     /* Đây là một tập hợp (set), nghĩa là mỗi phần tử không thể trùng nhau.
     KeyCode là kiểu dữ liệu đại diện cho các phím trên bàn phím (ví dụ: KeyCode.W, KeyCode.SPACE).
     Mục đích: lưu danh sách tất cả các phím hiện đang được nhấn.*/
-
 
     // Thiết lập listener cho Scene
     // MainGameView sẽ gọi hàm setupInputListeners này và "giao" Scene cho Controller
@@ -50,15 +51,34 @@ public class GameController {
             this.mouseY = event.getSceneY();
         });
 
-        // (Bạn cũng có thể thêm setOnMouseClicked ở đây luôn để chuẩn bị cho bước sau)
+        // Lắng nghe click chuột
         scene.setOnMouseClicked(event -> {
-            // Sẽ làm ở bước sau
-            // handleMouseClick(event.getSceneX(), event.getSceneY());
+            handleMouseClick(event);
         });
     }
 
     // Hàm để GameManager (model) kiểm tra phím có đang nhấn không
     public boolean isKeyPressed(KeyCode key) {
         return activeKeys.contains(key);
+    }
+    public void handleMouseClick(MouseEvent event) {
+        // Lấy tọa độ chuột (trên màn hình) tại thời điểm click
+        double mouseX = event.getSceneX();
+        double mouseY = event.getSceneY();
+
+        // Lấy tọa độ camera (world offset) từ GameManager
+        double worldOffsetX = gameManager.getWorldPane().getLayoutX();
+        double worldOffsetY = gameManager.getWorldPane().getLayoutY();
+
+        // Dịch tọa độ (giống hệt logic trong updateSelector)
+        double mouseWorldX = -worldOffsetX + mouseX;
+        double mouseWorldY = -worldOffsetY + mouseY;
+
+        // Tọa độ logic của Tile mà chuột trỏ tới
+        int targetCol = (int) Math.floor(mouseWorldX / mainGameView.getTILE_SIZE());
+        int targetRow = (int) Math.floor(mouseWorldY / mainGameView.getTILE_SIZE());
+
+        // 4. GỌI HÀM LOGIC GAME (Ném hành động vào hàng đợi)
+        gameManager.interactWithTile(targetCol, targetRow);
     }
 }

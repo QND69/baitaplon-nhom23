@@ -20,11 +20,14 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MainGameView {
-    private final static boolean DEBUG = false;
     private final static int WORLD_SIZE = 10000; // Độ rộng thế giới
     private final double SCREEN_WIDTH = 1280; // chiều ngang màn hình
     private final double SCREEN_HEIGHT = 720; // chiều dọc màn hình
     private final double TILE_SIZE = 60; // kích thước 1 ô (n x n)
+
+    private final int NUM_COLS_ON_SCREEN = (int) (SCREEN_WIDTH / TILE_SIZE) + 2; // Số cột của mảng screenTile
+    private final int NUM_ROWS_ON_SCREEN = (int) (SCREEN_HEIGHT / TILE_SIZE) + 2; // Số hàng của mảng screenTile
+    private ImageView[][] screenTiles;// Mảng 2D LƯU TRỮ các ImageView để tái sử dụng
 
     private Pane rootPane;    // Root pane
     private Pane worldPane;   // Pane "thế giới" (chứa map)
@@ -51,6 +54,25 @@ public class MainGameView {
         this.worldPane = new Pane();
         this.playerView = new PlayerView();
         this.worldMap = new WorldMap(WORLD_SIZE, WORLD_SIZE); // Khởi tạo đối tượng worldMap
+        this.screenTiles = new ImageView[NUM_ROWS_ON_SCREEN][NUM_COLS_ON_SCREEN];
+
+        // Chèn các tile rỗng vào worldPane
+        for (int r = 0; r < NUM_ROWS_ON_SCREEN; r++) {
+            for (int c = 0; c < NUM_COLS_ON_SCREEN; c++) {
+                // Tạo ImageView
+                ImageView tileView = new ImageView();
+
+                tileView.setFitHeight(TILE_SIZE);
+                tileView.setFitWidth(TILE_SIZE);
+
+                // Đặt vị trí TƯƠNG ĐỐI BÊN TRONG worldPane
+                // Vị trí này sẽ không bao giờ thay đổi nữa
+                tileView.setLayoutX(c * TILE_SIZE);
+                tileView.setLayoutY(r * TILE_SIZE);
+                this.screenTiles[r][c] = tileView; // Lưu lại
+                worldPane.getChildren().add(tileView);
+            }
+        }
 
         // Khởi tạo ô vuông selector
         this.tileSelector = new Rectangle(TILE_SIZE, TILE_SIZE);
@@ -59,41 +81,14 @@ public class MainGameView {
         this.tileSelector.setStrokeWidth(1); // Độ dày viền
         this.tileSelector.setVisible(true); // Luôn hiển thị
 
-        // Thêm worldPane vào root
+        // Thêm worldPane và tileSelector vào root
         rootPane.getChildren().addAll(worldPane, tileSelector);
 
+        // Đặt nhân vật ĐỨNG YÊN ở giữa màn hình
+        playerView.getSprite().setLayoutX(SCREEN_WIDTH / 2 - playerView.getWidth() / 2);
+        playerView.getSprite().setLayoutY(SCREEN_HEIGHT / 2 - playerView.getHeight() / 2);
 
-        if (DEBUG) {
-            //---------------------------------------------------------------------------
-            // 1. Lấy sprite nhân vật
-            ImageView playerSprite = playerView.getSprite();
-
-            // 2. Tạo Hitbox cho Player (chỉ tạo 1 lần)
-            double hitboxWidth = playerSprite.getFitWidth();
-            double hitboxHeight = playerSprite.getFitHeight();
-
-            Rectangle playerHitbox = new Rectangle(hitboxWidth, hitboxHeight);
-            playerHitbox.setStroke(Color.ORANGE); // Màu xanh lá
-            playerHitbox.setStrokeWidth(2);
-            playerHitbox.setFill(null);
-            playerHitbox.setVisible(DEBUG); // Hiển thị hitbox nếu debug = true
-
-            // 3. Gộp Player và Hitbox vào một container
-            StackPane playerContainer = new StackPane();
-
-            // Đặt container chứa nhân vật đứng yên ở giữa màn hình
-            playerContainer.setLayoutX(SCREEN_WIDTH / 2 - playerView.getWidth() / 2);
-            playerContainer.setLayoutY(SCREEN_HEIGHT / 2 - playerView.getHeight() / 2);
-            playerContainer.getChildren().addAll(playerSprite, playerHitbox);
-            rootPane.getChildren().add(playerContainer);
-            //---------------------------------------------------------------------------
-        } else {
-            // Đặt nhân vật ĐỨNG YÊN ở giữa màn hình
-            playerView.getSprite().setLayoutX(SCREEN_WIDTH / 2 - playerView.getWidth() / 2);
-            playerView.getSprite().setLayoutY(SCREEN_HEIGHT / 2 - playerView.getHeight() / 2);
-
-            rootPane.getChildren().add(playerView.getSprite()); // Thêm nhân vật vào "lớp trên" của root
-        }
+        rootPane.getChildren().add(playerView.getSprite()); // Thêm nhân vật vào "lớp trên" của root
 
 
         Scene scene = new Scene(rootPane, SCREEN_WIDTH, SCREEN_HEIGHT, Color.GREENYELLOW); // khởi tạo obj scene
@@ -115,129 +110,45 @@ public class MainGameView {
         if (this.worldMap == null) {
             return;
         }
-
-        // xóa map cũ
-        worldPane.getChildren().clear();
-
         // *** TÍNH TOÁN VÙNG CAMERA NHÌN THẤY ***
-
         /* Tính tọa độ của camera (góc trên-trái màn hình) trong thế giới
         Tọa độ của worldPane (worldOffsetX và worldOffsetY) là tọa độ của (0,0) của thế giới so với màn hình
         => Tọa độ của màn hình so với thế giới là giá trị âm của nó */
         double cameraWorldX = -worldOffsetX;
         double cameraWorldY = -worldOffsetY;
 
-        // Tính toán xem camera đang nhìn thấy các ô (tile) có chỉ số (row, col) nào
-        // +2 để đảm bảo luôn vẽ đủ các ô ở rìa màn hình (buffer)
+        // Tính ô logic bắt đầu (số nguyên) mà camera nhìn thấy
         int startCol = (int) Math.floor(cameraWorldX / TILE_SIZE);
         int startRow = (int) Math.floor(cameraWorldY / TILE_SIZE);
-        int numCols = (int) (SCREEN_WIDTH / TILE_SIZE) + 2;
-        int numRows = (int) (SCREEN_HEIGHT / TILE_SIZE) + 2;
 
-        if (DEBUG) {
-            // *** VẼ CÁC Ô (TILE) TRONG TẦM NHÌN ***
-            for (int row = startRow; row < startRow + numRows; row++) {
-                for (int col = startCol; col < startCol + numCols; col++) {
+        // Tính phần dư (pixel lẻ) để cuộn mượt
+        // Đây là mấu chốt: worldPane chỉ di chuyển trong phạm vi 1 ô
+        double pixelOffsetX = -(cameraWorldX - (startCol * TILE_SIZE));
+        double pixelOffsetY = -(cameraWorldY - (startRow * TILE_SIZE));
 
-                    // "HỎI" MODEL: Ô (col, row) này là loại gì?
-                    Tile type = worldMap.getTileType(col, row);
+        // Di chuyển TOÀN BỘ worldPane (chứa lưới) để tạo hiệu ứng mượt
+        worldPane.setLayoutX(pixelOffsetX);
+        worldPane.setLayoutY(pixelOffsetY);
 
-                    // CHỌN HÌNH ẢNH (TEXTURE) TƯƠNG ỨNG
-                    Image textureToDraw;
-                    switch (type) {
-                        case SOIL:
-                            textureToDraw = soilTexture;
-                            break;
-                        case WATER:
-                            textureToDraw = waterTexture;
-                            break;
-                        case GRASS:
-                        default: // Nếu là GRASS hoặc bất cứ thứ gì chưa định nghĩa, vẽ CỎ
-                            textureToDraw = grassTexture;
-                            break;
-                    }
+        // 5. CẬP NHẬT HÌNH ẢNH (TEXTURE) cho các ô trong lưới
+        for (int r = 0; r < NUM_ROWS_ON_SCREEN; r++) {
+            for (int c = 0; c < NUM_COLS_ON_SCREEN; c++) {
+                // Tính ô logic (thế giới) mà ô lưới (màn hình) này cần hiển thị
+                int logicalCol = startCol + c;
+                int logicalRow = startRow + r;
 
-                    // TẠO VÀ VẼ Ô (TILE) ĐÓ
-                    // (Kiểm tra null phòng trường hợp ảnh bị thiếu)
-                    if (textureToDraw == null) continue;
-
-                    ImageView tileView = new ImageView(textureToDraw);
-                    tileView.setFitHeight(TILE_SIZE);
-                    tileView.setFitWidth(TILE_SIZE);
-
-                    // Tạo viền kiểm tra
-                    Rectangle tileBorder = new Rectangle(TILE_SIZE, TILE_SIZE);
-                    tileBorder.setStroke(Color.RED);
-                    tileBorder.setStrokeWidth(1);
-                    tileBorder.setFill(null);
-                    tileBorder.setVisible(DEBUG); // Bật viền để debug
-
-                    //Tạo Text để đánh số
-                    String coordText = col + "," + row;
-                    Text coordinateLabel = new Text(coordText);
-
-                    // (Tùy chọn) Chỉnh style cho text để dễ đọc
-                    coordinateLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12)); // Đặt font và kích thước
-                    coordinateLabel.setFill(Color.BLACK);   // Màu chữ
-                    coordinateLabel.setStroke(Color.WHITE); // Thêm viền đen cho chữ để nổi bật
-                    coordinateLabel.setStrokeWidth(0.5);
-
-                    // Hiển thị số nếu đang debug
-                    coordinateLabel.setVisible(DEBUG);
-
-                    // Tạo Hitbox Player
-                    // Lấy kích thước của playerView (hoặc đặt kích thước hitbox cố định)
-                    double hitboxWidth = playerView.getSprite().getFitWidth();  // Hoặc PLAYER_WIDTH
-                    double hitboxHeight = playerView.getSprite().getFitHeight(); // Hoặc PLAYER_HEIGHT
-
-                    StackPane tileStack = new StackPane();
-                    tileStack.getChildren().addAll(tileView, tileBorder, coordinateLabel);
-
-                    // *** QUAN TRỌNG: Đặt vị trí ô (tile) theo TỌA ĐỘ THẾ GIỚI ***
-                    // (col * TILE_SIZE) là tọa độ X của ô này trong worldPane
-                    tileStack.setLayoutX(col * TILE_SIZE);
-                    tileStack.setLayoutY(row * TILE_SIZE);
-
-                    worldPane.getChildren().add(tileStack);
+                // Lấy loại tile từ Model
+                Tile type = worldMap.getTileType(logicalCol, logicalRow);
+                Image textureToDraw;
+                switch (type) {
+                    case SOIL: textureToDraw = soilTexture; break;
+                    case WATER: textureToDraw = waterTexture; break;
+                    default: textureToDraw = grassTexture; break;
                 }
-            }
 
-        } else {
-            // *** VẼ CÁC Ô (TILE) TRONG TẦM NHÌN ***
-            for (int row = startRow; row < startRow + numRows; row++) {
-                for (int col = startCol; col < startCol + numCols; col++) {
-
-                    // "HỎI" MODEL: Ô (col, row) này là loại gì?
-                    Tile tileType = worldMap.getTileType(col, row);
-
-                    // Chọn texture tương ứng
-                    Image textureToDraw;
-                    switch (tileType) {
-                        case SOIL:
-                            textureToDraw = soilTexture;
-                            break;
-                        case WATER:
-                            textureToDraw = waterTexture;
-                            break;
-                        case GRASS:
-                        default: // Nếu là GRASS hoặc bất cứ thứ gì chưa định nghĩa, vẽ CỎ
-                            textureToDraw = grassTexture;
-                            break;
-                    }
-
-                    // TẠO VÀ VẼ Ô (TILE) ĐÓ
-                    // (Kiểm tra null phòng trường hợp ảnh bị thiếu)
-                    if (textureToDraw == null) continue;
-
-                    ImageView tileView = new ImageView(textureToDraw);
-                    tileView.setFitHeight(TILE_SIZE);
-                    tileView.setFitWidth(TILE_SIZE);
-
-                    // *** QUAN TRỌNG: Đặt vị trí ô (tile) theo TỌA ĐỘ THẾ GIỚI ***
-                    // (col * TILE_SIZE) là tọa độ X của ô này trong worldPane
-                    tileView.setLayoutX(col * TILE_SIZE);
-                    tileView.setLayoutY(row * TILE_SIZE);
-                    worldPane.getChildren().add(tileView);
+                // Chỉ THAY ẢNH, không tạo mới
+                if (textureToDraw != null) {
+                    this.screenTiles[r][c].setImage(textureToDraw);
                 }
             }
         }
