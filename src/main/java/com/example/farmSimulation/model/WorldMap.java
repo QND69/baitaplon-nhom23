@@ -53,10 +53,10 @@ public class WorldMap {
     }
 
     // Hàm để "thay đổi" trạng thái 1 ô (ví dụ: cuốc đất)
-    public void setTileType(int col, int row, Tile type) {
+    public void setTileType(int col, int row, Tile tileType) {
         // Kiểm tra biên trước khi set
         if (col >= 0 && col < width && row >= 0 && row < height) {
-            tiles[row][col] = type;
+            tiles[row][col] = tileType;
         }
     }
 }

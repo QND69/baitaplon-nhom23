@@ -8,12 +8,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PlayerView {
-    private final double scale = 0.4; // tỉ lệ nhân vật
+    private final double scale = 0.2; // tỉ lệ nhân vật
     private Image playerImage;
     private ImageView sprite;
     private double width;
     private double height;
-    private String playerPath = "/assets/images/entities/playerDraft.png";
+    private String playerPath = "/assets/images/entities/player2Draft.png";
 
     public PlayerView() {
         playerImage = new Image(getClass().getResourceAsStream(playerPath));

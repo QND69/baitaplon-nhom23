@@ -16,6 +16,10 @@ public class GameController {
 
     private MainGameView mainGameView;
 
+    // 2 biến lưu tọa độ chuột
+    private double mouseX;
+    private double mouseY;
+
     // Dùng HashSet để lưu các phím đang được nhấn
     private HashSet<KeyCode> activeKeys = new HashSet<>();
     /* Đây là một tập hợp (set), nghĩa là mỗi phần tử không thể trùng nhau.
@@ -27,6 +31,7 @@ public class GameController {
     // MainGameView sẽ gọi hàm setupInputListeners này và "giao" Scene cho Controller
     public void setupInputListeners(Scene scene) {
 
+        // Lắng nghe sự kiện ẤN PHÍM
         scene.setOnKeyPressed(event -> { // được gọi khi người chơi nhấn một phím.
             activeKeys.add(event.getCode()); // Thêm phím được ấn vào activeKeys
             /* event.getCode() lấy mã phím nhấn, rồi thêm vào activeKeys.
@@ -37,6 +42,18 @@ public class GameController {
         scene.setOnKeyReleased(event -> { // được gọi khi người chơi nhả phím.
             activeKeys.remove(event.getCode()); // Lấy mã phím và xóa khỏi activeKeys.
             //System.out.println("Các phím đang nhấn: " + activeKeys);
+        });
+
+        // Lắng nghe sự kiện DI CHUYỂN CHUỘT
+        scene.setOnMouseMoved(event -> {
+            this.mouseX = event.getSceneX();
+            this.mouseY = event.getSceneY();
+        });
+
+        // (Bạn cũng có thể thêm setOnMouseClicked ở đây luôn để chuẩn bị cho bước sau)
+        scene.setOnMouseClicked(event -> {
+            // Sẽ làm ở bước sau
+            // handleMouseClick(event.getSceneX(), event.getSceneY());
         });
     }
 
