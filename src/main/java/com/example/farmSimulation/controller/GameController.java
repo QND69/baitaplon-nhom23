@@ -61,24 +61,12 @@ public class GameController {
     public boolean isKeyPressed(KeyCode key) {
         return activeKeys.contains(key);
     }
+
     public void handleMouseClick(MouseEvent event) {
-        // Lấy tọa độ chuột (trên màn hình) tại thời điểm click
-        double mouseX = event.getSceneX();
-        double mouseY = event.getSceneY();
-
-        // Lấy tọa độ camera (world offset) từ GameManager
-        double worldOffsetX = gameManager.getWorldPane().getLayoutX();
-        double worldOffsetY = gameManager.getWorldPane().getLayoutY();
-
-        // Dịch tọa độ (giống hệt logic trong updateSelector)
-        double mouseWorldX = -worldOffsetX + mouseX;
-        double mouseWorldY = -worldOffsetY + mouseY;
-
-        // Tọa độ logic của Tile mà chuột trỏ tới
-        int targetCol = (int) Math.floor(mouseWorldX / mainGameView.getTILE_SIZE());
-        int targetRow = (int) Math.floor(mouseWorldY / mainGameView.getTILE_SIZE());
-
-        // 4. GỌI HÀM LOGIC GAME (Ném hành động vào hàng đợi)
-        gameManager.interactWithTile(targetCol, targetRow);
+        // GỌI HÀM LOGIC GAME (Ném hành động vào hàng đợi)
+        gameManager.interactWithTile(
+                gameManager.getCurrentMouseTileX(),
+                gameManager.getCurrentMouseTileY()
+        );
     }
 }

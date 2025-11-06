@@ -25,8 +25,13 @@ public class GameManager {
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
     private double playerSpeed = 5.0;  // Tốc độ di chuyển (pixel mỗi frame)
 
-    private double worldOffsetX = 0.0; // Tọa độ thế giới
-    private double worldOffsetY = 0.0; // Tọa độ thế giới
+    // Tọa độ thế giới logic
+    private double worldOffsetX = 0.0;
+    private double worldOffsetY = 0.0;
+
+    // Tọa độ ô chuột đang trỏ tới
+    private int currentMouseTileX = 0;
+    private int currentMouseTileY = 0;
 
     private boolean mapNeedsUpdate = false;
 
@@ -85,13 +90,10 @@ public class GameManager {
 
         // *** GỌI HÀM CẬP NHẬT HÀNG ĐỢI ***
         // (Luôn chạy 60 lần/giây)
-        //updateTimedActions();
+        updateTimedActions();
 
         // Cập nhật Map nếu di chuyển
         if (dx != 0 || dy != 0) {
-            //worldPane.setLayoutX(worldPane.getLayoutX() + dx);
-            //worldPane.setLayoutY(worldPane.getLayoutY() + dy);
-
             this.worldOffsetX += dx;
             this.worldOffsetY += dy;
 
@@ -104,17 +106,20 @@ public class GameManager {
             mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY);
         }
 
-        // Nếu không di chuyển, NHƯNG map cần update (do cuốc đất)
-        /*else if (this.mapNeedsUpdate) {
-            mainGameView.updateMap(worldPane.getLayoutX(), worldPane.getLayoutY());
+        // Tọa độ logic của chuột trong thế giới
+        double mouseWorldX = -this.worldOffsetX + gameController.getMouseX();
+        double mouseWorldY = -this.worldOffsetY + gameController.getMouseY();
 
-            // Đặt lại cờ
-            this.mapNeedsUpdate = false;
-        }*/
-        // Selector LUÔN chạy để theo chuột mượt mà
+        double TILE_SIZE = mainGameView.getTILE_SIZE();
+
+        // Tọa độ logic của ô mà chuột trỏ tới
+        this.currentMouseTileX = (int) Math.floor(mouseWorldX / TILE_SIZE);
+        this.currentMouseTileY = (int) Math.floor(mouseWorldY / TILE_SIZE);
+
+        // Hàm update tile selector
         mainGameView.updateSelector(
-                gameController.getMouseX(),       // Lấy từ Controller
-                gameController.getMouseY(),       // Lấy từ Controller
+                this.currentMouseTileX,       // Vị trí X của ô được chọn
+                this.currentMouseTileY,       // Vị trí Y của ô được chọn
                 this.worldOffsetX,           // Vị trí X của thế giới
                 this.worldOffsetY           // Vị trí Y của thế giới
         );
@@ -132,27 +137,22 @@ public class GameManager {
         // VÍ DỤ 1: Cuốc đất (Grass -> Soil)
         if (currentType == Tile.GRASS) {
             // Đặt độ trễ là 1 frame (hoặc 0 nếu muốn tức thì)
-            int delayInFrames = 1;
+            int delayInFrames = 0;
 
             // Thêm hành động "Biến thành Đất" vào hàng đợi
             pendingActions.add(new TimedTileAction(col, row, Tile.SOIL, delayInFrames));
-
-            System.out.println("Đã lên lịch cuốc ô (" + col + "," + row + ") thành Đất.");
         }
-
+        /*
         // VÍ DỤ 2: Tưới nước (Soil -> Watered_Soil)
         // (Giả sử bạn đã thêm Tile.WATERED_SOIL vào Enum)
-        /*
         else if (currentType == Tile.SOIL) {
             // Đặt độ trễ là 10 frames (khoảng 1/6 giây)
             int delayInFrames = 10;
 
             // Thêm hành động "Biến thành Đất Ẩm" vào hàng đợi
-            pendingActions.add(new TimedTileAction(col, row, Tile.WATERED_SOIL, delayInFrames));
+            pendingActions.add(new TimedTileAction(col, row, Tile.WATER, delayInFrames));
 
-            System.out.println("Đã lên lịch tưới nước ô (" + col + "," + row + ")");
-        }
-        */
+        }*/
     }
 
     /**
@@ -161,7 +161,7 @@ public class GameManager {
      * và thực thi những hành động đã hết giờ.
      */
     private void updateTimedActions() {
-        // Dùng Iterator để chúng ta có thể XÓA phần tử khỏi List một cách an toàn
+        // Dùng Iterator để chúng ta có thể XÓA phần tử khỏi List pendingActions một cách an toàn
         Iterator<TimedTileAction> iterator = pendingActions.iterator();
 
         while (iterator.hasNext()) {
@@ -169,17 +169,19 @@ public class GameManager {
 
             // Gọi tick(). Nếu nó trả về "true" (hết giờ)
             if (action.tick()) {
-                // 1. THỰC THI HÀNH ĐỘNG: Thay đổi Model
+                // THỰC THI HÀNH ĐỘNG: Thay đổi Model
                 worldMap.setTileType(action.getCol(), action.getRow(), action.getNewType());
 
-                // 2. Báo cho View biết cần vẽ lại bản đồ
+                // Báo cho View biết cần vẽ lại bản đồ
                 this.mapNeedsUpdate = true;
 
-                // 3. Xóa hành động này khỏi hàng đợi
+                // Xóa hành động này khỏi hàng đợi
                 iterator.remove();
-
-                // System.out.println("Hoàn thành: " + action.getNewType() + " tại " + action.getCol());
             }
+        }
+        if(this.mapNeedsUpdate == true) {
+            mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY);
+            this.mapNeedsUpdate = false;
         }
     }
 }

@@ -7,12 +7,8 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +20,7 @@ public class MainGameView {
     private final double SCREEN_WIDTH = 1280; // chiều ngang màn hình
     private final double SCREEN_HEIGHT = 720; // chiều dọc màn hình
     private final double TILE_SIZE = 60; // kích thước 1 ô (n x n)
+    private static final double MAX_INTERACTION_DISTANCE = 2.0; // Tầm tương tác tối đa (ô)
 
     private final int NUM_COLS_ON_SCREEN = (int) (SCREEN_WIDTH / TILE_SIZE) + 2; // Số cột của mảng screenTile
     private final int NUM_ROWS_ON_SCREEN = (int) (SCREEN_HEIGHT / TILE_SIZE) + 2; // Số hàng của mảng screenTile
@@ -53,7 +50,7 @@ public class MainGameView {
         this.rootPane = new Pane();
         this.worldPane = new Pane();
         this.playerView = new PlayerView();
-        this.worldMap = new WorldMap(WORLD_SIZE, WORLD_SIZE); // Khởi tạo đối tượng worldMap
+        this.worldMap = new WorldMap(); // Khởi tạo đối tượng worldMap
         this.screenTiles = new ImageView[NUM_ROWS_ON_SCREEN][NUM_COLS_ON_SCREEN];
 
         // Chèn các tile rỗng vào worldPane
@@ -130,7 +127,7 @@ public class MainGameView {
         worldPane.setLayoutX(pixelOffsetX);
         worldPane.setLayoutY(pixelOffsetY);
 
-        // 5. CẬP NHẬT HÌNH ẢNH (TEXTURE) cho các ô trong lưới
+        // CẬP NHẬT HÌNH ẢNH (TEXTURE) cho các ô trong lưới
         for (int r = 0; r < NUM_ROWS_ON_SCREEN; r++) {
             for (int c = 0; c < NUM_COLS_ON_SCREEN; c++) {
                 // Tính ô logic (thế giới) mà ô lưới (màn hình) này cần hiển thị
@@ -141,9 +138,15 @@ public class MainGameView {
                 Tile type = worldMap.getTileType(logicalCol, logicalRow);
                 Image textureToDraw;
                 switch (type) {
-                    case SOIL: textureToDraw = soilTexture; break;
-                    case WATER: textureToDraw = waterTexture; break;
-                    default: textureToDraw = grassTexture; break;
+                    case SOIL:
+                        textureToDraw = soilTexture;
+                        break;
+                    case WATER:
+                        textureToDraw = waterTexture;
+                        break;
+                    default:
+                        textureToDraw = grassTexture;
+                        break;
                 }
 
                 // Chỉ THAY ẢNH, không tạo mới
@@ -156,20 +159,11 @@ public class MainGameView {
 
     //Hàm này được gọi 60 lần/giây bởi Game Loop.
     //Nhiệm vụ: Tính toán và di chuyển "ô chọn" (selector) để nó "bắt dính" (snap) vào ô (Tile) mà chuột đang trỏ vào.
-    public void updateSelector(double mouseX, double mouseY, double worldOffsetX, double worldOffsetY) {
+    public void updateSelector(int tileSelectedX, int tileSelectedY, double worldOffsetX, double worldOffsetY) {
         // Kiểm tra tileSelector được khai báo chưa
         if (this.tileSelector == null) {
             return;
         }
-
-        // Tọa độ logic của chuột trong thế giới
-        double mouseWorldX = -worldOffsetX + mouseX;
-        double mouseWorldY = -worldOffsetY + mouseY;
-
-        // Tọa độ logic của ô mà chuột trỏ tới
-        int tileSelectedX = (int) Math.floor(mouseWorldX / TILE_SIZE);
-        int tileSelectedY = (int) Math.floor(mouseWorldY / TILE_SIZE);
-
         // Tọa độ thực của ô trên màn hình
         double tileSelectedOnScreenX = tileSelectedX * TILE_SIZE + worldOffsetX;
         double tileSelectedOnScreenY = tileSelectedY * TILE_SIZE + worldOffsetY;

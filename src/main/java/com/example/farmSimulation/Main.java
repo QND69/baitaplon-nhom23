@@ -23,7 +23,7 @@ public class Main extends Application {
 
         GameManager gameManager = new GameManager(mainPlayer, gameController, mainGameView); // Tạo bộ não quản lý logic game (GameManager)
 
-        //gameController.setGameManager(gameManager);
+        gameController.setGameManager(gameManager);
 
         // ---  BẮT ĐẦU GAME  ---
 
