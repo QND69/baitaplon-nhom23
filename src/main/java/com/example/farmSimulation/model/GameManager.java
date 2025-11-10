@@ -88,6 +88,9 @@ public class GameManager {
             dx -= playerSpeed; // Di chuyển WORLD đi SANG TRÁI
         }
 
+        // Gọi hàm update của PlayerView và truyền dx, dy
+        mainGameView.getPlayerView().update(dx, dy);
+
         // *** GỌI HÀM CẬP NHẬT HÀNG ĐỢI ***
         // (Luôn chạy 60 lần/giây)
         updateTimedActions();
@@ -134,25 +137,14 @@ public class GameManager {
 
         // --- ÁP DỤNG "LUẬT CHƠI" ---
 
-        // VÍ DỤ 1: Cuốc đất (Grass -> Soil)
+        // VÍ DỤ: Cuốc đất (Grass -> Soil)
         if (currentType == Tile.GRASS) {
             // Đặt độ trễ là 1 frame (hoặc 0 nếu muốn tức thì)
-            int delayInFrames = 0;
+            int delayInFrames = 1;
 
             // Thêm hành động "Biến thành Đất" vào hàng đợi
             pendingActions.add(new TimedTileAction(col, row, Tile.SOIL, delayInFrames));
         }
-        /*
-        // VÍ DỤ 2: Tưới nước (Soil -> Watered_Soil)
-        // (Giả sử bạn đã thêm Tile.WATERED_SOIL vào Enum)
-        else if (currentType == Tile.SOIL) {
-            // Đặt độ trễ là 10 frames (khoảng 1/6 giây)
-            int delayInFrames = 10;
-
-            // Thêm hành động "Biến thành Đất Ẩm" vào hàng đợi
-            pendingActions.add(new TimedTileAction(col, row, Tile.WATER, delayInFrames));
-
-        }*/
     }
 
     /**

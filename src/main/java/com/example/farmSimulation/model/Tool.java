@@ -1,15 +1,9 @@
 package com.example.farmSimulation.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class Tool extends Item {
-    public double durability;
-
+public enum Tool {
+    HOE,
+    WATERING_CAN,
+    PICKAXE,
+    SHOVEL,
+    HAND
 }

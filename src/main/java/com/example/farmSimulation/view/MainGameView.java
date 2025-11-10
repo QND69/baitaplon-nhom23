@@ -16,7 +16,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MainGameView {
-    private final static int WORLD_SIZE = 10000; // Độ rộng thế giới
     private final double SCREEN_WIDTH = 1280; // chiều ngang màn hình
     private final double SCREEN_HEIGHT = 720; // chiều dọc màn hình
     private final double TILE_SIZE = 60; // kích thước 1 ô (n x n)
