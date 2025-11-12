@@ -36,8 +36,10 @@ public class GameManager {
     private boolean mapNeedsUpdate = false;
 
     // Thời gian và tốc độ cập nhật.
-    private double gameTimeSeconds = 360.0;
-    private final double SECONDS_PER_FRAME = 1.0 / 60.0;
+    // Lấy giá trị mặc định từ GameConfig
+    private double gameTimeSeconds = GameConfig.PLAYER_START_TIME_SECONDS;
+    // Lấy giá trị mặc định từ GameConfig
+    private final double SECONDS_PER_FRAME = GameConfig.SECONDS_PER_FRAME;
 
     // Constructor nhận tất cả các thành phần
     public GameManager(Player player, WorldMap worldMap, MainGameView mainGameView,
@@ -105,13 +107,14 @@ public class GameManager {
      * Cường độ: 1.0 (sáng) -> 0.0 (tối)
      */
     private void updateDayCycle() {
-        // 1. Định nghĩa chu kỳ (Ví dụ: 24 phút = 1440 giây thực)
-        final double DAY_CYCLE_DURATION_SECONDS = 1440.0;
+        // Định nghĩa chu kỳ (Ví dụ: 24 phút = 1440 giây thực)
+        // Lấy giá trị từ GameConfig
+        final double DAY_CYCLE_DURATION_SECONDS = GameConfig.DAY_CYCLE_DURATION_SECONDS;
 
-        // 2. Tính tỷ lệ phần trăm đã trôi qua trong chu kỳ
+        // Tính tỷ lệ phần trăm đã trôi qua trong chu kỳ
         double cycleProgress = (this.gameTimeSeconds % DAY_CYCLE_DURATION_SECONDS) / DAY_CYCLE_DURATION_SECONDS;
 
-        // 3. Chuyển đổi tỷ lệ thành Cường độ Ánh sáng (0.0 đến 1.0)
+        // Chuyển đổi tỷ lệ thành Cường độ Ánh sáng (0.0 đến 1.0)
 
         // Ví dụ về một chu kỳ đơn giản (dùng hàm sin để tạo độ cong)
         // Tỷ lệ Sin(0) = 0 (giữa đêm); Sin(Pi/2) = 1 (giữa ngày)
@@ -124,7 +127,8 @@ public class GameManager {
         double lightIntensity = (Math.sin(radians) + 1.0) / 2.0;
 
         // Giới hạn tối thiểu (Đảm bảo ban đêm không quá tối, ví dụ min 0.1)
-        final double MIN_INTENSITY = 0.1;
+        // [TỐI ƯU] Lấy giá trị từ GameConfig
+        final double MIN_INTENSITY = GameConfig.MIN_LIGHT_INTENSITY;
         lightIntensity = MIN_INTENSITY + (1.0 - MIN_INTENSITY) * lightIntensity;
 
         // Gửi cường độ ánh sáng tới View
@@ -291,7 +295,8 @@ public class GameManager {
         // VÍ DỤ: Cuốc đất (Grass -> Soil)
         if (currentType == Tile.GRASS) {
             // Đặt độ trễ là 1 frame (hoặc 0 nếu muốn tức thì)
-            int delayInFrames = 1;
+            // [TỐI ƯU] Lấy giá trị từ GameConfig
+            int delayInFrames = GameConfig.ACTION_DELAY_FRAMES_HOE;
 
             // Thêm hành động "Biến thành Đất" vào hàng đợi
             pendingActions.add(new TimedTileAction(col, row, Tile.SOIL, delayInFrames));
@@ -333,7 +338,6 @@ public class GameManager {
             this.mapNeedsUpdate = false;
         }
     }
-
 
     public void toggleSettingsMenu() {
         this.isPaused = !this.isPaused; // Sử dụng this.isPaused
