@@ -28,6 +28,10 @@ public class MainGameView {
     private Pane worldPane;   // Pane "thế giới" chứa lưới, chỉ dùng để di chuyển cuộn mượt
     private Rectangle tileSelector; // Hình vuông chứa ô được chọn
 
+    // Lưu lại vị trí render map lần cuối
+    private int lastRenderedStartCol = -1;
+    private int lastRenderedStartRow = -1;
+
     /**
      * Constructor (Hàm khởi tạo) nhận các thành phần nó cần
      * (Dependency Injection)
@@ -62,10 +66,10 @@ public class MainGameView {
 
         // Khởi tạo ô vuông selector
         this.tileSelector = new Rectangle(GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
-        this.tileSelector.setFill(null);            // Không tô nền
-        this.tileSelector.setStroke(Color.BLACK);   // Màu viền
-        this.tileSelector.setStrokeWidth(1);        // Độ dày viền
-        this.tileSelector.setVisible(true);         // Luôn hiển thị
+        this.tileSelector.setFill(null);                                    // Không tô nền
+        this.tileSelector.setStroke(GameConfig.SELECTOR_COLOR);             // Màu viền
+        this.tileSelector.setStrokeWidth(GameConfig.SELECTOR_STROKE_WIDTH); // Độ dày viền
+        this.tileSelector.setVisible(true);                                 // Luôn hiển thị
 
         // Thêm worldPane và tileSelector vào root
         rootPane.getChildren().addAll(worldPane, tileSelector);
@@ -75,11 +79,11 @@ public class MainGameView {
         playerSprite.setLayoutY(GameConfig.SCREEN_HEIGHT / 2 - playerSprite.getFitHeight() / 2);
         rootPane.getChildren().add(playerSprite); // Thêm nhân vật vào root
 
-        Scene scene = new Scene(rootPane, GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT);
+        Scene scene = new Scene(rootPane, GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT, GameConfig.BACKGROUND_COLOR);
         gameController.setupInputListeners(scene);
 
         primaryStage.getIcons().add(assetManager.getTexture(AssetPaths.LOGO)); // Lấy logo từ manager
-        primaryStage.setTitle("Farm Simulation");
+        primaryStage.setTitle(GameConfig.GAME_TITLE);
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -87,7 +91,7 @@ public class MainGameView {
 
     // Hàm này được gọi nếu có thay đổi về thế giới
     // Nhiệm vụ: Xóa map cũ, chỉ vẽ các ô (tile) mà camera thấy.
-    public void updateMap(double worldOffsetX, double worldOffsetY) {
+    public void updateMap(double worldOffsetX, double worldOffsetY, boolean forceRedraw) {
         // *** TÍNH TOÁN VÙNG CAMERA NHÌN THẤY ***
         /* Tính tọa độ của camera (góc trên-trái màn hình) trong thế giới
         Tọa độ của worldPane (worldOffsetX và worldOffsetY) là tọa độ của (0,0) của thế giới so với màn hình
@@ -108,7 +112,16 @@ public class MainGameView {
         worldPane.setLayoutX(pixelOffsetX);
         worldPane.setLayoutY(pixelOffsetY);
 
-        // TODO: có thể code tối ưu hơn bằng cách nếu qua ô mới thì mới render map
+        // Kiểm tra xem có CẦN vẽ lại các ô hay không
+        boolean needsTileUpdate = (startCol != lastRenderedStartCol ||
+                startRow != lastRenderedStartRow ||
+                forceRedraw);
+
+        // Không cần vẽ lại, tiết kiệm rất nhiều CPU
+        if (!needsTileUpdate) {
+            return;
+        }
+
         // CẬP NHẬT HÌNH ẢNH (TEXTURE) cho các ô trong lưới
         for (int r = 0; r < GameConfig.NUM_ROWS_ON_SCREEN; r++) {
             for (int c = 0; c < GameConfig.NUM_COLS_ON_SCREEN; c++) {
@@ -126,6 +139,9 @@ public class MainGameView {
                 this.screenTiles[r][c].setImage(textureToDraw);
             }
         }
+        // Ghi nhớ vị trí render lần cuối
+        this.lastRenderedStartCol = startCol;
+        this.lastRenderedStartRow = startRow;
     }
 
     // Hàm này được gọi 60 lần/giây bởi Game Loop.

@@ -12,7 +12,6 @@ import java.util.Map;
 
 @Getter
 public class PlayerView {
-
     // --- Định nghĩa trạng thái & hướng ---
     // Public để GameManager có thể "ra lệnh"
     public enum PlayerState {
@@ -89,43 +88,42 @@ public class PlayerView {
     private void initializeAnimationMap() {
         // IDLE (Đứng yên)
         Map<Direction, AnimData> idleMap = new EnumMap<>(Direction.class);
-        idleMap.put(Direction.DOWN,  new AnimData(0, 6));
-        idleMap.put(Direction.UP,    new AnimData(2, 6));
-        idleMap.put(Direction.RIGHT, new AnimData(1, 6));
-        idleMap.put(Direction.LEFT,  new AnimData(1, 6));
+        idleMap.put(Direction.DOWN, new AnimData(GameConfig.IDLE_DOWN_ROW, GameConfig.IDLE_FRAMES));
+        idleMap.put(Direction.UP, new AnimData(GameConfig.IDLE_UP_ROW, GameConfig.IDLE_FRAMES));
+        idleMap.put(Direction.RIGHT, new AnimData(GameConfig.IDLE_RIGHT_ROW, GameConfig.IDLE_FRAMES));
+        idleMap.put(Direction.LEFT, new AnimData(GameConfig.IDLE_LEFT_ROW, GameConfig.IDLE_FRAMES));
         animationMap.put(PlayerState.IDLE, idleMap);
 
         // WALK (Di chuyển)
         Map<Direction, AnimData> walkMap = new EnumMap<>(Direction.class);
-        walkMap.put(Direction.DOWN,  new AnimData(3, 6));
-        walkMap.put(Direction.UP,    new AnimData(5, 6));
-        walkMap.put(Direction.RIGHT, new AnimData(4, 6));
-        walkMap.put(Direction.LEFT,  new AnimData(4, 6));
+        walkMap.put(Direction.DOWN, new AnimData(GameConfig.WALK_DOWN_ROW, GameConfig.WALK_FRAMES));
+        walkMap.put(Direction.UP, new AnimData(GameConfig.WALK_UP_ROW, GameConfig.WALK_FRAMES));
+        walkMap.put(Direction.RIGHT, new AnimData(GameConfig.WALK_RIGHT_ROW, GameConfig.WALK_FRAMES));
+        walkMap.put(Direction.LEFT, new AnimData(GameConfig.WALK_LEFT_ROW, GameConfig.WALK_FRAMES));
         animationMap.put(PlayerState.WALK, walkMap);
 
         // ATTACK (Tấn công)
         Map<Direction, AnimData> attackMap = new EnumMap<>(Direction.class);
-        attackMap.put(Direction.DOWN,  new AnimData(6, 4, 100)); // Tốc độ nhanh hơn
-        attackMap.put(Direction.UP,    new AnimData(8, 4, 100));
-        attackMap.put(Direction.RIGHT, new AnimData(7, 4, 100));
-        attackMap.put(Direction.LEFT,  new AnimData(7, 4, 100));
+        attackMap.put(Direction.DOWN, new AnimData(GameConfig.ATTACK_DOWN_ROW, GameConfig.ATTACK_FRAMES, GameConfig.ATTACK_SPEED));
+        attackMap.put(Direction.UP, new AnimData(GameConfig.ATTACK_UP_ROW, GameConfig.ATTACK_FRAMES, GameConfig.ATTACK_SPEED));
+        attackMap.put(Direction.RIGHT, new AnimData(GameConfig.ATTACK_RIGHT_ROW, GameConfig.ATTACK_FRAMES, GameConfig.ATTACK_SPEED));
+        attackMap.put(Direction.LEFT, new AnimData(GameConfig.ATTACK_LEFT_ROW, GameConfig.ATTACK_FRAMES, GameConfig.ATTACK_SPEED));
         animationMap.put(PlayerState.ATTACK, attackMap);
-
 
 //        // HOE (Cuốc đất)
 //        Map<Direction, AnimData> hoeMap = new EnumMap<>(Direction.class);
-//        hoeMap.put(Direction.DOWN,  new AnimData(12, 3, 150));
-//        hoeMap.put(Direction.UP,    new AnimData(13, 3, 150));
-//        hoeMap.put(Direction.RIGHT, new AnimData(14, 3, 150));
-//        hoeMap.put(Direction.LEFT,  new AnimData(15, 3, 150));
+//        hoeMap.put(Direction.DOWN, new AnimData(GameConfig.HOE_DOWN_ROW, GameConfig.HOE_FRAMES, GameConfig.HOE_SPEED));
+//        hoeMap.put(Direction.UP, new AnimData(GameConfig.HOE_UP_ROW, GameConfig.HOE_FRAMES, GameConfig.HOE_SPEED));
+//        hoeMap.put(Direction.RIGHT, new AnimData(GameConfig.HOE_RIGHT_ROW, GameConfig.HOE_FRAMES, GameConfig.HOE_SPEED));
+//        hoeMap.put(Direction.LEFT, new AnimData(GameConfig.HOE_LEFT_ROW, GameConfig.HOE_FRAMES, GameConfig.HOE_SPEED));
 //        animationMap.put(PlayerState.HOE, hoeMap);
 //
 //        // DEAD (Ngất)
 //        Map<Direction, AnimData> deadMap = new EnumMap<>(Direction.class);
-//        deadMap.put(Direction.DOWN,  new AnimData(16, 2, 200));
-//        deadMap.put(Direction.UP,    new AnimData(16, 2, 200)); // Dùng chung 1 hàng
-//        deadMap.put(Direction.RIGHT, new AnimData(16, 2, 200));
-//        deadMap.put(Direction.LEFT,  new AnimData(16, 2, 200));
+//        deadMap.put(Direction.DOWN, new AnimData(GameConfig.DEAD_DOWN_ROW, GameConfig.DEAD_FRAMES, GameConfig.DEAD_SPEED));
+//        deadMap.put(Direction.UP, new AnimData(GameConfig.DEAD_UP_ROW, GameConfig.DEAD_FRAMES, GameConfig.DEAD_SPEED));
+//        deadMap.put(Direction.RIGHT, new AnimData(GameConfig.DEAD_RIGHT_ROW, GameConfig.DEAD_FRAMES, GameConfig.DEAD_SPEED));
+//        deadMap.put(Direction.LEFT, new AnimData(GameConfig.DEAD_LEFT_ROW, GameConfig.DEAD_FRAMES, GameConfig.DEAD_SPEED));
 //        animationMap.put(PlayerState.DEAD, deadMap);
     }
 
@@ -159,7 +157,8 @@ public class PlayerView {
 
     /**
      * Hàm này được GameManager "ra lệnh"
-     * @param newState Trạng thái mới (IDLE, WALK,...)
+     *
+     * @param newState     Trạng thái mới (IDLE, WALK,...)
      * @param newDirection Hướng mới (UP, DOWN,...)
      */
     public void setState(PlayerState newState, Direction newDirection) {

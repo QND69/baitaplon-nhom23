@@ -3,9 +3,9 @@ package com.example.farmSimulation.model;
 import com.example.farmSimulation.config.GameConfig;
 import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.view.MainGameView;
-import com.example.farmSimulation.view.PlayerView; // Import
+import com.example.farmSimulation.view.PlayerView;
 import javafx.animation.AnimationTimer;
-import javafx.geometry.Point2D; // Import
+import javafx.geometry.Point2D;
 import javafx.scene.input.KeyCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,13 +20,15 @@ public class GameManager {
     private final Player mainPlayer;
     private final WorldMap worldMap;
     private final MainGameView mainGameView;
-    private final PlayerView playerView; // Thêm PlayerView
+    private final PlayerView playerView;
     private final GameController gameController;
     private final List<TimedTileAction> pendingActions;  // Thêm danh sách hành động chờ
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
+
     // Tọa độ thế giới logic
     private double worldOffsetX = 0.0;
     private double worldOffsetY = 0.0;
+
     // Tọa độ ô chuột đang trỏ tới
     private int currentMouseTileX = 0;
     private int currentMouseTileY = 0;
@@ -51,7 +53,7 @@ public class GameManager {
         this.worldOffsetY = -mainPlayer.getTileY() + GameConfig.SCREEN_HEIGHT / 2 - playerView.getHeight() / 2;
 
         // Gọi updateMap để vẽ map lần đầu
-        mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY);
+        mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY, true);
 
         // Bắt đầu game loop
         this.gameLoop = new AnimationTimer() {
@@ -159,7 +161,7 @@ public class GameManager {
 
             // *** YÊU CẦU VIEW VẼ LẠI MAP DỰA TRÊN VỊ TRÍ MỚI ***
             // Truyền vào vị trí offset (dịch chuyển) của worldPane
-            mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY);
+            mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY, false);
         }
     }
 
@@ -184,10 +186,37 @@ public class GameManager {
     }
 
     /**
+     * Kiểm tra xem người chơi có trong tầm tương tác không
+     */
+    private boolean isPlayerInRange(int col, int row) {
+        // Tọa độ pixel logic của Tâm người chơi
+        double playerX = mainPlayer.getTileX() + GameConfig.PLAYER_FRAME_WIDTH / 2;
+        double playerY = mainPlayer.getTileY() + GameConfig.PLAYER_FRAME_HEIGHT * 3 / 4;
+
+        // Tọa độ pixel logic của TÂM ô target
+        double targetX = (col * GameConfig.TILE_SIZE) + (GameConfig.TILE_SIZE / 2.0);
+        double targetY = (row * GameConfig.TILE_SIZE) + (GameConfig.TILE_SIZE / 2.0);
+
+        // Tính khoảng cách
+        double distance = Math.sqrt(
+                Math.pow(playerX - targetX, 2) + Math.pow(playerY - targetY, 2)
+        );
+
+        return distance <= GameConfig.PLAYER_INTERACTION_RANGE_PIXELS;
+    }
+
+    /**
      * Xử lý click chuột
      * [TỐI ƯU] Sẵn sàng cho Tool System
+     * [TỐI ƯU] Thêm kiểm tra tầm hoạt động và dùng config
      */
     public void interactWithTile(int col, int row) {
+        // Kiểm tra tầm hoạt động trước
+        if (!isPlayerInRange(col, row)) {
+            System.out.println("Quá xa!");
+            return; // Quá xa, không làm gì cả
+        }
+
         Tile currentType = worldMap.getTileType(col, row);
 
         // --- ÁP DỤNG "LUẬT CHƠI" ---
@@ -237,7 +266,7 @@ public class GameManager {
 
         // Update map nếu cần
         if (this.mapNeedsUpdate) {
-            mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY);
+            mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY, true);
             this.mapNeedsUpdate = false;
         }
     }

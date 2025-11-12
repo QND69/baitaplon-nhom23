@@ -1,5 +1,6 @@
 package com.example.farmSimulation.model;
 
+import com.example.farmSimulation.config.GameConfig;
 import com.example.farmSimulation.view.PlayerView;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,8 +26,8 @@ public class Player {
 
     // Constructor
     public Player() {
-        this.tileX = 0;
-        this.tileY = 0;
+        this.tileX = GameConfig.PLAYER_START_X;
+        this.tileY = GameConfig.PLAYER_START_Y;
         this.state = PlayerView.PlayerState.IDLE; // Trạng thái ban đầu
         this.direction = PlayerView.Direction.DOWN; // Hướng ban đầu
     }
