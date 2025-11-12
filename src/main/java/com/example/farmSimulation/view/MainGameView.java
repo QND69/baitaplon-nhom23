@@ -4,52 +4,28 @@ import com.example.farmSimulation.model.GameManager;
 import com.example.farmSimulation.config.AssetPaths;
 import com.example.farmSimulation.config.GameConfig;
 import com.example.farmSimulation.controller.GameController;
-import com.example.farmSimulation.model.Tile;
 import com.example.farmSimulation.model.WorldMap;
 import com.example.farmSimulation.view.assets.AssetManager;
-import javafx.animation.FadeTransition;
-import javafx.animation.PauseTransition;
-import javafx.animation.SequentialTransition;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import lombok.Getter;
 import lombok.Setter;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
 
 @Getter
 @Setter
 public class MainGameView {
-    private final ImageView[][] screenTiles; // Mảng 2D LƯU TRỮ các ImageView
-
-    private Label timerLabel; // bộ đếm thời gian
-
     private final AssetManager assetManager; // Để lấy textures
     private final WorldMap worldMap;         // Để biết vẽ tile gì
     private GameManager gameManager;
 
     private Pane rootPane;    // Root pane
-    private Pane worldPane;   // Pane "thế giới" chứa lưới, chỉ dùng để di chuyển cuộn mượt
-    private Rectangle tileSelector; // Hình vuông chứa ô được chọn
-    private Rectangle darknessOverlay; // Lớp phủ màu đen để tạo hiệu ứng tối
 
-    // Lưu lại vị trí render map lần cuối
-    private int lastRenderedStartCol = -1;
-    private int lastRenderedStartRow = -1;
-
-    // --- Các thành phần cho UI tạm thời ---
-    private Text temporaryText;       // Đối tượng Text để hiển thị thông báo tạm thời
-    private SequentialTransition temporaryTextAnimation; // Animation cho text
+    // Các thành phần View con
+    private WorldRenderer worldRenderer;
+    private HudView hudView;
+    private SettingsMenuView settingsMenu;
 
     /**
      * Constructor (Hàm khởi tạo) nhận các thành phần nó cần
@@ -58,11 +34,6 @@ public class MainGameView {
     public MainGameView(AssetManager assetManager, WorldMap worldMap) {
         this.assetManager = assetManager;
         this.worldMap = worldMap;
-        this.screenTiles = new ImageView[GameConfig.NUM_ROWS_ON_SCREEN][GameConfig.NUM_COLS_ON_SCREEN];
-        // [TỐI ƯU] Lấy giá trị mặc định từ GameConfig
-        this.timerLabel = new Label(GameConfig.TIMER_DEFAULT_TEXT);
-        // [TỐI ƯU] Lấy giá trị mặc định từ GameConfig
-        this.timerLabel.setStyle(GameConfig.TIMER_STYLE_CSS);
     }
 
     public void setGameManager(GameManager gameManager) {
@@ -73,64 +44,29 @@ public class MainGameView {
      * initUI nhận Controller và PlayerSprite từ bên ngoài (từ class Game)
      */
     public void initUI(Stage primaryStage, GameController gameController, ImageView playerSprite) {
-        //System.out.println("Creating Map...");
-
         this.rootPane = new Pane();
-        this.worldPane = new Pane();
+
+        // Khởi tạo các View con
+        this.worldRenderer = new WorldRenderer(assetManager, worldMap);
+        this.hudView = new HudView();
+        // ⚠️ Phải khởi tạo SettingsMenu SAU KHI gameManager đã được set
+        // Hoặc truyền gameManager vào sau
+        // Chúng ta sẽ truyền gameManager vào đây:
+        this.settingsMenu = new SettingsMenuView(this.gameManager);
 
 
-        // Chèn các tile rỗng vào worldPane
-        for (int r = 0; r < GameConfig.NUM_ROWS_ON_SCREEN; r++) {
-            for (int c = 0; c < GameConfig.NUM_COLS_ON_SCREEN; c++) {
-                ImageView tileView = new ImageView();
-                tileView.setFitHeight(GameConfig.TILE_SIZE);
-                tileView.setFitWidth(GameConfig.TILE_SIZE);
-                tileView.setLayoutX(c * GameConfig.TILE_SIZE);
-                tileView.setLayoutY(r * GameConfig.TILE_SIZE);
-                this.screenTiles[r][c] = tileView;
-                worldPane.getChildren().add(tileView);
-            }
-        }
-
-        // Đặt Timer Label ở góc trên bên trái
-        // [TỐI ƯU] Lấy giá trị mặc định từ GameConfig
-        this.timerLabel.setLayoutX(GameConfig.TIMER_X_POSITION);
-        this.timerLabel.setLayoutY(GameConfig.TIMER_Y_POSITION);
-
-        // Khởi tạo ô vuông selector
-        this.tileSelector = new Rectangle(GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
-        this.tileSelector.setFill(null);                                    // Không tô nền
-        this.tileSelector.setStroke(GameConfig.SELECTOR_COLOR);             // Màu viền
-        this.tileSelector.setStrokeWidth(GameConfig.SELECTOR_STROKE_WIDTH); // Độ dày viền
-        this.tileSelector.setVisible(true);                                 // Luôn hiển thị
-        rootPane.getChildren().addAll(worldPane, tileSelector); // Thêm worldPane và tileSelector vào root
-
-        // --- Khởi tạo Temporary Text ---
-        temporaryText = new Text();
-        temporaryText.setFont(GameConfig.TEMP_TEXT_FONT);
-        temporaryText.setFill(GameConfig.TEMP_TEXT_COLOR);
-        temporaryText.setFont(GameConfig.TEMP_TEXT_FONT);
-        temporaryText.setStroke(GameConfig.TEMP_TEXT_STROKE_COLOR);
-        temporaryText.setStrokeWidth(GameConfig.TEMP_TEXT_STROKE_WIDTH);
-        temporaryText.setOpacity(0); // Ban đầu ẩn
-        temporaryText.setManaged(false); // Không ảnh hưởng layout
-        rootPane.getChildren().add(temporaryText);
-
+        // Thêm các thành phần vào rootPane theo đúng thứ tự (lớp)
+        rootPane.getChildren().addAll(
+                worldRenderer.getWorldPane(),   // Lớp 1: Bản đồ
+                worldRenderer.getTileSelector(),// Lớp 2: Ô chọn
+                playerSprite,                   // Lớp 3: Người chơi
+                hudView,                        // Lớp 4: HUD (Timer, Text, Darkness)
+                settingsMenu                    // Lớp 5: Menu (hiện đang ẩn)
+        );
 
         // Đặt nhân vật (nhận từ bên ngoài) vào giữa màn hình
         playerSprite.setLayoutX(GameConfig.SCREEN_WIDTH / 2 - playerSprite.getFitWidth() / 2);
         playerSprite.setLayoutY(GameConfig.SCREEN_HEIGHT / 2 - playerSprite.getFitHeight() / 2);
-        rootPane.getChildren().add(playerSprite); // Thêm nhân vật vào root
-
-        // Khởi tạo Lớp phủ Tối
-        this.darknessOverlay = new Rectangle(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT);
-        this.darknessOverlay.setFill(Color.BLACK);
-        this.darknessOverlay.setOpacity(0.0); // Ban đầu không tối (sáng)
-        rootPane.getChildren().add(this.darknessOverlay); // Thêm overlay
-
-
-        //Thêm timerLabel vào rootPane sau khi đã đặt vị trí
-        rootPane.getChildren().add(this.timerLabel);
 
         Scene scene = new Scene(rootPane, GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT, GameConfig.BACKGROUND_COLOR);
         gameController.setupInputListeners(scene);
@@ -142,232 +78,35 @@ public class MainGameView {
         primaryStage.show();
     }
 
-    // Hàm này được gọi nếu có thay đổi về thế giới
-    // Nhiệm vụ: Xóa map cũ, chỉ vẽ các ô (tile) mà camera thấy.
+    // --- CÁC HÀM ĐIỀU PHỐI (DELEGATE) ---
+    // (Chỉ gọi lệnh cho các View con)
+
     public void updateMap(double worldOffsetX, double worldOffsetY, boolean forceRedraw) {
-        // *** TÍNH TOÁN VÙNG CAMERA NHÌN THẤY ***
-        /* Tính tọa độ của camera (góc trên-trái màn hình) trong thế giới
-        Tọa độ của worldPane (worldOffsetX và worldOffsetY) là tọa độ của (0,0) của thế giới so với màn hình
-        => Tọa độ của màn hình so với thế giới là giá trị âm của nó */
-        double cameraWorldX = -worldOffsetX;
-        double cameraWorldY = -worldOffsetY;
-
-        // Tính ô logic bắt đầu (số nguyên) mà camera nhìn thấy
-        int startCol = (int) Math.floor(cameraWorldX / GameConfig.TILE_SIZE);
-        int startRow = (int) Math.floor(cameraWorldY / GameConfig.TILE_SIZE);
-
-        // Tính phần dư (pixel lẻ) để cuộn mượt
-        // Đây là mấu chốt: worldPane chỉ di chuyển trong phạm vi 1 ô
-        double pixelOffsetX = -(cameraWorldX - (startCol * GameConfig.TILE_SIZE));
-        double pixelOffsetY = -(cameraWorldY - (startRow * GameConfig.TILE_SIZE));
-
-        // Di chuyển TOÀN BỘ worldPane (chứa lưới) để tạo hiệu ứng mượt
-        worldPane.setLayoutX(pixelOffsetX);
-        worldPane.setLayoutY(pixelOffsetY);
-
-        // Kiểm tra xem có CẦN vẽ lại các ô hay không
-        boolean needsTileUpdate = (startCol != lastRenderedStartCol ||
-                startRow != lastRenderedStartRow ||
-                forceRedraw);
-
-        // Không cần vẽ lại, tiết kiệm rất nhiều CPU
-        if (!needsTileUpdate) {
-            return;
-        }
-
-        // CẬP NHẬT HÌNH ẢNH (TEXTURE) cho các ô trong lưới
-        for (int r = 0; r < GameConfig.NUM_ROWS_ON_SCREEN; r++) {
-            for (int c = 0; c < GameConfig.NUM_COLS_ON_SCREEN; c++) {
-                // Tính ô logic (thế giới) mà ô lưới (màn hình) này cần hiển thị
-                int logicalCol = startCol + c;
-                int logicalRow = startRow + r;
-
-                // Lấy loại tile từ Model
-                Tile type = worldMap.getTileType(logicalCol, logicalRow);
-
-                // Lấy ảnh từ AssetManager
-                Image textureToDraw = assetManager.getTileTexture(type);
-
-                // Chỉ THAY ẢNH, không tạo mới
-                this.screenTiles[r][c].setImage(textureToDraw);
-            }
-        }
-        // Ghi nhớ vị trí render lần cuối
-        this.lastRenderedStartCol = startCol;
-        this.lastRenderedStartRow = startRow;
+        worldRenderer.updateMap(worldOffsetX, worldOffsetY, forceRedraw);
     }
 
-    // Hàm này được gọi 60 lần/giây bởi Game Loop.
-    // Nhiệm vụ: Tính toán và di chuyển "ô chọn" (selector)
-    // để nó "bắt dính" (snap) vào ô (Tile) mà chuột đang trỏ vào.
     public void updateSelector(int tileSelectedX, int tileSelectedY, double worldOffsetX, double worldOffsetY) {
-        // Kiểm tra tileSelector được khai báo chưa
-        if (this.tileSelector == null) {
-            return;
-        }
-        // Tọa độ thực của ô trên màn hình
-        double tileSelectedOnScreenX = tileSelectedX * GameConfig.TILE_SIZE + worldOffsetX;
-        double tileSelectedOnScreenY = tileSelectedY * GameConfig.TILE_SIZE + worldOffsetY;
-
-        // Hiển thị ô được trỏ chuột
-        this.tileSelector.setLayoutX(tileSelectedOnScreenX);
-        this.tileSelector.setLayoutY(tileSelectedOnScreenY);
+        worldRenderer.updateSelector(tileSelectedX, tileSelectedY, worldOffsetX, worldOffsetY);
     }
 
-    /**
-     * Hiển thị một đoạn text tạm thời trên đầu người chơi, sau đó mờ dần và biến mất.
-     *
-     * @param message       Nội dung text cần hiển thị.
-     * @param playerScreenX Tọa độ X của người chơi trên màn hình.
-     * @param playerScreenY Tọa độ Y của người chơi trên màn hình.
-     */
     public void showTemporaryText(String message, double playerScreenX, double playerScreenY) {
-        if (temporaryTextAnimation != null && temporaryTextAnimation.getStatus().equals(javafx.animation.Animation.Status.RUNNING)) {
-            temporaryTextAnimation.stop(); // Dừng animation cũ nếu đang chạy
-        }
-
-        temporaryText.setText(message);
-        temporaryText.setLayoutX(playerScreenX - temporaryText.getLayoutBounds().getWidth() / 2); // Căn giữa
-        temporaryText.setLayoutY(playerScreenY + GameConfig.TEMP_TEXT_OFFSET_Y); // Trên đầu player
-        temporaryText.setOpacity(1); // Hiển thị ngay lập tức
-
-        FadeTransition fadeOut = new FadeTransition(Duration.millis(GameConfig.TEMP_TEXT_FADE_DURATION), temporaryText);
-        fadeOut.setFromValue(1.0);
-        fadeOut.setToValue(0.0);
-
-        PauseTransition pause = new PauseTransition(Duration.millis(GameConfig.TEMP_TEXT_DISPLAY_DURATION - GameConfig.TEMP_TEXT_FADE_DURATION));
-
-        temporaryTextAnimation = new SequentialTransition(temporaryText, pause, fadeOut);
-        temporaryTextAnimation.play();
+        hudView.showTemporaryText(message, playerScreenX, playerScreenY);
     }
-
-    private VBox settingsMenu;
-    private boolean musicOn = GameConfig.DEFAULT_MUSIC_ON;
-    private boolean soundOn = GameConfig.DEFAULT_SOUND_ON;
-    private double musicVolume = GameConfig.DEFAULT_MUSIC_VOLUME;
-    private double soundVolume = GameConfig.DEFAULT_SOUND_VOLUME;
 
     public void showSettingsMenu(String playerName, int playerLevel) {
-        if (settingsMenu == null) {
-            settingsMenu = new VBox(GameConfig.SETTINGS_MENU_SPACING);
-            settingsMenu.setStyle(GameConfig.SETTINGS_MENU_STYLE_CSS);
-            settingsMenu.setPrefSize(GameConfig.SETTINGS_MENU_WIDTH, GameConfig.SETTINGS_MENU_HEIGHT);
-            settingsMenu.setAlignment(Pos.CENTER);
-
-            // Tiêu đề
-            Label title = new Label(GameConfig.SETTINGS_MENU_TITLE);
-            title.setTextFill(GameConfig.SETTINGS_MENU_FONT_COLOR);
-            title.setFont(Font.font(GameConfig.SETTINGS_MENU_FONT_FAMILY, GameConfig.SETTINGS_MENU_TITLE_FONT_SIZE));
-
-            // Thông tin người chơi
-            VBox playerInfo = new VBox(GameConfig.SETTINGS_PLAYER_INFO_SPACING);
-            playerInfo.setAlignment(Pos.CENTER);
-            Label nameLabel = new Label("Player: " + playerName);
-            Label levelLabel = new Label("Level: " + playerLevel);
-            nameLabel.setTextFill(GameConfig.SETTINGS_MENU_FONT_COLOR);
-            levelLabel.setTextFill(GameConfig.SETTINGS_MENU_FONT_COLOR);
-
-            nameLabel.setFont(Font.font(GameConfig.SETTINGS_MENU_FONT_FAMILY, GameConfig.SETTINGS_MENU_BODY_FONT_SIZE));
-            levelLabel.setFont(Font.font(GameConfig.SETTINGS_MENU_FONT_FAMILY, GameConfig.SETTINGS_MENU_BODY_FONT_SIZE));
-            playerInfo.getChildren().addAll(nameLabel, levelLabel);
-
-            // Nút Resume
-            Button resume = new Button(GameConfig.SETTINGS_RESUME_BUTTON_TEXT);
-            resume.setPrefWidth(GameConfig.SETTINGS_MENU_BUTTON_WIDTH);
-            resume.setOnAction(e -> {
-                if (this.gameManager != null) {
-                    // ⚠️ GỌI LOGIC TỪ MANAGER
-                    this.gameManager.toggleSettingsMenu();
-                }
-                // Lệnh hideSettingsMenu() sẽ được gọi bên trong toggleSettingsMenu()
-                // Hoặc bạn có thể gọi nó ở đây:
-                // hideSettingsMenu(); // ⬅️ Tùy chọn, nếu bạn muốn View tự ẩn
-            });
-
-            // Nút Save Game
-            Button save = new Button(GameConfig.SETTINGS_SAVE_BUTTON_TEXT);
-            save.setPrefWidth(GameConfig.SETTINGS_MENU_BUTTON_WIDTH);
-            save.setOnAction(e -> System.out.println("Save game logic here"));
-
-            // Nút Exit
-            Button exit = new Button(GameConfig.SETTINGS_EXIT_BUTTON_TEXT);
-            exit.setPrefWidth(GameConfig.SETTINGS_MENU_BUTTON_WIDTH);
-            exit.setOnAction(e -> System.exit(0));
-
-            // Toggle nhạc
-            Button musicToggle = new Button(GameConfig.SETTINGS_MUSIC_BUTTON_TEXT_PREFIX + (musicOn ? GameConfig.SETTINGS_TEXT_ON : GameConfig.SETTINGS_TEXT_OFF));
-            musicToggle.setPrefWidth(GameConfig.SETTINGS_MENU_BUTTON_WIDTH);
-            musicToggle.setOnAction(e -> {
-                musicOn = !musicOn;
-                musicToggle.setText(GameConfig.SETTINGS_MUSIC_BUTTON_TEXT_PREFIX + (musicOn ? GameConfig.SETTINGS_TEXT_ON : GameConfig.SETTINGS_TEXT_OFF));
-            });
-
-            javafx.scene.control.Slider musicSlider = new javafx.scene.control.Slider(GameConfig.SLIDER_MIN_VALUE, GameConfig.SLIDER_MAX_VALUE, musicVolume);
-            musicSlider.setPrefWidth(GameConfig.SETTINGS_MENU_BUTTON_WIDTH);
-            musicSlider.valueProperty().addListener((obs, oldVal, newVal) -> musicVolume = newVal.doubleValue());
-
-            // Toggle âm thanh
-            Button soundToggle = new Button(GameConfig.SETTINGS_SOUND_BUTTON_TEXT_PREFIX + (soundOn ? GameConfig.SETTINGS_TEXT_ON : GameConfig.SETTINGS_TEXT_OFF));
-            soundToggle.setPrefWidth(GameConfig.SETTINGS_MENU_BUTTON_WIDTH);
-            soundToggle.setOnAction(e -> {
-                soundOn = !soundOn;
-                soundToggle.setText(GameConfig.SETTINGS_SOUND_BUTTON_TEXT_PREFIX + (soundOn ? GameConfig.SETTINGS_TEXT_ON : GameConfig.SETTINGS_TEXT_OFF));
-            });
-
-            javafx.scene.control.Slider soundSlider = new javafx.scene.control.Slider(GameConfig.SLIDER_MIN_VALUE, GameConfig.SLIDER_MAX_VALUE, soundVolume);
-            soundSlider.setPrefWidth(GameConfig.SETTINGS_MENU_BUTTON_WIDTH);
-            soundSlider.valueProperty().addListener((obs, oldVal, newVal) -> soundVolume = newVal.doubleValue());
-
-            settingsMenu.getChildren().addAll(
-                    title,
-                    playerInfo,
-                    resume,
-                    save,
-                    exit,
-                    musicToggle,
-                    musicSlider,
-                    soundToggle,
-                    soundSlider
-            );
-
-            // Đặt menu giữa màn hình
-            settingsMenu.setLayoutX(GameConfig.SCREEN_WIDTH / 2 - GameConfig.SETTINGS_MENU_WIDTH / 2);
-            settingsMenu.setLayoutY(GameConfig.SCREEN_HEIGHT / 2 - GameConfig.SETTINGS_MENU_HEIGHT / 2);
-
-            rootPane.getChildren().add(settingsMenu);
-        }
-
-        settingsMenu.setVisible(true);
+        settingsMenu.updatePlayerInfo(playerName, playerLevel);
+        settingsMenu.show();
     }
 
     public void hideSettingsMenu() {
-        if (settingsMenu != null) {
-            settingsMenu.setVisible(false);
-        }
+        settingsMenu.hide();
     }
 
     public void updateTimer(String timeString) {
-        this.timerLabel.setText(timeString);
+        hudView.updateTimer(timeString);
     }
 
-    /**
-     * Cập nhật độ tối của màn hình dựa trên cường độ ánh sáng từ Model.
-     *
-     * @param intensity Cường độ ánh sáng (1.0 là sáng nhất, 0.0 là tối nhất)
-     */
     public void updateLighting(double intensity) {
-        // Cường độ ánh sáng 1.0 => Opacity của lớp phủ tối là 0.0
-        // Cường độ ánh sáng 0.0 => Opacity của lớp phủ tối là 1.0 (hoặc tối đa 0.8)
-
-        // Đảo ngược cường độ để có độ mờ (opacity)
-        // Giới hạn độ mờ tối đa (Ví dụ: 80% tối)
-        final double MAX_DARKNESS = GameConfig.MAX_DARKNESS_OPACITY;
-
-        double opacity = 1.0 - intensity;
-
-        // Áp dụng giới hạn tối đa
-        opacity = Math.min(opacity, MAX_DARKNESS);
-
-        this.darknessOverlay.setOpacity(opacity);
+        hudView.updateLighting(intensity);
     }
 }

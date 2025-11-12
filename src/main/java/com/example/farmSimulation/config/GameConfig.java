@@ -29,11 +29,11 @@ public class GameConfig {
     public static final Font TEMP_TEXT_FONT = Font.font("Arial", TEMP_TEXT_FONT_SIZE); // Font chữ
 
     // --- Cấu hình Game Time & Day Cycle ---
-    public static final double PLAYER_START_TIME_SECONDS = 360.0; // 6:00 AM (ví dụ)
+    public static final double PLAYER_START_TIME_SECONDS = 720.0; // 6:00 AM (ví dụ)
     public static final double SECONDS_PER_FRAME = 1.0 / 60.0;
     public static final double DAY_CYCLE_DURATION_SECONDS = 1440.0; // 24 phút
-    public static final double MIN_LIGHT_INTENSITY = 0.1; // Độ sáng tối thiểu (10%)
-    public static final double MAX_DARKNESS_OPACITY = 0.8; // Độ tối tối đa (80%)
+    public static final double MIN_LIGHT_INTENSITY = 0.1; // Độ sáng tối thiểu (?/1)
+    public static final double MAX_DARKNESS_OPACITY = 0.7; // Độ tối tối đa (?/1)
 
     // --- Cấu hình HUD (Timer) ---
     public static final String TIMER_DEFAULT_TEXT = "Time: 06:00"; // [SỬA LẠI TỪ 00:00]

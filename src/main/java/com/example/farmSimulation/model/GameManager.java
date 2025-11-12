@@ -5,41 +5,32 @@ import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
 import javafx.animation.AnimationTimer;
-import javafx.geometry.Point2D;
-import javafx.scene.input.KeyCode;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 @Getter
 @Setter
 public class GameManager {
+    // --- Các thành phần cốt lõi (Model, View, Controller) ---
     private final Player mainPlayer;
     private final WorldMap worldMap;
     private final MainGameView mainGameView;
     private final PlayerView playerView;
     private final GameController gameController;
-    private final List<TimedTileAction> pendingActions;  // Thêm danh sách hành động chờ
+
+    // --- Các Manager con (được tách ra) ---
+    private final TimeManager timeManager;
+    private final ActionManager actionManager;
+    private final PlayerMovementHandler movementHandler;
+    private final Camera camera;
+
+    // --- Trạng thái Game ---
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
     private boolean isPaused = false;
-
-    // Tọa độ thế giới logic
-    private double worldOffsetX = 0.0;
-    private double worldOffsetY = 0.0;
 
     // Tọa độ ô chuột đang trỏ tới
     private int currentMouseTileX = 0;
     private int currentMouseTileY = 0;
-    private boolean mapNeedsUpdate = false;
-
-    // Thời gian và tốc độ cập nhật.
-    // Lấy giá trị mặc định từ GameConfig
-    private double gameTimeSeconds = GameConfig.PLAYER_START_TIME_SECONDS;
-    // Lấy giá trị mặc định từ GameConfig
-    private final double SECONDS_PER_FRAME = GameConfig.SECONDS_PER_FRAME;
 
     // Constructor nhận tất cả các thành phần
     public GameManager(Player player, WorldMap worldMap, MainGameView mainGameView,
@@ -49,18 +40,20 @@ public class GameManager {
         this.mainGameView = mainGameView;
         this.playerView = playerView;
         this.gameController = gameController;
-        this.pendingActions = new ArrayList<>();
+
+        // Khởi tạo các Manager con
+        this.camera = new Camera();
+        this.timeManager = new TimeManager(mainGameView);
+        this.actionManager = new ActionManager();
+        this.movementHandler = new PlayerMovementHandler(player, playerView, gameController, camera, mainGameView);
     }
 
     public void startGame() {
-        // *** Đặt vị trí khởi đầu của worldPane (camera) ***
-        // Sao cho người chơi (ở giữa màn hình) nhìn vào tọa độ logic (tileX, tileY) của player
-        // Vị trí worldPane = -Tọa độ logic player + (Nửa màn hình) - (Độ dài nhân vật)
-        this.worldOffsetX = -mainPlayer.getTileX() + GameConfig.SCREEN_WIDTH / 2 - playerView.getWidth() / 2;
-        this.worldOffsetY = -mainPlayer.getTileY() + GameConfig.SCREEN_HEIGHT / 2 - playerView.getHeight() / 2;
+        // Đặt vị trí camera ban đầu
+        camera.initializePosition(mainPlayer, playerView);
 
         // Gọi updateMap để vẽ map lần đầu
-        mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY, true);
+        mainGameView.updateMap(camera.getWorldOffsetX(), camera.getWorldOffsetY(), true);
 
         // Bắt đầu game loop
         this.gameLoop = new AnimationTimer() {
@@ -81,152 +74,21 @@ public class GameManager {
         if (this.isPaused) {
             return;
         }
-        // Xử lý Input
-        Point2D movementDelta = handleInput(); // Trả về (dx, dy)
-        double dx = movementDelta.getX();
-        double dy = movementDelta.getY();
 
-        updateGameTime(); //Thêm bộ đếm thời gian
-        updateDayCycle(); //Gọi hàm cập nhật chu kỳ ngày đêm
+        // Cập nhật thời gian & chu kỳ ngày đêm
+        timeManager.update();
 
-        // Cập nhật Model và View
-        updatePlayerState(dx, dy); // Cập nhật trạng thái (IDLE/WALK)
-        updatePlayerPosition(dx, dy); // Cập nhật vị trí
+        // Cập nhật di chuyển & trạng thái Player
+        movementHandler.update();
 
+        // Cập nhật animation (View tự chạy)
         playerView.updateAnimation(); // [QUAN TRỌNG] Yêu cầu PlayerView tự chạy animation
 
         // Cập nhật các hành động chờ
-        updateTimedActions();
+        actionManager.updateTimedActions(worldMap, mainGameView, camera.getWorldOffsetX(), camera.getWorldOffsetY());
 
         // Cập nhật chuột
         updateMouseSelector();
-    }
-
-    /**
-     * Tính toán cường độ ánh sáng dựa trên chu kỳ ngày đêm.
-     * Cường độ: 1.0 (sáng) -> 0.0 (tối)
-     */
-    private void updateDayCycle() {
-        // Định nghĩa chu kỳ (Ví dụ: 24 phút = 1440 giây thực)
-        // Lấy giá trị từ GameConfig
-        final double DAY_CYCLE_DURATION_SECONDS = GameConfig.DAY_CYCLE_DURATION_SECONDS;
-
-        // Tính tỷ lệ phần trăm đã trôi qua trong chu kỳ
-        double cycleProgress = (this.gameTimeSeconds % DAY_CYCLE_DURATION_SECONDS) / DAY_CYCLE_DURATION_SECONDS;
-
-        // Chuyển đổi tỷ lệ thành Cường độ Ánh sáng (0.0 đến 1.0)
-
-        // Ví dụ về một chu kỳ đơn giản (dùng hàm sin để tạo độ cong)
-        // Tỷ lệ Sin(0) = 0 (giữa đêm); Sin(Pi/2) = 1 (giữa ngày)
-        // Cần dịch pha để 0% (00:00) là đêm, 50% (12:00) là ngày.
-
-        // Biến đổi: (0 -> 1) thành (-Pi/2 -> 3*Pi/2) để bao phủ toàn bộ chu kỳ sin
-        double radians = cycleProgress * 2 * Math.PI - (Math.PI / 2.0);
-
-        // Ánh sáng sẽ dao động từ -1.0 đến 1.0. Dịch chuyển và chia 2 để được (0.0 đến 1.0)
-        double lightIntensity = (Math.sin(radians) + 1.0) / 2.0;
-
-        // Giới hạn tối thiểu (Đảm bảo ban đêm không quá tối, ví dụ min 0.1)
-        // [TỐI ƯU] Lấy giá trị từ GameConfig
-        final double MIN_INTENSITY = GameConfig.MIN_LIGHT_INTENSITY;
-        lightIntensity = MIN_INTENSITY + (1.0 - MIN_INTENSITY) * lightIntensity;
-
-        // Gửi cường độ ánh sáng tới View
-        mainGameView.updateLighting(lightIntensity);
-    }
-
-    // Phương thức mới để cập nhật thời gian
-    private void updateGameTime() {
-        this.gameTimeSeconds += SECONDS_PER_FRAME;
-
-
-        // Định dạng thời gian thành chuỗi HH:MM:SS
-        int totalSeconds = (int) Math.round(this.gameTimeSeconds);
-        int hours = totalSeconds / 3600;
-        int minutes = (totalSeconds % 3600) / 60;
-        int seconds = totalSeconds % 60;
-
-        String timeString = String.format("Time: %02d:%02d:%02d", hours, minutes, seconds);
-
-        // Gửi chuỗi thời gian đã định dạng tới View
-        mainGameView.updateTimer(timeString);
-    }
-
-    /**
-     * Xử lý input và trả về vector di chuyển
-     */
-    private Point2D handleInput() {
-        // Tính toán hướng di chuyển (delta X, delta Y)
-        double dx = 0;
-        double dy = 0;
-
-        // Chỉ cho phép di chuyển nếu đang không làm hành động khác
-        if (mainPlayer.getState() == PlayerView.PlayerState.IDLE ||
-                mainPlayer.getState() == PlayerView.PlayerState.WALK) {
-
-            if (gameController.isKeyPressed(KeyCode.W)) { // Di chuyển PLAYER đi LÊN
-                dy += GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi XUỐNG
-            }
-            if (gameController.isKeyPressed(KeyCode.S)) { // Di chuyển PLAYER đi XUỐNG
-                dy -= GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi LÊN
-            }
-            if (gameController.isKeyPressed(KeyCode.A)) { // Di chuyển PLAYER đi TRÁI
-                dx += GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi PHẢI
-            }
-            if (gameController.isKeyPressed(KeyCode.D)) { // Di chuyển PLAYER đi PHẢI
-                dx -= GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi TRÁI
-            }
-        }
-        return new Point2D(dx, dy);
-    }
-
-    /**
-     * Cập nhật trạng thái (Logic) và
-     * "ra lệnh" cho PlayerView (Visual)
-     */
-    private void updatePlayerState(double dx, double dy) {
-        // Quyết định Trạng thái (Logic)
-        if (dx != 0 || dy != 0) {
-            mainPlayer.setState(PlayerView.PlayerState.WALK);
-        } else {
-            mainPlayer.setState(PlayerView.PlayerState.IDLE);
-        }
-
-        // Quyết định Hướng (Logic)
-        if (dy > 0) {
-            mainPlayer.setDirection(PlayerView.Direction.UP);
-        } else if (dy < 0) {
-            mainPlayer.setDirection(PlayerView.Direction.DOWN);
-        } else if (dx > 0) {
-            mainPlayer.setDirection(PlayerView.Direction.LEFT);
-        } else if (dx < 0) {
-            mainPlayer.setDirection(PlayerView.Direction.RIGHT);
-        }
-
-        // "RA LỆNH" cho PlayerView cập nhật hình ảnh
-        playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
-    }
-
-    /**
-     * Cập nhật vị trí người chơi và camera
-     */
-    private void updatePlayerPosition(double dx, double dy) {
-        // Cập nhật Map nếu di chuyển
-        if (dx != 0 || dy != 0) {
-            // (Sau này thêm logic va chạm (Collision) ở đây)
-
-            // Cập nhật camera
-            this.worldOffsetX += dx;
-            this.worldOffsetY += dy;
-
-            // Cập nhật tọa độ logic của Player
-            mainPlayer.setTileX(mainPlayer.getTileX() - dx);
-            mainPlayer.setTileY(mainPlayer.getTileY() - dy);
-
-            // *** YÊU CẦU VIEW VẼ LẠI MAP DỰA TRÊN VỊ TRÍ MỚI ***
-            // Truyền vào vị trí offset (dịch chuyển) của worldPane
-            mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY, false);
-        }
     }
 
     /**
@@ -234,8 +96,8 @@ public class GameManager {
      */
     private void updateMouseSelector() {
         // Tọa độ logic của chuột trong thế giới
-        double mouseWorldX = -this.worldOffsetX + gameController.getMouseX();
-        double mouseWorldY = -this.worldOffsetY + gameController.getMouseY();
+        double mouseWorldX = -camera.getWorldOffsetX() + gameController.getMouseX();
+        double mouseWorldY = -camera.getWorldOffsetY() + gameController.getMouseY();
 
         // Tọa độ logic của ô mà chuột trỏ tới
         this.currentMouseTileX = (int) Math.floor(mouseWorldX / GameConfig.TILE_SIZE);
@@ -244,8 +106,8 @@ public class GameManager {
         mainGameView.updateSelector(
                 this.currentMouseTileX,       // Vị trí X của ô được chọn
                 this.currentMouseTileY,       // Vị trí Y của ô được chọn
-                this.worldOffsetX,           // Vị trí X của thế giới
-                this.worldOffsetY           // Vị trí Y của thế giới
+                camera.getWorldOffsetX(),     // Vị trí X của thế giới
+                camera.getWorldOffsetY()      // Vị trí Y của thế giới
         );
     }
 
@@ -299,43 +161,11 @@ public class GameManager {
             int delayInFrames = GameConfig.ACTION_DELAY_FRAMES_HOE;
 
             // Thêm hành động "Biến thành Đất" vào hàng đợi
-            pendingActions.add(new TimedTileAction(col, row, Tile.SOIL, delayInFrames));
+            actionManager.addPendingAction(new TimedTileAction(col, row, Tile.SOIL, delayInFrames));
 
             // Ra lệnh cho PlayerView chạy animation "Cuốc"
             // (Hiện tại chưa làm, chỉ là ví dụ)
             // mainPlayer.setState(PlayerView.PlayerState.HOE);
-        }
-    }
-
-    /**
-     * Hàm này được gọi 60 LẦN/GIÂY.
-     * Nhiệm vụ: Lặp qua tất cả hành động chờ, "tick" chúng,
-     * và thực thi những hành động đã hết giờ.
-     */
-    private void updateTimedActions() {
-        // Dùng Iterator để chúng ta có thể XÓA phần tử khỏi List pendingActions một cách an toàn
-        Iterator<TimedTileAction> iterator = pendingActions.iterator();
-
-        while (iterator.hasNext()) {
-            TimedTileAction action = iterator.next();
-
-            // Gọi tick(). Nếu nó trả về "true" (hết giờ)
-            if (action.tick()) {
-                // THỰC THI HÀNH ĐỘNG: Thay đổi Model
-                worldMap.setTileType(action.getCol(), action.getRow(), action.getNewType());
-
-                // Báo cho View biết cần vẽ lại bản đồ
-                this.mapNeedsUpdate = true;
-
-                // Xóa hành động này khỏi hàng đợi
-                iterator.remove();
-            }
-        }
-
-        // Update map nếu cần
-        if (this.mapNeedsUpdate) {
-            mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY, true);
-            this.mapNeedsUpdate = false;
         }
     }
 
