@@ -1,5 +1,6 @@
 package com.example.farmSimulation.model;
 
+import com.example.farmSimulation.view.PlayerView;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,9 +18,16 @@ public class Player {
     private double tileX;
     private double tileY;
 
+    // Lưu trữ trạng thái LOGIC (Model)
+    // PlayerView sẽ lưu trạng thái VISUAL (View)
+    private PlayerView.PlayerState state;
+    private PlayerView.Direction direction;
+
     // Constructor
     public Player() {
         this.tileX = 0;
         this.tileY = 0;
+        this.state = PlayerView.PlayerState.IDLE; // Trạng thái ban đầu
+        this.direction = PlayerView.Direction.DOWN; // Hướng ban đầu
     }
 }

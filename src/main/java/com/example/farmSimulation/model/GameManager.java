@@ -1,10 +1,12 @@
 package com.example.farmSimulation.model;
 
+import com.example.farmSimulation.config.GameConfig;
 import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.view.MainGameView;
+import com.example.farmSimulation.view.PlayerView; // Import
 import javafx.animation.AnimationTimer;
+import javafx.geometry.Point2D; // Import
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Pane;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,89 +16,140 @@ import java.util.List;
 
 @Getter
 @Setter
-// Class quản lý logic game
 public class GameManager {
-    private Player mainPlayer;
-    private GameController gameController;
-    private MainGameView mainGameView;
-
-    private Pane worldPane;          // lấy từ MainGameView
-    private WorldMap worldMap;       // lấy từ MainGameView
+    private final Player mainPlayer;
+    private final WorldMap worldMap;
+    private final MainGameView mainGameView;
+    private final PlayerView playerView; // Thêm PlayerView
+    private final GameController gameController;
+    private final List<TimedTileAction> pendingActions;  // Thêm danh sách hành động chờ
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
-    private double playerSpeed = 5.0;  // Tốc độ di chuyển (pixel mỗi frame)
-
     // Tọa độ thế giới logic
     private double worldOffsetX = 0.0;
     private double worldOffsetY = 0.0;
-
     // Tọa độ ô chuột đang trỏ tới
     private int currentMouseTileX = 0;
     private int currentMouseTileY = 0;
-
     private boolean mapNeedsUpdate = false;
 
-    private List<TimedTileAction> pendingActions; // Thêm danh sách hành động chờ
-
-    public GameManager(Player player, GameController gameController, MainGameView mainGameView) {
+    // Constructor nhận tất cả các thành phần
+    public GameManager(Player player, WorldMap worldMap, MainGameView mainGameView,
+                       PlayerView playerView, GameController gameController) {
         this.mainPlayer = player;
-        this.gameController = gameController;
+        this.worldMap = worldMap;
         this.mainGameView = mainGameView;
-        this.pendingActions = new ArrayList<>(); // Khởi tạo danh sách hành động chờ
+        this.playerView = playerView;
+        this.gameController = gameController;
+        this.pendingActions = new ArrayList<>();
     }
 
     public void startGame() {
-        // Lấy worldPane và worldMap từ View (gọi sau initUI)
-        this.worldPane = mainGameView.getWorldPane();
-        this.worldMap = mainGameView.getWorldMap();
-
         // *** Đặt vị trí khởi đầu của worldPane (camera) ***
         // Sao cho người chơi (ở giữa màn hình) nhìn vào tọa độ logic (tileX, tileY) của player
         // Vị trí worldPane = -Tọa độ logic player + (Nửa màn hình) - (Độ dài nhân vật)
-        this.worldOffsetX = -mainPlayer.getTileX() + mainGameView.getSCREEN_WIDTH() / 2 - mainGameView.getPlayerView().getWidth() / 2;
-        this.worldOffsetY = -mainPlayer.getTileY() + mainGameView.getSCREEN_HEIGHT() / 2 - mainGameView.getPlayerView().getHeight() / 2;
+        this.worldOffsetX = -mainPlayer.getTileX() + GameConfig.SCREEN_WIDTH / 2 - playerView.getWidth() / 2;
+        this.worldOffsetY = -mainPlayer.getTileY() + GameConfig.SCREEN_HEIGHT / 2 - playerView.getHeight() / 2;
 
         // Gọi updateMap để vẽ map lần đầu
         mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY);
 
-        // Bắt đầu loop game
+        // Bắt đầu game loop
         this.gameLoop = new AnimationTimer() {
             @Override
-            public void handle(long now) { // Hàm handle() này sẽ được gọi 60 lần mỗi giây
+            public void handle(long now) {
                 updateGameLogic();
             }
         };
-        gameLoop.start(); // Bắt đầu gọi hàm handle() 60 lần/giây
+        gameLoop.start();
         System.out.println("Game Started!");
     }
 
+    /**
+     * [TỐI ƯU] Hàm update chính, chỉ điều phối các hàm con
+     */
     private void updateGameLogic() {
+        // Xử lý Input
+        Point2D movementDelta = handleInput(); // Trả về (dx, dy)
+        double dx = movementDelta.getX();
+        double dy = movementDelta.getY();
+
+        // Cập nhật Model và View
+        updatePlayerState(dx, dy); // Cập nhật trạng thái (IDLE/WALK)
+        updatePlayerPosition(dx, dy); // Cập nhật vị trí
+
+        playerView.updateAnimation(); // [QUAN TRỌNG] Yêu cầu PlayerView tự chạy animation
+
+        // Cập nhật các hành động chờ
+        updateTimedActions();
+
+        // Cập nhật chuột
+        updateMouseSelector();
+    }
+
+    /**
+     * Xử lý input và trả về vector di chuyển
+     */
+    private Point2D handleInput() {
         // Tính toán hướng di chuyển (delta X, delta Y)
         double dx = 0;
         double dy = 0;
 
-        // "Hỏi" GameController xem phím nào đang được nhấn
-        if (gameController.isKeyPressed(KeyCode.W)) { // Di chuyển PLAYER đi LÊN
-            dy += playerSpeed; // Di chuyển WORLD đi XUỐNG
+        // Chỉ cho phép di chuyển nếu đang không làm hành động khác
+        if (mainPlayer.getState() == PlayerView.PlayerState.IDLE ||
+                mainPlayer.getState() == PlayerView.PlayerState.WALK) {
+
+            if (gameController.isKeyPressed(KeyCode.W)) { // Di chuyển PLAYER đi LÊN
+                dy += GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi XUỐNG
+            }
+            if (gameController.isKeyPressed(KeyCode.S)) { // Di chuyển PLAYER đi XUỐNG
+                dy -= GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi LÊN
+            }
+            if (gameController.isKeyPressed(KeyCode.A)) { // Di chuyển PLAYER đi TRÁI
+                dx += GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi PHẢI
+            }
+            if (gameController.isKeyPressed(KeyCode.D)) { // Di chuyển PLAYER đi PHẢI
+                dx -= GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi TRÁI
+            }
         }
-        if (gameController.isKeyPressed(KeyCode.S)) { // Di chuyển PLAYER đi XUỐNG
-            dy -= playerSpeed; // Di chuyển WORLD đi LÊN
-        }
-        if (gameController.isKeyPressed(KeyCode.A)) { // Di chuyển PLAYER đi TRÁI
-            dx += playerSpeed; // Di chuyển WORLD đi SANG PHẢI
-        }
-        if (gameController.isKeyPressed(KeyCode.D)) { // Di chuyển PLAYER đi PHẢI
-            dx -= playerSpeed; // Di chuyển WORLD đi SANG TRÁI
+        return new Point2D(dx, dy);
+    }
+
+    /**
+     * Cập nhật trạng thái (Logic) và
+     * "ra lệnh" cho PlayerView (Visual)
+     */
+    private void updatePlayerState(double dx, double dy) {
+        // Quyết định Trạng thái (Logic)
+        if (dx != 0 || dy != 0) {
+            mainPlayer.setState(PlayerView.PlayerState.WALK);
+        } else {
+            mainPlayer.setState(PlayerView.PlayerState.IDLE);
         }
 
-        // Gọi hàm update của PlayerView và truyền dx, dy
-        mainGameView.getPlayerView().update(dx, dy);
+        // Quyết định Hướng (Logic)
+        if (dy > 0) {
+            mainPlayer.setDirection(PlayerView.Direction.UP);
+        } else if (dy < 0) {
+            mainPlayer.setDirection(PlayerView.Direction.DOWN);
+        } else if (dx > 0) {
+            mainPlayer.setDirection(PlayerView.Direction.LEFT);
+        } else if (dx < 0) {
+            mainPlayer.setDirection(PlayerView.Direction.RIGHT);
+        }
 
-        // *** GỌI HÀM CẬP NHẬT HÀNG ĐỢI ***
-        // (Luôn chạy 60 lần/giây)
-        updateTimedActions();
+        // "RA LỆNH" cho PlayerView cập nhật hình ảnh
+        playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
+    }
 
+    /**
+     * Cập nhật vị trí người chơi và camera
+     */
+    private void updatePlayerPosition(double dx, double dy) {
         // Cập nhật Map nếu di chuyển
         if (dx != 0 || dy != 0) {
+            // (Sau này thêm logic va chạm (Collision) ở đây)
+
+            // Cập nhật camera
             this.worldOffsetX += dx;
             this.worldOffsetY += dy;
 
@@ -108,18 +161,20 @@ public class GameManager {
             // Truyền vào vị trí offset (dịch chuyển) của worldPane
             mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY);
         }
+    }
 
+    /**
+     * Cập nhật vị trí ô vuông chọn
+     */
+    private void updateMouseSelector() {
         // Tọa độ logic của chuột trong thế giới
         double mouseWorldX = -this.worldOffsetX + gameController.getMouseX();
         double mouseWorldY = -this.worldOffsetY + gameController.getMouseY();
 
-        double TILE_SIZE = mainGameView.getTILE_SIZE();
-
         // Tọa độ logic của ô mà chuột trỏ tới
-        this.currentMouseTileX = (int) Math.floor(mouseWorldX / TILE_SIZE);
-        this.currentMouseTileY = (int) Math.floor(mouseWorldY / TILE_SIZE);
+        this.currentMouseTileX = (int) Math.floor(mouseWorldX / GameConfig.TILE_SIZE);
+        this.currentMouseTileY = (int) Math.floor(mouseWorldY / GameConfig.TILE_SIZE);
 
-        // Hàm update tile selector
         mainGameView.updateSelector(
                 this.currentMouseTileX,       // Vị trí X của ô được chọn
                 this.currentMouseTileY,       // Vị trí Y của ô được chọn
@@ -129,13 +184,17 @@ public class GameManager {
     }
 
     /**
-     * Xử lý logic khi người chơi TƯƠNG TÁC (CLICK) với một ô.
-     * Nhiệm vụ của hàm này giờ là "Quyết định" và "Thêm hành động vào hàng đợi".
+     * Xử lý click chuột
+     * [TỐI ƯU] Sẵn sàng cho Tool System
      */
     public void interactWithTile(int col, int row) {
         Tile currentType = worldMap.getTileType(col, row);
 
         // --- ÁP DỤNG "LUẬT CHƠI" ---
+
+        // TODO: Sửa logic này khi có Hệ thống Dụng cụ (Tool System)
+        // PlayerTool tool = mainPlayer.getSelectedTool();
+        // if (tool == PlayerTool.HOE && currentType == Tile.GRASS) { ... }
 
         // VÍ DỤ: Cuốc đất (Grass -> Soil)
         if (currentType == Tile.GRASS) {
@@ -144,6 +203,10 @@ public class GameManager {
 
             // Thêm hành động "Biến thành Đất" vào hàng đợi
             pendingActions.add(new TimedTileAction(col, row, Tile.SOIL, delayInFrames));
+
+            // Ra lệnh cho PlayerView chạy animation "Cuốc"
+            // (Hiện tại chưa làm, chỉ là ví dụ)
+            // mainPlayer.setState(PlayerView.PlayerState.HOE);
         }
     }
 
@@ -171,7 +234,9 @@ public class GameManager {
                 iterator.remove();
             }
         }
-        if(this.mapNeedsUpdate == true) {
+
+        // Update map nếu cần
+        if (this.mapNeedsUpdate) {
             mainGameView.updateMap(this.worldOffsetX, this.worldOffsetY);
             this.mapNeedsUpdate = false;
         }

@@ -63,6 +63,7 @@ public class GameController {
     }
 
     public void handleMouseClick(MouseEvent event) {
+        if (event.getButton() != javafx.scene.input.MouseButton.PRIMARY) return;
         // GỌI HÀM LOGIC GAME (Ném hành động vào hàng đợi)
         gameManager.interactWithTile(
                 gameManager.getCurrentMouseTileX(),
