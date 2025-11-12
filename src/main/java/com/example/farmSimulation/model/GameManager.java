@@ -24,6 +24,7 @@ public class GameManager {
     private final GameController gameController;
     private final List<TimedTileAction> pendingActions;  // Thêm danh sách hành động chờ
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
+    private boolean isPaused = false;
 
     // Tọa độ thế giới logic
     private double worldOffsetX = 0.0;
@@ -33,6 +34,10 @@ public class GameManager {
     private int currentMouseTileX = 0;
     private int currentMouseTileY = 0;
     private boolean mapNeedsUpdate = false;
+
+    // Thời gian và tốc độ cập nhật.
+    private double gameTimeSeconds = 360.0;
+    private final double SECONDS_PER_FRAME = 1.0 / 60.0;
 
     // Constructor nhận tất cả các thành phần
     public GameManager(Player player, WorldMap worldMap, MainGameView mainGameView,
@@ -70,10 +75,17 @@ public class GameManager {
      * [TỐI ƯU] Hàm update chính, chỉ điều phối các hàm con
      */
     private void updateGameLogic() {
+        // ⚠️ BỔ SUNG: Dừng ngay lập tức nếu game đang tạm dừng
+        if (this.isPaused) {
+            return;
+        }
         // Xử lý Input
         Point2D movementDelta = handleInput(); // Trả về (dx, dy)
         double dx = movementDelta.getX();
         double dy = movementDelta.getY();
+
+        updateGameTime(); //Thêm bộ đếm thời gian
+        updateDayCycle(); //Gọi hàm cập nhật chu kỳ ngày đêm
 
         // Cập nhật Model và View
         updatePlayerState(dx, dy); // Cập nhật trạng thái (IDLE/WALK)
@@ -86,6 +98,54 @@ public class GameManager {
 
         // Cập nhật chuột
         updateMouseSelector();
+    }
+
+    /**
+     * Tính toán cường độ ánh sáng dựa trên chu kỳ ngày đêm.
+     * Cường độ: 1.0 (sáng) -> 0.0 (tối)
+     */
+    private void updateDayCycle() {
+        // 1. Định nghĩa chu kỳ (Ví dụ: 24 phút = 1440 giây thực)
+        final double DAY_CYCLE_DURATION_SECONDS = 1440.0;
+
+        // 2. Tính tỷ lệ phần trăm đã trôi qua trong chu kỳ
+        double cycleProgress = (this.gameTimeSeconds % DAY_CYCLE_DURATION_SECONDS) / DAY_CYCLE_DURATION_SECONDS;
+
+        // 3. Chuyển đổi tỷ lệ thành Cường độ Ánh sáng (0.0 đến 1.0)
+
+        // Ví dụ về một chu kỳ đơn giản (dùng hàm sin để tạo độ cong)
+        // Tỷ lệ Sin(0) = 0 (giữa đêm); Sin(Pi/2) = 1 (giữa ngày)
+        // Cần dịch pha để 0% (00:00) là đêm, 50% (12:00) là ngày.
+
+        // Biến đổi: (0 -> 1) thành (-Pi/2 -> 3*Pi/2) để bao phủ toàn bộ chu kỳ sin
+        double radians = cycleProgress * 2 * Math.PI - (Math.PI / 2.0);
+
+        // Ánh sáng sẽ dao động từ -1.0 đến 1.0. Dịch chuyển và chia 2 để được (0.0 đến 1.0)
+        double lightIntensity = (Math.sin(radians) + 1.0) / 2.0;
+
+        // Giới hạn tối thiểu (Đảm bảo ban đêm không quá tối, ví dụ min 0.1)
+        final double MIN_INTENSITY = 0.1;
+        lightIntensity = MIN_INTENSITY + (1.0 - MIN_INTENSITY) * lightIntensity;
+
+        // Gửi cường độ ánh sáng tới View
+        mainGameView.updateLighting(lightIntensity);
+    }
+
+    // Phương thức mới để cập nhật thời gian
+    private void updateGameTime() {
+        this.gameTimeSeconds += SECONDS_PER_FRAME;
+
+
+        // Định dạng thời gian thành chuỗi HH:MM:SS
+        int totalSeconds = (int) Math.round(this.gameTimeSeconds);
+        int hours = totalSeconds / 3600;
+        int minutes = (totalSeconds % 3600) / 60;
+        int seconds = totalSeconds % 60;
+
+        String timeString = String.format("Time: %02d:%02d:%02d", hours, minutes, seconds);
+
+        // Gửi chuỗi thời gian đã định dạng tới View
+        mainGameView.updateTimer(timeString);
     }
 
     /**
@@ -273,13 +333,21 @@ public class GameManager {
             this.mapNeedsUpdate = false;
         }
     }
-    private boolean paused = false;
+
 
     public void toggleSettingsMenu() {
-        paused = !paused;
-        if (paused) {
+        this.isPaused = !this.isPaused; // Sử dụng this.isPaused
+        if (this.isPaused) {
+            if (gameLoop != null) {
+                gameLoop.stop(); // ⬅️ Dừng game loop
+                System.out.println("Game Loop đã dừng.");
+            }
             mainGameView.showSettingsMenu(mainPlayer.getName(), mainPlayer.getLevel());
         } else {
+            if (gameLoop != null) {
+                gameLoop.start(); // ⬅️ Tiếp tục game loop
+                System.out.println("Game Loop đã tiếp tục.");
+            }
             mainGameView.hideSettingsMenu();
         }
     }
