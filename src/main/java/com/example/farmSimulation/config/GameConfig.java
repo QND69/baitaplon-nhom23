@@ -2,6 +2,7 @@ package com.example.farmSimulation.config;
 
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.text.Font;
 
 // Chứa các hằng số cấu hình game
 public class GameConfig {
@@ -15,6 +16,17 @@ public class GameConfig {
     // --- Cấu hình Selector ---
     public static final Paint SELECTOR_COLOR = Color.BLACK;
     public static final double SELECTOR_STROKE_WIDTH = 1.0;
+
+    // --- Cấu hình Text tạm thời ---
+    public static final String TOO_FAR_TEXT = "It's too far!"; // Nội dung text
+    public static final Paint TEMP_TEXT_COLOR = Color.WHITE; // Màu text
+    public static final double TEMP_TEXT_STROKE_WIDTH = 0.9; // Độ dày viền
+    public static final Paint TEMP_TEXT_STROKE_COLOR = Color.BLACK; // Màu viền
+    public static final double TEMP_TEXT_FONT_SIZE = 18.0; // Kích thước font
+    public static final double TEMP_TEXT_DISPLAY_DURATION = 1000.0; // Thời gian hiển thị (ms)
+    public static final double TEMP_TEXT_FADE_DURATION = 200.0; // Thời gian mờ dần (ms)
+    public static final double TEMP_TEXT_OFFSET_Y = 10.0; // Offset Y so với đầu player
+    public static final Font TEMP_TEXT_FONT = Font.font("Arial", TEMP_TEXT_FONT_SIZE); // Font chữ
 
     // --- Cấu hình vật lý & Logic ---
     public static final double PLAYER_SPEED = 5.0; // Tốc độ di chuyển

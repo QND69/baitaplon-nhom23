@@ -213,7 +213,10 @@ public class GameManager {
     public void interactWithTile(int col, int row) {
         // Kiểm tra tầm hoạt động trước
         if (!isPlayerInRange(col, row)) {
-            System.out.println("Quá xa!");
+            // Hiển thị text "It's too far"
+            double playerScreenX = playerView.getSprite().getLayoutX() + playerView.getWidth() / 2;
+            double playerScreenY = playerView.getSprite().getLayoutY(); // Đầu player
+            mainGameView.showTemporaryText(GameConfig.TOO_FAR_TEXT, playerScreenX, playerScreenY);
             return; // Quá xa, không làm gì cả
         }
 

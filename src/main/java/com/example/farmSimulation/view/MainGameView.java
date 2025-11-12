@@ -6,13 +6,18 @@ import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.model.Tile;
 import com.example.farmSimulation.model.WorldMap;
 import com.example.farmSimulation.view.assets.AssetManager;
+import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,6 +36,10 @@ public class MainGameView {
     // Lưu lại vị trí render map lần cuối
     private int lastRenderedStartCol = -1;
     private int lastRenderedStartRow = -1;
+
+    // --- Các thành phần cho UI tạm thời ---
+    private Text temporaryText;       // Đối tượng Text để hiển thị thông báo tạm thời
+    private SequentialTransition temporaryTextAnimation; // Animation cho text
 
     /**
      * Constructor (Hàm khởi tạo) nhận các thành phần nó cần
@@ -70,9 +79,19 @@ public class MainGameView {
         this.tileSelector.setStroke(GameConfig.SELECTOR_COLOR);             // Màu viền
         this.tileSelector.setStrokeWidth(GameConfig.SELECTOR_STROKE_WIDTH); // Độ dày viền
         this.tileSelector.setVisible(true);                                 // Luôn hiển thị
+        rootPane.getChildren().addAll(worldPane, tileSelector); // Thêm worldPane và tileSelector vào root
 
-        // Thêm worldPane và tileSelector vào root
-        rootPane.getChildren().addAll(worldPane, tileSelector);
+        // --- Khởi tạo Temporary Text ---
+        temporaryText = new Text();
+        temporaryText.setFont(GameConfig.TEMP_TEXT_FONT);
+        temporaryText.setFill(GameConfig.TEMP_TEXT_COLOR);
+        temporaryText.setFont(GameConfig.TEMP_TEXT_FONT);
+        temporaryText.setStroke(GameConfig.TEMP_TEXT_STROKE_COLOR);
+        temporaryText.setStrokeWidth(GameConfig.TEMP_TEXT_STROKE_WIDTH);
+        temporaryText.setOpacity(0); // Ban đầu ẩn
+        temporaryText.setManaged(false); // Không ảnh hưởng layout
+        rootPane.getChildren().add(temporaryText);
+
 
         // Đặt nhân vật (nhận từ bên ngoài) vào giữa màn hình
         playerSprite.setLayoutX(GameConfig.SCREEN_WIDTH / 2 - playerSprite.getFitWidth() / 2);
@@ -159,5 +178,31 @@ public class MainGameView {
         // Hiển thị ô được trỏ chuột
         this.tileSelector.setLayoutX(tileSelectedOnScreenX);
         this.tileSelector.setLayoutY(tileSelectedOnScreenY);
+    }
+
+    /**
+     * Hiển thị một đoạn text tạm thời trên đầu người chơi, sau đó mờ dần và biến mất.
+     * @param message Nội dung text cần hiển thị.
+     * @param playerScreenX Tọa độ X của người chơi trên màn hình.
+     * @param playerScreenY Tọa độ Y của người chơi trên màn hình.
+     */
+    public void showTemporaryText(String message, double playerScreenX, double playerScreenY) {
+        if (temporaryTextAnimation != null && temporaryTextAnimation.getStatus().equals(javafx.animation.Animation.Status.RUNNING)) {
+            temporaryTextAnimation.stop(); // Dừng animation cũ nếu đang chạy
+        }
+
+        temporaryText.setText(message);
+        temporaryText.setLayoutX(playerScreenX - temporaryText.getLayoutBounds().getWidth() / 2); // Căn giữa
+        temporaryText.setLayoutY(playerScreenY + GameConfig.TEMP_TEXT_OFFSET_Y); // Trên đầu player
+        temporaryText.setOpacity(1); // Hiển thị ngay lập tức
+
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(GameConfig.TEMP_TEXT_FADE_DURATION), temporaryText);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+
+        PauseTransition pause = new PauseTransition(Duration.millis(GameConfig.TEMP_TEXT_DISPLAY_DURATION - GameConfig.TEMP_TEXT_FADE_DURATION));
+
+        temporaryTextAnimation = new SequentialTransition(temporaryText, pause, fadeOut);
+        temporaryTextAnimation.play();
     }
 }
