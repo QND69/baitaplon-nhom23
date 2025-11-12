@@ -273,4 +273,14 @@ public class GameManager {
             this.mapNeedsUpdate = false;
         }
     }
+    private boolean paused = false;
+
+    public void toggleSettingsMenu() {
+        paused = !paused;
+        if (paused) {
+            mainGameView.showSettingsMenu(mainPlayer.getName(), mainPlayer.getLevel());
+        } else {
+            mainGameView.hideSettingsMenu();
+        }
+    }
 }
