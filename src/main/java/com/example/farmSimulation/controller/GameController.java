@@ -38,6 +38,12 @@ public class GameController {
             /* event.getCode() lấy mã phím nhấn, rồi thêm vào activeKeys.
             Vì là HashSet, nếu phím đang nhấn rồi thì thêm lại cũng không ảnh hưởng (không bị trùng). */
             //System.out.println("Các phím đang nhấn: " + activeKeys);
+            // Thêm xử lý ESC
+            if (event.getCode() == KeyCode.ESCAPE) {
+                if (gameManager != null) {
+                    gameManager.toggleSettingsMenu(); // Gọi hàm hiển thị/ẩn menu
+                }
+            }
         });
 
         scene.setOnKeyReleased(event -> { // được gọi khi người chơi nhả phím.
