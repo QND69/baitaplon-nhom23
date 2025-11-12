@@ -56,5 +56,6 @@ public class Game {
 
         // Bắt đầu Game Loop
         gameManager.startGame();
+        mainGameView.setGameManager(gameManager);
     }
 }

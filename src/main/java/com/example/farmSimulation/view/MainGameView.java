@@ -1,5 +1,6 @@
 package com.example.farmSimulation.view;
 
+import com.example.farmSimulation.model.GameManager;
 import com.example.farmSimulation.config.AssetPaths;
 import com.example.farmSimulation.config.GameConfig;
 import com.example.farmSimulation.controller.GameController;
@@ -30,12 +31,16 @@ import javafx.scene.text.Font;
 public class MainGameView {
     private final ImageView[][] screenTiles; // Mảng 2D LƯU TRỮ các ImageView
 
+    private Label timerLabel; // bộ đếm thời gian
+
     private final AssetManager assetManager; // Để lấy textures
     private final WorldMap worldMap;         // Để biết vẽ tile gì
+    private GameManager gameManager;
 
     private Pane rootPane;    // Root pane
     private Pane worldPane;   // Pane "thế giới" chứa lưới, chỉ dùng để di chuyển cuộn mượt
     private Rectangle tileSelector; // Hình vuông chứa ô được chọn
+    private Rectangle darknessOverlay; // Lớp phủ màu đen để tạo hiệu ứng tối
 
     // Lưu lại vị trí render map lần cuối
     private int lastRenderedStartCol = -1;
@@ -53,6 +58,12 @@ public class MainGameView {
         this.assetManager = assetManager;
         this.worldMap = worldMap;
         this.screenTiles = new ImageView[GameConfig.NUM_ROWS_ON_SCREEN][GameConfig.NUM_COLS_ON_SCREEN];
+        this.timerLabel = new Label("Time: 00:00");
+        this.timerLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: white; -fx-background-color: rgba(0, 0, 0, 0.5); -fx-padding: 5px;");
+    }
+
+    public void setGameManager(GameManager gameManager) {
+        this.gameManager = gameManager;
     }
 
     /**
@@ -63,6 +74,8 @@ public class MainGameView {
 
         this.rootPane = new Pane();
         this.worldPane = new Pane();
+
+
 
         // Chèn các tile rỗng vào worldPane
         for (int r = 0; r < GameConfig.NUM_ROWS_ON_SCREEN; r++) {
@@ -76,6 +89,10 @@ public class MainGameView {
                 worldPane.getChildren().add(tileView);
             }
         }
+
+        // Đặt Timer Label ở góc trên bên trái
+        this.timerLabel.setLayoutX(10);
+        this.timerLabel.setLayoutY(10);
 
         // Khởi tạo ô vuông selector
         this.tileSelector = new Rectangle(GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
@@ -101,6 +118,16 @@ public class MainGameView {
         playerSprite.setLayoutX(GameConfig.SCREEN_WIDTH / 2 - playerSprite.getFitWidth() / 2);
         playerSprite.setLayoutY(GameConfig.SCREEN_HEIGHT / 2 - playerSprite.getFitHeight() / 2);
         rootPane.getChildren().add(playerSprite); // Thêm nhân vật vào root
+
+        // Khởi tạo Lớp phủ Tối
+        this.darknessOverlay = new Rectangle(GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT);
+        this.darknessOverlay.setFill(Color.BLACK);
+        this.darknessOverlay.setOpacity(0.0); // Ban đầu không tối (sáng)
+        rootPane.getChildren().add(this.darknessOverlay); // Thêm overlay
+
+
+        //Thêm timerLabel vào rootPane sau khi đã đặt vị trí
+        rootPane.getChildren().add(this.timerLabel);
 
         Scene scene = new Scene(rootPane, GameConfig.SCREEN_WIDTH, GameConfig.SCREEN_HEIGHT, GameConfig.BACKGROUND_COLOR);
         gameController.setupInputListeners(scene);
@@ -246,7 +273,15 @@ public class MainGameView {
             // Nút Resume
             Button resume = new Button("Resume");
             resume.setPrefWidth(200);
-            resume.setOnAction(e -> hideSettingsMenu());
+            resume.setOnAction(e -> {
+                if (this.gameManager != null) {
+                    // ⚠️ GỌI LOGIC TỪ MANAGER
+                    this.gameManager.toggleSettingsMenu();
+                }
+                // Lệnh hideSettingsMenu() sẽ được gọi bên trong toggleSettingsMenu()
+                // Hoặc bạn có thể gọi nó ở đây:
+                hideSettingsMenu(); // ⬅️ Tùy chọn, nếu bạn muốn View tự ẩn
+            });
 
 
             // Nút Save Game
@@ -308,5 +343,29 @@ public class MainGameView {
         if (settingsMenu != null) {
             settingsMenu.setVisible(false);
         }
+    }
+
+    public void updateTimer(String timeString) {
+        this.timerLabel.setText(timeString);
+    }
+
+    /**
+     * Cập nhật độ tối của màn hình dựa trên cường độ ánh sáng từ Model.
+     * @param intensity Cường độ ánh sáng (1.0 là sáng nhất, 0.0 là tối nhất)
+     */
+    public void updateLighting(double intensity) {
+        // Cường độ ánh sáng 1.0 => Opacity của lớp phủ tối là 0.0
+        // Cường độ ánh sáng 0.0 => Opacity của lớp phủ tối là 1.0 (hoặc tối đa 0.8)
+
+        // Đảo ngược cường độ để có độ mờ (opacity)
+        // Giới hạn độ mờ tối đa (Ví dụ: 80% tối)
+        final double MAX_DARKNESS = 0.8;
+
+        double opacity = 1.0 - intensity;
+
+        // Áp dụng giới hạn tối đa
+        opacity = Math.min(opacity, MAX_DARKNESS);
+
+        this.darknessOverlay.setOpacity(opacity);
     }
 }
