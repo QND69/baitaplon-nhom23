@@ -45,7 +45,7 @@ public class GameController {
                     gameManager.toggleSettingsMenu(); // Gọi hàm hiển thị/ẩn menu
                 }
             }
-            // [MỚI] Xử lý phím số (1-9, 0) để đổi hotbar
+            // Xử lý phím số (1-9, 0) để đổi hotbar
             if (event.getCode().isDigitKey()) {
                 int slot = -1;
                 if (event.getCode() == KeyCode.DIGIT1) slot = 0;

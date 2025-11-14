@@ -22,12 +22,9 @@ public class HudView extends Pane {
     private SequentialTransition temporaryTextAnimation; // Animation cho text
 
     public HudView() {
-        // [TỐI ƯU] Lấy giá trị mặc định từ GameConfig
         this.timerLabel = new Label(HudConfig.TIMER_DEFAULT_TEXT);
-        // [TỐI ƯU] Lấy giá trị mặc định từ GameConfig
         this.timerLabel.setStyle(HudConfig.TIMER_STYLE_CSS);
         // Đặt Timer Label ở góc trên bên trái
-        // [TỐI ƯU] Lấy giá trị mặc định từ GameConfig
         this.timerLabel.setLayoutX(HudConfig.TIMER_X_POSITION);
         this.timerLabel.setLayoutY(HudConfig.TIMER_Y_POSITION);
 

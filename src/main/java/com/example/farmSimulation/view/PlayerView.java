@@ -36,10 +36,10 @@ public class PlayerView {
 
     // --- Cấu trúc dữ liệu Animation ---
     // (private record) là 1 class siêu gọn để chứa dữ liệu
-    private record AnimData(int row, int frameCount, long speed) {
-        // Constructor phụ nếu muốn dùng tốc độ mặc định
-        AnimData(int row, int frameCount) {
-            this(row, frameCount, PlayerSpriteConfig.ANIMATION_SPEED);
+    private record AnimData(int row, int frameCount, long speed, PlayerSpriteConfig.AnimationType type) {
+        // Constructor phụ cho tốc độ mặc định
+        AnimData(int row, int frameCount, PlayerSpriteConfig.AnimationType type) {
+            this(row, frameCount, PlayerSpriteConfig.ANIMATION_SPEED, type);
         }
     }
 
@@ -103,7 +103,8 @@ public class PlayerView {
 
         this.lastFrameTime = System.nanoTime(); // Dùng nanoTime cho chính xác
 
-        // --- [SỬA] Khởi tạo Debug Nodes (CHỈ KHI DEBUG BẬT) ---
+
+        // --- Khởi tạo Debug Nodes (CHỈ KHI DEBUG BẬT) ---
         if (PlayerSpriteConfig.DEBUG_PLAYER_BOUNDS) {
             this.debugBoundingBox = new Rectangle(this.baseWidth, this.baseHeight);
             this.debugBoundingBox.setFill(null);
@@ -115,8 +116,8 @@ public class PlayerView {
             this.debugCenterDot.setFill(PlayerSpriteConfig.DEBUG_CENTER_DOT_COLOR);
             this.debugCenterDot.setMouseTransparent(true); // Không cản click
 
-            // [MỚI] Khởi tạo vòng tròn range
-            this.debugRangeCircle = new Circle(GameLogicConfig.PLAYER_INTERACTION_RANGE_PIXELS);
+            // Khởi tạo vòng tròn range
+            this.debugRangeCircle = new Circle(GameLogicConfig.HAND_INTERACTION_RANGE);
             this.debugRangeCircle.setFill(null); // Không tô nền
             this.debugRangeCircle.setStroke(PlayerSpriteConfig.DEBUG_RANGE_COLOR);
             this.debugRangeCircle.setStrokeWidth(1.0);
@@ -126,9 +127,10 @@ public class PlayerView {
             // Nếu debug TẮT, giữ chúng là null
             this.debugBoundingBox = null;
             this.debugCenterDot = null;
-            this.debugRangeCircle = null; // [MỚI]
+            this.debugRangeCircle = null;
         }
         // --- Hết phần Debug ---
+
 
         updateViewport(); // Cập nhật viewport lần đầu
     }
@@ -148,42 +150,42 @@ public class PlayerView {
 
         // IDLE (Đứng yên) - Dùng playerSheet
         Map<Direction, AnimData> idleMap = new EnumMap<>(Direction.class);
-        idleMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.IDLE_DOWN_ROW, PlayerSpriteConfig.IDLE_FRAMES));
-        idleMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.IDLE_UP_ROW, PlayerSpriteConfig.IDLE_FRAMES));
-        idleMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.IDLE_RIGHT_ROW, PlayerSpriteConfig.IDLE_FRAMES));
-        idleMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.IDLE_LEFT_ROW, PlayerSpriteConfig.IDLE_FRAMES));
+        idleMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.IDLE_DOWN_ROW, PlayerSpriteConfig.IDLE_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
+        idleMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.IDLE_UP_ROW, PlayerSpriteConfig.IDLE_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
+        idleMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.IDLE_RIGHT_ROW, PlayerSpriteConfig.IDLE_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
+        idleMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.IDLE_LEFT_ROW, PlayerSpriteConfig.IDLE_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
         animationMap.put(PlayerState.IDLE, idleMap);
 
         // WALK (Di chuyển) - Dùng playerSheet
         Map<Direction, AnimData> walkMap = new EnumMap<>(Direction.class);
-        walkMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.WALK_DOWN_ROW, PlayerSpriteConfig.WALK_FRAMES));
-        walkMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.WALK_UP_ROW, PlayerSpriteConfig.WALK_FRAMES));
-        walkMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.WALK_RIGHT_ROW, PlayerSpriteConfig.WALK_FRAMES));
-        walkMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.WALK_LEFT_ROW, PlayerSpriteConfig.WALK_FRAMES));
+        walkMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.WALK_DOWN_ROW, PlayerSpriteConfig.WALK_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
+        walkMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.WALK_UP_ROW, PlayerSpriteConfig.WALK_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
+        walkMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.WALK_RIGHT_ROW, PlayerSpriteConfig.WALK_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
+        walkMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.WALK_LEFT_ROW, PlayerSpriteConfig.WALK_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
         animationMap.put(PlayerState.WALK, walkMap);
 
         // ATTACK (Tấn công) - Dùng playerSheet
         Map<Direction, AnimData> attackMap = new EnumMap<>(Direction.class);
-        attackMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.ATTACK_DOWN_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED));
-        attackMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.ATTACK_UP_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED));
-        attackMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.ATTACK_RIGHT_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED));
-        attackMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.ATTACK_LEFT_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED));
+        attackMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.ATTACK_DOWN_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
+        attackMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.ATTACK_UP_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
+        attackMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.ATTACK_RIGHT_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
+        attackMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.ATTACK_LEFT_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
         animationMap.put(PlayerState.ATTACK, attackMap);
 
         // HOE (Cuốc đất) - Dùng playerActionsSheet
         Map<Direction, AnimData> hoeMap = new EnumMap<>(Direction.class);
-        hoeMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.HOE_DOWN_ROW, PlayerSpriteConfig.HOE_FRAMES, PlayerSpriteConfig.HOE_SPEED));
-        hoeMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.HOE_UP_ROW, PlayerSpriteConfig.HOE_FRAMES, PlayerSpriteConfig.HOE_SPEED));
-        hoeMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.HOE_RIGHT_ROW, PlayerSpriteConfig.HOE_FRAMES, PlayerSpriteConfig.HOE_SPEED));
-        hoeMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.HOE_LEFT_ROW, PlayerSpriteConfig.HOE_FRAMES, PlayerSpriteConfig.HOE_SPEED));
+        hoeMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.HOE_DOWN_ROW, PlayerSpriteConfig.HOE_FRAMES, GameLogicConfig.HOE_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        hoeMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.HOE_UP_ROW, PlayerSpriteConfig.HOE_FRAMES, GameLogicConfig.HOE_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        hoeMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.HOE_RIGHT_ROW, PlayerSpriteConfig.HOE_FRAMES, GameLogicConfig.HOE_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        hoeMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.HOE_LEFT_ROW, PlayerSpriteConfig.HOE_FRAMES, GameLogicConfig.HOE_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
         animationMap.put(PlayerState.HOE, hoeMap);
 
         // WATER (Tưới nước) - Dùng playerActionsSheet
         Map<Direction, AnimData> waterMap = new EnumMap<>(Direction.class);
-        waterMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.WATER_DOWN_ROW, PlayerSpriteConfig.WATER_FRAMES, PlayerSpriteConfig.WATER_SPEED));
-        waterMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.WATER_UP_ROW, PlayerSpriteConfig.WATER_FRAMES, PlayerSpriteConfig.WATER_SPEED));
-        waterMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.WATER_RIGHT_ROW, PlayerSpriteConfig.WATER_FRAMES, PlayerSpriteConfig.WATER_SPEED));
-        waterMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.WATER_LEFT_ROW, PlayerSpriteConfig.WATER_FRAMES, PlayerSpriteConfig.WATER_SPEED));
+        waterMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.WATER_DOWN_ROW, PlayerSpriteConfig.WATER_FRAMES, GameLogicConfig.WATERING_CAN_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        waterMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.WATER_UP_ROW, PlayerSpriteConfig.WATER_FRAMES, GameLogicConfig.WATERING_CAN_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        waterMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.WATER_RIGHT_ROW, PlayerSpriteConfig.WATER_FRAMES, GameLogicConfig.WATERING_CAN_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        waterMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.WATER_LEFT_ROW, PlayerSpriteConfig.WATER_FRAMES, GameLogicConfig.WATERING_CAN_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
         animationMap.put(PlayerState.WATER, waterMap);
 
 //        // DEAD (Ngất)
@@ -211,30 +213,50 @@ public class PlayerView {
 
         // Bù frame nếu lag
         boolean frameChanged = false;
-        while (frameAccumulator > data.speed()) {
-            // Xử lý animation "one-shot" (HOE, WATER, ATTACK)
-            // Chúng không lặp lại (loop)
-            boolean isOneShot = (currentState == PlayerState.ATTACK ||
-                    currentState == PlayerState.HOE ||
-                    currentState == PlayerState.WATER);
 
-            int nextFrame = currentFrame + 1; // Tăng frame
+        // Tính toán tốc độ frame (frameSpeed)
+        long frameSpeed;
+        if (data.type() == PlayerSpriteConfig.AnimationType.ACTION_LOOP) {
+            // Đây là action do LOGIC điều khiển (HOE, WATER)
+            // data.speed() lúc này là TỔNG THỜI GIAN 1 LẦN LẶP (ví dụ: 500ms)
+            // Tốc độ frame = Tổng thời gian / Số lượng frame (ví dụ: 500ms / 2 frames = 250ms/frame)
+            frameSpeed = data.speed() / data.frameCount();
+            if (frameSpeed <= 0) frameSpeed = 1; // Tránh chia cho 0
+        } else {
+            // Đây là action do VIEW điều khiển (IDLE, WALK, ATTACK)
+            // data.speed() là tốc độ mỗi frame (ví dụ: 120ms hoặc 100ms)
+            frameSpeed = data.speed();
+        }
 
-            if (isOneShot) { // Animation ko lặp
-                if (nextFrame >= data.frameCount()) {
-                    // Đến frame cuối
-                    currentFrame = 0; // Về frame đầu
-                    frameAccumulator = 0; // Dừng chạy
-                } else {
-                    currentFrame = nextFrame; // Chuyển frame
-                    frameAccumulator -= data.speed();
-                }
-            } else { // Animation lặp lại (IDLE, WALK)
-                currentFrame = nextFrame % data.frameCount(); // Modulo để quay vòng
-                frameAccumulator -= data.speed();
+        // Dùng while loop để xử lý bù frame và logic animation
+        while (frameAccumulator > frameSpeed) {
+            frameChanged = true;
+            frameAccumulator -= frameSpeed;
+            int nextFrame = currentFrame + 1; // Tính frame tiếp theo
+
+            switch (data.type()) {
+                case LOOP: // IDLE, WALK
+                case ACTION_LOOP: // HOE (Sẽ lặp liên tục)
+                    // Lặp lại bằng modulo
+                    // (ActionManager sẽ tự ngắt vòng lặp này khi hết TỔNG thời gian)
+                    currentFrame = nextFrame % data.frameCount();
+                    break;
+
+                case ONE_SHOT: // ATTACK
+                    if (nextFrame >= data.frameCount()) {
+                        // Giữ ở frame CUỐI CÙNG
+                        currentFrame = data.frameCount() - 1;
+                        frameAccumulator = 0; // Dừng hẳn (để state IDLE tiếp quản)
+                    } else {
+                        currentFrame = nextFrame; // Tiếp tục chạy
+                    }
+                    break;
             }
 
-            frameChanged = true;
+            // Nếu animation đã dừng (do frameAccumulator = 0), thoát khỏi vòng lặp
+            if (frameAccumulator == 0) {
+                break;
+            }
         }
 
         // Chỉ cập nhật viewport NẾU frame thay đổi

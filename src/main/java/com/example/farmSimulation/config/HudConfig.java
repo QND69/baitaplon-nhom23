@@ -9,7 +9,9 @@ import javafx.scene.text.FontWeight;
 public class HudConfig {
 
     // --- Cấu hình Text tạm thời ---
-    public static final String TOO_FAR_TEXT = "It's too far!"; // Nội dung text
+    public static final String TOO_FAR_TEXT = "It's too far"; // Nội dung text
+    public static final String WRONG_TOOL_TEXT = "Can't use this here";
+
     public static final Paint TEMP_TEXT_COLOR = Color.WHITE; // Màu text
     public static final double TEMP_TEXT_STROKE_WIDTH = 0.9; // Độ dày viền
     public static final Paint TEMP_TEXT_STROKE_COLOR = Color.BLACK; // Màu viền
