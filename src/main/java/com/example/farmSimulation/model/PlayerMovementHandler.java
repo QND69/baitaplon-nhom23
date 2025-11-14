@@ -1,6 +1,6 @@
 package com.example.farmSimulation.model;
 
-import com.example.farmSimulation.config.GameConfig;
+import com.example.farmSimulation.config.GameLogicConfig;
 import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
@@ -47,16 +47,16 @@ public class PlayerMovementHandler {
                 mainPlayer.getState() == PlayerView.PlayerState.WALK) {
 
             if (gameController.isKeyPressed(KeyCode.W)) { // Di chuyển PLAYER đi LÊN
-                dy += GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi XUỐNG
+                dy += GameLogicConfig.PLAYER_SPEED; // Di chuyển WORLD đi XUỐNG
             }
             if (gameController.isKeyPressed(KeyCode.S)) { // Di chuyển PLAYER đi XUỐNG
-                dy -= GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi LÊN
+                dy -= GameLogicConfig.PLAYER_SPEED; // Di chuyển WORLD đi LÊN
             }
             if (gameController.isKeyPressed(KeyCode.A)) { // Di chuyển PLAYER đi TRÁI
-                dx += GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi PHẢI
+                dx += GameLogicConfig.PLAYER_SPEED; // Di chuyển WORLD đi PHẢI
             }
             if (gameController.isKeyPressed(KeyCode.D)) { // Di chuyển PLAYER đi PHẢI
-                dx -= GameConfig.PLAYER_SPEED; // Di chuyển WORLD đi TRÁI
+                dx -= GameLogicConfig.PLAYER_SPEED; // Di chuyển WORLD đi TRÁI
             }
         }
         return new Point2D(dx, dy);
@@ -68,25 +68,29 @@ public class PlayerMovementHandler {
      */
     private void updatePlayerState(double dx, double dy) {
         // Quyết định Trạng thái (Logic)
-        if (dx != 0 || dy != 0) {
-            mainPlayer.setState(PlayerView.PlayerState.WALK);
-        } else {
-            mainPlayer.setState(PlayerView.PlayerState.IDLE);
-        }
+        // (Chỉ thay đổi nếu không đang làm hành động)
+        if (mainPlayer.getState() == PlayerView.PlayerState.IDLE ||
+                mainPlayer.getState() == PlayerView.PlayerState.WALK) {
+            if (dx != 0 || dy != 0) {
+                mainPlayer.setState(PlayerView.PlayerState.WALK);
+            } else {
+                mainPlayer.setState(PlayerView.PlayerState.IDLE);
+            }
 
-        // Quyết định Hướng (Logic)
-        if (dy > 0) {
-            mainPlayer.setDirection(PlayerView.Direction.UP);
-        } else if (dy < 0) {
-            mainPlayer.setDirection(PlayerView.Direction.DOWN);
-        } else if (dx > 0) {
-            mainPlayer.setDirection(PlayerView.Direction.LEFT);
-        } else if (dx < 0) {
-            mainPlayer.setDirection(PlayerView.Direction.RIGHT);
-        }
+            // Quyết định Hướng (Logic)
+            if (dy > 0) {
+                mainPlayer.setDirection(PlayerView.Direction.UP);
+            } else if (dy < 0) {
+                mainPlayer.setDirection(PlayerView.Direction.DOWN);
+            } else if (dx > 0) {
+                mainPlayer.setDirection(PlayerView.Direction.LEFT);
+            } else if (dx < 0) {
+                mainPlayer.setDirection(PlayerView.Direction.RIGHT);
+            }
 
-        // "RA LỆNH" cho PlayerView cập nhật hình ảnh
-        playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
+            // "RA LỆNH" cho PlayerView cập nhật hình ảnh
+            playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
+        }
     }
 
     /**

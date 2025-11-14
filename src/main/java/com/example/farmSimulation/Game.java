@@ -5,6 +5,7 @@ import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.model.GameManager;
 import com.example.farmSimulation.model.Player;
 import com.example.farmSimulation.model.WorldMap;
+import com.example.farmSimulation.view.HotbarView;
 import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
 import com.example.farmSimulation.view.assets.AssetManager;
@@ -28,11 +29,14 @@ public class Game {
         // Khởi tạo View (Hình ảnh)
         // PlayerView được tạo và nhận Image từ AssetManager
         PlayerView playerView = new PlayerView(
-                assetManager.getTexture(AssetPaths.PLAYER_SHEET)
+                assetManager.getTexture(AssetPaths.PLAYER_SHEET), assetManager.getTexture(AssetPaths.PLAYER_ACTIONS_SHEET)
         );
 
+        // Khởi tạo HotbarView
+        HotbarView hotbarView = new HotbarView(player, assetManager);
+
         // MainGameView nhận AssetManager để vẽ map
-        MainGameView mainGameView = new MainGameView(assetManager, worldMap);
+        MainGameView mainGameView = new MainGameView(assetManager, worldMap, hotbarView);
 
         // Khởi tạo Controller (Input)
         GameController gameController = new GameController();
@@ -52,7 +56,14 @@ public class Game {
 
         // Khởi tạo UI (Truyền các thành phần cần thiết)
         // UI cần Controller (để lắng nghe input) và PlayerSprite (để vẽ)
-        mainGameView.initUI(primaryStage, gameController, playerView.getSprite());
+        mainGameView.initUI(
+                primaryStage,
+                gameController,
+                playerView.getSpriteContainer(),
+                playerView.getDebugBoundingBox(),
+                playerView.getDebugCenterDot(),
+                playerView.getDebugRangeCircle()
+        );
 
         // Bắt đầu Game Loop
         gameManager.startGame();

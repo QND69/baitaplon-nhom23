@@ -1,6 +1,6 @@
 package com.example.farmSimulation.view;
 
-import com.example.farmSimulation.config.GameConfig;
+import com.example.farmSimulation.config.WorldConfig;
 import com.example.farmSimulation.model.Tile;
 import com.example.farmSimulation.model.WorldMap;
 import com.example.farmSimulation.view.assets.AssetManager;
@@ -26,27 +26,27 @@ public class WorldRenderer {
     public WorldRenderer(AssetManager assetManager, WorldMap worldMap) {
         this.assetManager = assetManager;
         this.worldMap = worldMap;
-        this.screenTiles = new ImageView[GameConfig.NUM_ROWS_ON_SCREEN][GameConfig.NUM_COLS_ON_SCREEN];
+        this.screenTiles = new ImageView[WorldConfig.NUM_ROWS_ON_SCREEN][WorldConfig.NUM_COLS_ON_SCREEN];
         this.worldPane = new Pane();
 
         // Chèn các tile rỗng vào worldPane
-        for (int r = 0; r < GameConfig.NUM_ROWS_ON_SCREEN; r++) {
-            for (int c = 0; c < GameConfig.NUM_COLS_ON_SCREEN; c++) {
+        for (int r = 0; r < WorldConfig.NUM_ROWS_ON_SCREEN; r++) {
+            for (int c = 0; c < WorldConfig.NUM_COLS_ON_SCREEN; c++) {
                 ImageView tileView = new ImageView();
-                tileView.setFitHeight(GameConfig.TILE_SIZE);
-                tileView.setFitWidth(GameConfig.TILE_SIZE);
-                tileView.setLayoutX(c * GameConfig.TILE_SIZE);
-                tileView.setLayoutY(r * GameConfig.TILE_SIZE);
+                tileView.setFitHeight(WorldConfig.TILE_SIZE);
+                tileView.setFitWidth(WorldConfig.TILE_SIZE);
+                tileView.setLayoutX(c * WorldConfig.TILE_SIZE);
+                tileView.setLayoutY(r * WorldConfig.TILE_SIZE);
                 this.screenTiles[r][c] = tileView;
                 worldPane.getChildren().add(tileView);
             }
         }
 
         // Khởi tạo ô vuông selector
-        this.tileSelector = new Rectangle(GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
+        this.tileSelector = new Rectangle(WorldConfig.TILE_SIZE, WorldConfig.TILE_SIZE);
         this.tileSelector.setFill(null);                                    // Không tô nền
-        this.tileSelector.setStroke(GameConfig.SELECTOR_COLOR);             // Màu viền
-        this.tileSelector.setStrokeWidth(GameConfig.SELECTOR_STROKE_WIDTH); // Độ dày viền
+        this.tileSelector.setStroke(WorldConfig.SELECTOR_COLOR);             // Màu viền
+        this.tileSelector.setStrokeWidth(WorldConfig.SELECTOR_STROKE_WIDTH); // Độ dày viền
         this.tileSelector.setVisible(true);                                 // Luôn hiển thị
     }
 
@@ -61,13 +61,13 @@ public class WorldRenderer {
         double cameraWorldY = -worldOffsetY;
 
         // Tính ô logic bắt đầu (số nguyên) mà camera nhìn thấy
-        int startCol = (int) Math.floor(cameraWorldX / GameConfig.TILE_SIZE);
-        int startRow = (int) Math.floor(cameraWorldY / GameConfig.TILE_SIZE);
+        int startCol = (int) Math.floor(cameraWorldX / WorldConfig.TILE_SIZE);
+        int startRow = (int) Math.floor(cameraWorldY / WorldConfig.TILE_SIZE);
 
         // Tính phần dư (pixel lẻ) để cuộn mượt
         // Đây là mấu chốt: worldPane chỉ di chuyển trong phạm vi 1 ô
-        double pixelOffsetX = -(cameraWorldX - (startCol * GameConfig.TILE_SIZE));
-        double pixelOffsetY = -(cameraWorldY - (startRow * GameConfig.TILE_SIZE));
+        double pixelOffsetX = -(cameraWorldX - (startCol * WorldConfig.TILE_SIZE));
+        double pixelOffsetY = -(cameraWorldY - (startRow * WorldConfig.TILE_SIZE));
 
         // Di chuyển TOÀN BỘ worldPane (chứa lưới) để tạo hiệu ứng mượt
         worldPane.setLayoutX(pixelOffsetX);
@@ -84,8 +84,8 @@ public class WorldRenderer {
         }
 
         // CẬP NHẬT HÌNH ẢNH (TEXTURE) cho các ô trong lưới
-        for (int r = 0; r < GameConfig.NUM_ROWS_ON_SCREEN; r++) {
-            for (int c = 0; c < GameConfig.NUM_COLS_ON_SCREEN; c++) {
+        for (int r = 0; r < WorldConfig.NUM_ROWS_ON_SCREEN; r++) {
+            for (int c = 0; c < WorldConfig.NUM_COLS_ON_SCREEN; c++) {
                 // Tính ô logic (thế giới) mà ô lưới (màn hình) này cần hiển thị
                 int logicalCol = startCol + c;
                 int logicalRow = startRow + r;
@@ -114,8 +114,8 @@ public class WorldRenderer {
             return;
         }
         // Tọa độ thực của ô trên màn hình
-        double tileSelectedOnScreenX = tileSelectedX * GameConfig.TILE_SIZE + worldOffsetX;
-        double tileSelectedOnScreenY = tileSelectedY * GameConfig.TILE_SIZE + worldOffsetY;
+        double tileSelectedOnScreenX = tileSelectedX * WorldConfig.TILE_SIZE + worldOffsetX;
+        double tileSelectedOnScreenY = tileSelectedY * WorldConfig.TILE_SIZE + worldOffsetY;
 
         // Hiển thị ô được trỏ chuột
         this.tileSelector.setLayoutX(tileSelectedOnScreenX);

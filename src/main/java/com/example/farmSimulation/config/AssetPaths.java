@@ -14,6 +14,10 @@ public final class AssetPaths {
     // GUI
     public static final String LOGO = "/assets/images/GUI/logo.png";
 
+    public static final String TOOLS_SHEET = "/assets/images/items/tools/tools.png";
+
+    public static final String PLAYER_ACTIONS_SHEET = "/assets/images/entities/player/player_actions_scaled_4x.png";
+
     private AssetPaths() {
     }
 }
