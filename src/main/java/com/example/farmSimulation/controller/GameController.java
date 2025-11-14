@@ -1,5 +1,6 @@
 package com.example.farmSimulation.controller;
 
+import com.example.farmSimulation.config.HotbarConfig;
 import com.example.farmSimulation.model.GameManager;
 import com.example.farmSimulation.view.MainGameView;
 import javafx.scene.Scene;
@@ -44,6 +45,24 @@ public class GameController {
                     gameManager.toggleSettingsMenu(); // Gọi hàm hiển thị/ẩn menu
                 }
             }
+            // [MỚI] Xử lý phím số (1-9, 0) để đổi hotbar
+            if (event.getCode().isDigitKey()) {
+                int slot = -1;
+                if (event.getCode() == KeyCode.DIGIT1) slot = 0;
+                else if (event.getCode() == KeyCode.DIGIT2) slot = 1;
+                else if (event.getCode() == KeyCode.DIGIT3) slot = 2;
+                else if (event.getCode() == KeyCode.DIGIT4) slot = 3;
+                else if (event.getCode() == KeyCode.DIGIT5) slot = 4;
+                else if (event.getCode() == KeyCode.DIGIT6) slot = 5;
+                else if (event.getCode() == KeyCode.DIGIT7) slot = 6;
+                else if (event.getCode() == KeyCode.DIGIT8) slot = 7;
+                else if (event.getCode() == KeyCode.DIGIT9) slot = 8;
+                else if (event.getCode() == KeyCode.DIGIT0) slot = 9;
+
+                if (slot != -1 && gameManager != null) {
+                    gameManager.changeHotbarSlot(slot);
+                }
+            }
         });
 
         scene.setOnKeyReleased(event -> { // được gọi khi người chơi nhả phím.
@@ -60,6 +79,19 @@ public class GameController {
         // Lắng nghe click chuột
         scene.setOnMouseClicked(event -> {
             handleMouseClick(event);
+        });
+
+        // Lắng nghe cuộn chuột
+        scene.setOnScroll(event -> {
+            if (gameManager == null || gameManager.isPaused()) return; // Không cuộn khi đang pause
+
+            int currentSlot = gameManager.getMainPlayer().getSelectedHotbarSlot();
+            if (event.getDeltaY() < 0) { // Cuộn xuống -> slot tiếp theo
+                currentSlot = (currentSlot + 1) % HotbarConfig.HOTBAR_SLOT_COUNT;
+            } else if (event.getDeltaY() > 0) { // Cuộn lên -> slot trước đó
+                currentSlot = (currentSlot - 1 + HotbarConfig.HOTBAR_SLOT_COUNT) % HotbarConfig.HOTBAR_SLOT_COUNT;
+            }
+            gameManager.changeHotbarSlot(currentSlot);
         });
     }
 

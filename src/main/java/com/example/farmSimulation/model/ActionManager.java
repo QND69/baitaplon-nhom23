@@ -1,6 +1,8 @@
 package com.example.farmSimulation.model;
 
 import com.example.farmSimulation.view.MainGameView;
+import com.example.farmSimulation.view.PlayerView;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -9,8 +11,14 @@ public class ActionManager {
     private final List<TimedTileAction> pendingActions;  // Thêm danh sách hành động chờ
     private boolean mapNeedsUpdate = false;
 
-    public ActionManager() {
+    // Thêm tham chiếu đến Model và View của Player
+    private final Player mainPlayer;
+    private final PlayerView playerView;
+
+    public ActionManager(Player mainPlayer, PlayerView playerView) {
         this.pendingActions = new ArrayList<>();
+        this.mainPlayer = mainPlayer;
+        this.playerView = playerView;
     }
 
     public void addPendingAction(TimedTileAction action) {
@@ -32,10 +40,22 @@ public class ActionManager {
             // Gọi tick(). Nếu nó trả về "true" (hết giờ)
             if (action.tick()) {
                 // THỰC THI HÀNH ĐỘNG: Thay đổi Model
-                worldMap.setTileType(action.getCol(), action.getRow(), action.getNewType());
+                if (action.getNewType() != null) { // Cho phép action không đổi tile
+                    worldMap.setTileType(action.getCol(), action.getRow(), action.getNewType());
+                    // Báo cho View biết cần vẽ lại bản đồ
+                    this.mapNeedsUpdate = true;
+                }
 
-                // Báo cho View biết cần vẽ lại bản đồ
-                this.mapNeedsUpdate = true;
+                // Reset trạng thái Player về IDLE sau khi hành động xong
+                // Chỉ reset nếu player VẪN đang trong trạng thái hành động đó
+                PlayerView.PlayerState currentState = mainPlayer.getState();
+                if (currentState == PlayerView.PlayerState.HOE ||
+                        currentState == PlayerView.PlayerState.WATER ||
+                        currentState == PlayerView.PlayerState.ATTACK) {
+
+                    mainPlayer.setState(PlayerView.PlayerState.IDLE);
+                    playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
+                }
 
                 // Xóa hành động này khỏi hàng đợi
                 iterator.remove();

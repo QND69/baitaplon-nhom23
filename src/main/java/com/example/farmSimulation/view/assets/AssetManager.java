@@ -26,9 +26,11 @@ public class AssetManager {
     public void loadAssets() {
         // Tải Player
         getTexture(AssetPaths.PLAYER_SHEET);
+        getTexture(AssetPaths.PLAYER_ACTIONS_SHEET);
 
         // Tải GUI
         getTexture(AssetPaths.LOGO);
+        getTexture(AssetPaths.TOOLS_SHEET);
 
         // Tải Tile Textures
         Image grass = getTexture(AssetPaths.GRASS);

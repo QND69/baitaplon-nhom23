@@ -1,12 +1,36 @@
 package com.example.farmSimulation.config;
 
+import javafx.scene.paint.Color;
+
 // Chứa các hằng số cấu hình cho Sprite và Animation của Player
 public class PlayerSpriteConfig {
+    // --- Cấu hình MẶC ĐỊNH ---
+    public static final double BASE_PLAYER_FRAME_WIDTH = 192;
+    public static final double BASE_PLAYER_FRAME_HEIGHT = 192;
+    public static final double BASE_PLAYER_FRAME_SCALE = 1.0;
+
     // --- Cấu hình Player Sprite (player_scaled_4x.png) ---
     public static final double PLAYER_FRAME_WIDTH = 128;
     public static final double PLAYER_FRAME_HEIGHT = 128;
-    public static final double PLAYER_SPRITE_SCALE = 1.0;
     public static final long ANIMATION_SPEED = 120; // Tốc độ mỗi khung hình (ms/frame)
+
+    // --- Cấu hình Player Action Sprite (player_action_scaled_4x.png) ---
+    public static final double ACTION_FRAME_WIDTH = 192;
+    public static final double ACTION_FRAME_HEIGHT = 192;
+
+    // Offset để căn giữa nhân vật trong khung mặc định
+    public static final double PLAYER_SPRITE_OFFSET_X = (BASE_PLAYER_FRAME_WIDTH - PLAYER_FRAME_WIDTH) / 2;
+    public static final double PLAYER_SPRITE_OFFSET_Y = (BASE_PLAYER_FRAME_HEIGHT - PLAYER_FRAME_HEIGHT) / 2;
+
+    // --- Hằng số Debug ---
+    /**
+     * Bật/Tắt hiển thị khung viền (bounding box)
+     * và tâm (center dot) của player.
+     */
+    public static final boolean DEBUG_PLAYER_BOUNDS = true;
+    public static final Color DEBUG_BOUNDING_BOX_COLOR = Color.RED;
+    public static final Color DEBUG_CENTER_DOT_COLOR = Color.CYAN;
+    public static final Color DEBUG_RANGE_COLOR = Color.GREENYELLOW;
 
     // --- DỮ LIỆU ANIMATION ---
 
@@ -32,7 +56,21 @@ public class PlayerSpriteConfig {
     public static final int ATTACK_FRAMES = 4; // Số frame của hành động
     public static final long ATTACK_SPEED = 100; // Tốc độ tấn công
 
-    // TODO: Thêm các hằng số cho HOE, DEAD
+    // HOE (Cuốc)
+    public static final long HOE_SPEED = 180; // Tốc độ cuốc (ms/frame)
+    public static final int HOE_FRAMES = 2; // Số frame của hành động
+    public static final int HOE_DOWN_ROW = 7;
+    public static final int HOE_UP_ROW = 8;
+    public static final int HOE_RIGHT_ROW = 6;
+    public static final int HOE_LEFT_ROW = 6; // Dùng chung ảnh với RIGHT
+
+    // WATER (Tưới nước)
+    public static final long WATER_SPEED = 200; // Tốc độ tưới (ms/frame)
+    public static final int WATER_FRAMES = 2; // Số frame của hành động
+    public static final int WATER_DOWN_ROW = 9;
+    public static final int WATER_UP_ROW = 10;
+    public static final int WATER_RIGHT_ROW = 11;
+    public static final int WATER_LEFT_ROW = 11;
 
     private PlayerSpriteConfig() {}
 }

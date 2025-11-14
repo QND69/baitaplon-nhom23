@@ -1,6 +1,6 @@
 package com.example.farmSimulation.model;
 
-import com.example.farmSimulation.config.GameConfig;
+import com.example.farmSimulation.config.*;
 import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
@@ -32,7 +32,7 @@ public class GameManager {
     private int currentMouseTileX = 0;
     private int currentMouseTileY = 0;
 
-    // Constructor nhận tất cả các thành phần
+    // Constructor nhận tất cả các thành phần cốt lõi
     public GameManager(Player player, WorldMap worldMap, MainGameView mainGameView,
                        PlayerView playerView, GameController gameController) {
         this.mainPlayer = player;
@@ -44,7 +44,7 @@ public class GameManager {
         // Khởi tạo các Manager con
         this.camera = new Camera();
         this.timeManager = new TimeManager(mainGameView);
-        this.actionManager = new ActionManager();
+        this.actionManager = new ActionManager(player, playerView); // Truyền player/playerView
         this.movementHandler = new PlayerMovementHandler(player, playerView, gameController, camera, mainGameView);
     }
 
@@ -100,8 +100,8 @@ public class GameManager {
         double mouseWorldY = -camera.getWorldOffsetY() + gameController.getMouseY();
 
         // Tọa độ logic của ô mà chuột trỏ tới
-        this.currentMouseTileX = (int) Math.floor(mouseWorldX / GameConfig.TILE_SIZE);
-        this.currentMouseTileY = (int) Math.floor(mouseWorldY / GameConfig.TILE_SIZE);
+        this.currentMouseTileX = (int) Math.floor(mouseWorldX / WorldConfig.TILE_SIZE);
+        this.currentMouseTileY = (int) Math.floor(mouseWorldY / WorldConfig.TILE_SIZE);
 
         mainGameView.updateSelector(
                 this.currentMouseTileX,       // Vị trí X của ô được chọn
@@ -115,57 +115,121 @@ public class GameManager {
      * Kiểm tra xem người chơi có trong tầm tương tác không
      */
     private boolean isPlayerInRange(int col, int row) {
-        // Tọa độ pixel logic của Tâm người chơi
-        double playerX = mainPlayer.getTileX() + GameConfig.PLAYER_FRAME_WIDTH / 2;
-        double playerY = mainPlayer.getTileY() + GameConfig.PLAYER_FRAME_HEIGHT * 3 / 4;
+        // Tọa độ pixel logic của Tâm người chơi, lấy nửa dưới để tính khoảng cách
+        double playerX = mainPlayer.getTileX() + PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2;
+        double playerY = mainPlayer.getTileY() + PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT / 2 + PlayerSpriteConfig.PLAYER_FRAME_WIDTH / 8;
 
         // Tọa độ pixel logic của TÂM ô target
-        double targetX = (col * GameConfig.TILE_SIZE) + (GameConfig.TILE_SIZE / 2.0);
-        double targetY = (row * GameConfig.TILE_SIZE) + (GameConfig.TILE_SIZE / 2.0);
+        double targetX = (col * WorldConfig.TILE_SIZE) + (WorldConfig.TILE_SIZE / 2.0);
+        double targetY = (row * WorldConfig.TILE_SIZE) + (WorldConfig.TILE_SIZE / 2.0);
 
         // Tính khoảng cách
         double distance = Math.sqrt(
                 Math.pow(playerX - targetX, 2) + Math.pow(playerY - targetY, 2)
         );
 
-        return distance <= GameConfig.PLAYER_INTERACTION_RANGE_PIXELS;
+        return distance <= GameLogicConfig.PLAYER_INTERACTION_RANGE_PIXELS;
+    }
+
+    /**
+     * Quay hướng người chơi về phía ô (col, row)
+     */
+    private void updatePlayerDirectionTowards(int col, int row) {
+        // Tọa độ pixel logic của Tâm người chơi, lấy nửa dưới để tính hướng
+        double playerX = mainPlayer.getTileX() + PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2;
+        double playerY = mainPlayer.getTileY() + PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT / 2 + PlayerSpriteConfig.PLAYER_FRAME_WIDTH / 8;
+
+        // Tọa độ pixel logic của TÂM ô target
+        double targetX = (col * WorldConfig.TILE_SIZE) + (WorldConfig.TILE_SIZE / 2.0);
+        double targetY = (row * WorldConfig.TILE_SIZE) + (WorldConfig.TILE_SIZE / 2.0);
+
+        // Tính góc (atan2(y, x) = góc giữa vector (x, y) và trục X dương)
+        double angleDeg = Math.toDegrees(Math.atan2(targetY - playerY, targetX - playerX));
+
+        // Quyết định hướng theo trục Oy ngược
+        // -45 đến 45 = RIGHT
+        // 45 đến 135 = DOWN
+        // 135 đến 180 hoặc -180 đến -135 = LEFT
+        // -135 đến -45 = UP
+        if (angleDeg > -45 && angleDeg <= 45) {
+            mainPlayer.setDirection(PlayerView.Direction.RIGHT);
+        } else if (angleDeg > 45 && angleDeg <= 135) {
+            mainPlayer.setDirection(PlayerView.Direction.DOWN);
+        } else if (angleDeg > 135 || angleDeg < -135) {
+            mainPlayer.setDirection(PlayerView.Direction.LEFT);
+        } else { // (-135 đến -45)
+            mainPlayer.setDirection(PlayerView.Direction.UP);
+        }
     }
 
     /**
      * Xử lý click chuột
-     * [TỐI ƯU] Sẵn sàng cho Tool System
-     * [TỐI ƯU] Thêm kiểm tra tầm hoạt động và dùng config
      */
     public void interactWithTile(int col, int row) {
-        // Kiểm tra tầm hoạt động trước
+        // Kiểm tra xem player có đang bận (làm hành động khác) không
+        PlayerView.PlayerState currentState = mainPlayer.getState();
+        if (currentState != PlayerView.PlayerState.IDLE && currentState != PlayerView.PlayerState.WALK) {
+            return; // Player đang bận, không cho hành động
+        }
+
+        // Kiểm tra tầm hoạt động
         if (!isPlayerInRange(col, row)) {
+            // Vị trí hiển thị của text
+            // Lấy tọa độ của "khung" (spriteContainer) chứ không phải của "ảnh" (sprite)
+            // Tọa độ này là tọa độ của container so với màn hình (rootPane)
+            double playerScreenX = playerView.getSpriteContainer().getLayoutX();
+            double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
+
             // Hiển thị text "It's too far"
-            double playerScreenX = playerView.getSprite().getLayoutX() + playerView.getWidth() / 2;
-            double playerScreenY = playerView.getSprite().getLayoutY(); // Đầu player
-            mainGameView.showTemporaryText(GameConfig.TOO_FAR_TEXT, playerScreenX, playerScreenY);
+            mainGameView.showTemporaryText(HudConfig.TOO_FAR_TEXT, playerScreenX, playerScreenY);
             return; // Quá xa, không làm gì cả
         }
 
+        // Quay người chơi về hướng ô target
+        updatePlayerDirectionTowards(col, row);
+
         Tile currentType = worldMap.getTileType(col, row);
+        Tool tool = mainPlayer.getCurrentTool(); // Lấy công cụ đang cầm
 
         // --- ÁP DỤNG "LUẬT CHƠI" ---
 
-        // TODO: Sửa logic này khi có Hệ thống Dụng cụ (Tool System)
-        // PlayerTool tool = mainPlayer.getSelectedTool();
-        // if (tool == PlayerTool.HOE && currentType == Tile.GRASS) { ... }
+        // Cuốc đất (Grass -> Soil)
+        if (currentType == Tile.GRASS && tool == Tool.HOE) {
+            // Ra lệnh cho PlayerView chạy animation "Cuốc"
+            mainPlayer.setState(PlayerView.PlayerState.HOE);
+            playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
 
-        // VÍ DỤ: Cuốc đất (Grass -> Soil)
-        if (currentType == Tile.GRASS) {
-            // Đặt độ trễ là 1 frame (hoặc 0 nếu muốn tức thì)
-            // [TỐI ƯU] Lấy giá trị từ GameConfig
-            int delayInFrames = GameConfig.ACTION_DELAY_FRAMES_HOE;
+            // Tính thời gian animation (ms) -> (frames)
+            long animDurationMs = PlayerSpriteConfig.HOE_FRAMES * PlayerSpriteConfig.HOE_SPEED; // Tổng thời gian thực tế
+            int delayInFrames = (int) (animDurationMs / (GameLogicConfig.SECONDS_PER_FRAME * 1000)); // Số frame thực tế
 
             // Thêm hành động "Biến thành Đất" vào hàng đợi
             actionManager.addPendingAction(new TimedTileAction(col, row, Tile.SOIL, delayInFrames));
+        }
 
-            // Ra lệnh cho PlayerView chạy animation "Cuốc"
-            // (Hiện tại chưa làm, chỉ là ví dụ)
-            // mainPlayer.setState(PlayerView.PlayerState.HOE);
+        // Dùng BÌNH TƯỚI (WATERING_CAN)
+        else if (currentType == Tile.SOIL && tool == Tool.WATERING_CAN) {
+            // Ra lệnh cho PlayerView chạy animation "Tưới"
+            mainPlayer.setState(PlayerView.PlayerState.WATER);
+            playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
+
+            // Tính thời gian animation
+            long animDurationMs = PlayerSpriteConfig.WATER_FRAMES * PlayerSpriteConfig.WATER_SPEED;
+            int delayInFrames = (int) (animDurationMs / (GameLogicConfig.SECONDS_PER_FRAME * 1000));
+
+            // TODO: Đổi Tile.SOIL thành Tile.SOIL_WET
+            // Hiện tại, chỉ thêm hành động chờ (để reset state), không đổi tile (truyền null)
+            actionManager.addPendingAction(new TimedTileAction(col, row, null, delayInFrames));
+        }
+    }
+
+    /**
+     * Được gọi từ Controller khi người dùng đổi slot hotbar
+     */
+    public void changeHotbarSlot(int slotIndex) {
+        if (slotIndex >= 0 && slotIndex < HotbarConfig.HOTBAR_SLOT_COUNT) {
+            mainPlayer.setSelectedHotbarSlot(slotIndex);
+            mainGameView.updateHotbar(); // Yêu cầu View vẽ lại
         }
     }
 

@@ -1,19 +1,30 @@
 package com.example.farmSimulation.model;
 
-import com.example.farmSimulation.config.GameConfig;
+import com.example.farmSimulation.config.GameLogicConfig; // [MỚI] Import config mới
 import com.example.farmSimulation.view.MainGameView;
 
 public class TimeManager {
-    // Thời gian và tốc độ cập nhật.
-    // Lấy giá trị mặc định từ GameConfig
-    private double gameTimeSeconds = GameConfig.PLAYER_START_TIME_SECONDS;
-    // Lấy giá trị mặc định từ GameConfig
-    private final double SECONDS_PER_FRAME = GameConfig.SECONDS_PER_FRAME;
+
+    // --- Các trường (fields) để lưu cấu hình ---
+    private double gameTimeSeconds; // Thời gian game hiện tại
+    private final double SECONDS_PER_FRAME;
+    private final double DAY_CYCLE_DURATION_SECONDS;
+    private final double MIN_LIGHT_INTENSITY;
 
     private final MainGameView mainGameView;
 
+    /**
+     * [SỬA] Constructor (Hàm khởi tạo) đơn giản
+     * Tự đọc các giá trị cấu hình từ GameLogicConfig
+     */
     public TimeManager(MainGameView mainGameView) {
         this.mainGameView = mainGameView;
+
+        // Tự gán giá trị từ file config
+        this.gameTimeSeconds = GameLogicConfig.PLAYER_START_TIME_SECONDS;
+        this.SECONDS_PER_FRAME = GameLogicConfig.SECONDS_PER_FRAME;
+        this.DAY_CYCLE_DURATION_SECONDS = GameLogicConfig.DAY_CYCLE_DURATION_SECONDS;
+        this.MIN_LIGHT_INTENSITY = GameLogicConfig.MIN_LIGHT_INTENSITY;
     }
 
     // Hàm update chính cho thời gian
@@ -27,29 +38,16 @@ public class TimeManager {
      * Cường độ: 1.0 (sáng) -> 0.0 (tối)
      */
     private void updateDayCycle() {
-        // Định nghĩa chu kỳ (Ví dụ: 24 phút = 1440 giây thực)
-        // Lấy giá trị từ GameConfig
-        final double DAY_CYCLE_DURATION_SECONDS = GameConfig.DAY_CYCLE_DURATION_SECONDS;
-
-        // Tính tỷ lệ phần trăm đã trôi qua trong chu kỳ
-        double cycleProgress = (this.gameTimeSeconds % DAY_CYCLE_DURATION_SECONDS) / DAY_CYCLE_DURATION_SECONDS;
+        // [SỬA] Đọc từ trường (field) của class
+        double cycleProgress = (this.gameTimeSeconds % this.DAY_CYCLE_DURATION_SECONDS) / this.DAY_CYCLE_DURATION_SECONDS;
 
         // Chuyển đổi tỷ lệ thành Cường độ Ánh sáng (0.0 đến 1.0)
-
-        // Ví dụ về một chu kỳ đơn giản (dùng hàm sin để tạo độ cong)
-        // Tỷ lệ Sin(0) = 0 (giữa đêm); Sin(Pi/2) = 1 (giữa ngày)
-        // Cần dịch pha để 0% (00:00) là đêm, 50% (12:00) là ngày.
-
-        // Biến đổi: (0 -> 1) thành (-Pi/2 -> 3*Pi/2) để bao phủ toàn bộ chu kỳ sin
+        // (Phép toán sin giữ nguyên)
         double radians = cycleProgress * 2 * Math.PI - (Math.PI / 2.0);
-
-        // Ánh sáng sẽ dao động từ -1.0 đến 1.0. Dịch chuyển và chia 2 để được (0.0 đến 1.0)
         double lightIntensity = (Math.sin(radians) + 1.0) / 2.0;
 
-        // Giới hạn tối thiểu (Đảm bảo ban đêm không quá tối, ví dụ min 0.1)
-        // [TỐI ƯU] Lấy giá trị từ GameConfig
-        final double MIN_INTENSITY = GameConfig.MIN_LIGHT_INTENSITY;
-        lightIntensity = MIN_INTENSITY + (1.0 - MIN_INTENSITY) * lightIntensity;
+        // [SỬA] Đọc từ trường (field) của class
+        lightIntensity = this.MIN_LIGHT_INTENSITY + (1.0 - this.MIN_LIGHT_INTENSITY) * lightIntensity;
 
         // Gửi cường độ ánh sáng tới View
         mainGameView.updateLighting(lightIntensity);
@@ -57,7 +55,8 @@ public class TimeManager {
 
     // Phương thức mới để cập nhật thời gian
     private void updateGameTime() {
-        this.gameTimeSeconds += SECONDS_PER_FRAME;
+        // [SỬA] Đọc từ trường (field) của class
+        this.gameTimeSeconds += this.SECONDS_PER_FRAME;
 
         // Định dạng thời gian thành chuỗi HH:MM:SS
         int totalSeconds = (int) Math.round(this.gameTimeSeconds);
