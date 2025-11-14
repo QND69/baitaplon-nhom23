@@ -4,7 +4,7 @@ package com.example.farmSimulation.config;
 public class GameLogicConfig {
 
     // --- Cấu hình Game Time & Day Cycle ---
-    public static final double PLAYER_START_TIME_SECONDS = 720.0; // 6:00 AM (ví dụ)
+    public static final double PLAYER_START_TIME_SECONDS = 720.0; // 12:00 PM (ví dụ)
     public static final double SECONDS_PER_FRAME = 1.0 / 60.0;
     public static final double DAY_CYCLE_DURATION_SECONDS = 1440.0; // 24 phút
     public static final double MIN_LIGHT_INTENSITY = 0.1; // Độ sáng tối thiểu (10%)
@@ -15,9 +15,31 @@ public class GameLogicConfig {
     public static final double PLAYER_START_X = 0.0; // Tọa độ X spawn
     public static final double PLAYER_START_Y = 0.0; // Tọa độ Y spawn
 
-    // (Phụ thuộc vào WorldConfig)
-    public static final double PLAYER_INTERACTION_RANGE_PIXELS = WorldConfig.TILE_SIZE * 1.2; // Tầm tương tác
-    public static final int ACTION_DELAY_FRAMES_HOE = 1; // Thời gian cuốc đất (1 frame = 16.6 ms)
+    // --- CẤU HÌNH CHO TỪNG TOOL ---
+    // (Bao gồm Tầm tương tác và Thời gian hành động)
+
+    // HAND (Mặc định)
+    public static final double HAND_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.2; // Tầm hoạt động
+
+    // HOE (Cuốc)
+    public static final double HOE_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.2; // Tầm hoạt động
+    public static final int HOE_REPETITIONS = 3; // Số lần lặp
+    public static final long HOE_DURATION_PER_REPETITION_MS = 500; // Thời gian (ms) mỗi lần
+
+    // WATERING CAN (Bình tưới)
+    public static final double WATERING_CAN_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.1;
+    public static final int WATERING_CAN_REPETITIONS = 1; // Số lần lặp
+    public static final long WATERING_CAN_DURATION_PER_REPETITION_MS = 1000; // Giữ trong 1 giây
+
+    // PICKAXE (Cúp)
+    public static final double PICKAXE_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.2;
+    public static final int PICKAXE_REPETITIONS = 3; // (Ví dụ)
+    public static final long PICKAXE_DURATION_PER_REPETITION_MS = 300; // (Ví dụ)
+
+    // SHOVEL (Xẻng)
+    public static final double SHOVEL_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.2;
+    public static final int SHOVEL_REPETITIONS = 2; // (Ví dụ)
+    public static final long SHOVEL_DURATION_PER_REPETITION_MS = 250; // (Ví dụ)
 
     private GameLogicConfig() {}
 }

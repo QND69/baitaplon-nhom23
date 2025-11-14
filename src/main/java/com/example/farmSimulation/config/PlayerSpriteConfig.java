@@ -9,6 +9,13 @@ public class PlayerSpriteConfig {
     public static final double BASE_PLAYER_FRAME_HEIGHT = 192;
     public static final double BASE_PLAYER_FRAME_SCALE = 1.0;
 
+    // --- Định nghĩa loại Animation ---
+    public enum AnimationType {
+        LOOP,                   // Lặp vô hạn (IDLE, WALK)
+        ONE_SHOT,               // Chạy 1 lần rồi dừng ở frame 0 (ATTACK)
+        ACTION_LOOP             // Lặp khi state active (HOE)
+    }
+
     // --- Cấu hình Player Sprite (player_scaled_4x.png) ---
     public static final double PLAYER_FRAME_WIDTH = 128;
     public static final double PLAYER_FRAME_HEIGHT = 128;
@@ -57,7 +64,6 @@ public class PlayerSpriteConfig {
     public static final long ATTACK_SPEED = 100; // Tốc độ tấn công
 
     // HOE (Cuốc)
-    public static final long HOE_SPEED = 180; // Tốc độ cuốc (ms/frame)
     public static final int HOE_FRAMES = 2; // Số frame của hành động
     public static final int HOE_DOWN_ROW = 7;
     public static final int HOE_UP_ROW = 8;
@@ -65,7 +71,6 @@ public class PlayerSpriteConfig {
     public static final int HOE_LEFT_ROW = 6; // Dùng chung ảnh với RIGHT
 
     // WATER (Tưới nước)
-    public static final long WATER_SPEED = 200; // Tốc độ tưới (ms/frame)
     public static final int WATER_FRAMES = 2; // Số frame của hành động
     public static final int WATER_DOWN_ROW = 9;
     public static final int WATER_UP_ROW = 10;

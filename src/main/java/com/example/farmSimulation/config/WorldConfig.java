@@ -5,7 +5,7 @@ import javafx.scene.paint.Paint;
 
 // Chứa các hằng số cấu hình liên quan đến thế giới game
 public class WorldConfig {
-    public static final double TILE_SIZE = 60; // Cạnh ô vuông TILE
+    public static final double TILE_SIZE = 64; // Cạnh ô vuông TILE
 
     // --- Cấu hình Selector ---
     public static final Paint SELECTOR_COLOR = Color.BLACK;

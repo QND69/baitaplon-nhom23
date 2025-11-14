@@ -23,6 +23,7 @@ public class GameManager {
     private final ActionManager actionManager;
     private final PlayerMovementHandler movementHandler;
     private final Camera camera;
+    private final InteractionManager interactionManager;
 
     // --- Trạng thái Game ---
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
@@ -46,6 +47,7 @@ public class GameManager {
         this.timeManager = new TimeManager(mainGameView);
         this.actionManager = new ActionManager(player, playerView); // Truyền player/playerView
         this.movementHandler = new PlayerMovementHandler(player, playerView, gameController, camera, mainGameView);
+        this.interactionManager = new InteractionManager(this.actionManager);
     }
 
     public void startGame() {
@@ -67,7 +69,7 @@ public class GameManager {
     }
 
     /**
-     * [TỐI ƯU] Hàm update chính, chỉ điều phối các hàm con
+     * Hàm update chính, chỉ điều phối các hàm con
      */
     private void updateGameLogic() {
         // ⚠️ BỔ SUNG: Dừng ngay lập tức nếu game đang tạm dừng
@@ -114,7 +116,7 @@ public class GameManager {
     /**
      * Kiểm tra xem người chơi có trong tầm tương tác không
      */
-    private boolean isPlayerInRange(int col, int row) {
+    private boolean isPlayerInRange(int col, int row, Tool tool) {
         // Tọa độ pixel logic của Tâm người chơi, lấy nửa dưới để tính khoảng cách
         double playerX = mainPlayer.getTileX() + PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2;
         double playerY = mainPlayer.getTileY() + PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT / 2 + PlayerSpriteConfig.PLAYER_FRAME_WIDTH / 8;
@@ -128,7 +130,28 @@ public class GameManager {
                 Math.pow(playerX - targetX, 2) + Math.pow(playerY - targetY, 2)
         );
 
-        return distance <= GameLogicConfig.PLAYER_INTERACTION_RANGE_PIXELS;
+        // Lấy tầm tương tác dựa trên công cụ
+        double range;
+        switch (tool) {
+            case HOE:
+                range = GameLogicConfig.HOE_INTERACTION_RANGE;
+                break;
+            case WATERING_CAN:
+                range = GameLogicConfig.WATERING_CAN_INTERACTION_RANGE;
+                break;
+            case PICKAXE:
+                range = GameLogicConfig.PICKAXE_INTERACTION_RANGE;
+                break;
+            case SHOVEL:
+                range = GameLogicConfig.SHOVEL_INTERACTION_RANGE;
+                break;
+            case HAND:
+            default:
+                range = GameLogicConfig.HAND_INTERACTION_RANGE;
+                break;
+        }
+
+        return distance <= range;
     }
 
     /**
@@ -164,6 +187,7 @@ public class GameManager {
 
     /**
      * Xử lý click chuột
+     * Hàm này chỉ kiểm tra điều kiện chung và ủy quyền
      */
     public void interactWithTile(int col, int row) {
         // Kiểm tra xem player có đang bận (làm hành động khác) không
@@ -172,11 +196,12 @@ public class GameManager {
             return; // Player đang bận, không cho hành động
         }
 
-        // Kiểm tra tầm hoạt động
-        if (!isPlayerInRange(col, row)) {
+        // Lấy công cụ *trước* khi kiểm tra tầm
+        Tool currentTool = mainPlayer.getCurrentTool();
+
+        // Kiểm tra tầm hoạt động (Sử dụng hàm isPlayerInRange)
+        if (!isPlayerInRange(col, row, currentTool)) {
             // Vị trí hiển thị của text
-            // Lấy tọa độ của "khung" (spriteContainer) chứ không phải của "ảnh" (sprite)
-            // Tọa độ này là tọa độ của container so với màn hình (rootPane)
             double playerScreenX = playerView.getSpriteContainer().getLayoutX();
             double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
 
@@ -188,41 +213,25 @@ public class GameManager {
         // Quay người chơi về hướng ô target
         updatePlayerDirectionTowards(col, row);
 
-        Tile currentType = worldMap.getTileType(col, row);
-        Tool tool = mainPlayer.getCurrentTool(); // Lấy công cụ đang cầm
+        // Ủy thác logic xử lý cho InteractionManager
+        boolean actionTaken = interactionManager.processInteraction(
+                mainPlayer,
+                playerView,
+                worldMap,
+                col,
+                row
+        );
 
-        // --- ÁP DỤNG "LUẬT CHƠI" ---
+        // Xử lý nếu không có quy tắc nào khớp (dùng sai tool)
+        if (!actionTaken) {
+            // Vị trí hiển thị của text
+            double playerScreenX = playerView.getSpriteContainer().getLayoutX();
+            double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
 
-        // Cuốc đất (Grass -> Soil)
-        if (currentType == Tile.GRASS && tool == Tool.HOE) {
-            // Ra lệnh cho PlayerView chạy animation "Cuốc"
-            mainPlayer.setState(PlayerView.PlayerState.HOE);
-            playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
-
-            // Tính thời gian animation (ms) -> (frames)
-            long animDurationMs = PlayerSpriteConfig.HOE_FRAMES * PlayerSpriteConfig.HOE_SPEED; // Tổng thời gian thực tế
-            int delayInFrames = (int) (animDurationMs / (GameLogicConfig.SECONDS_PER_FRAME * 1000)); // Số frame thực tế
-
-            // Thêm hành động "Biến thành Đất" vào hàng đợi
-            actionManager.addPendingAction(new TimedTileAction(col, row, Tile.SOIL, delayInFrames));
-        }
-
-        // Dùng BÌNH TƯỚI (WATERING_CAN)
-        else if (currentType == Tile.SOIL && tool == Tool.WATERING_CAN) {
-            // Ra lệnh cho PlayerView chạy animation "Tưới"
-            mainPlayer.setState(PlayerView.PlayerState.WATER);
-            playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
-
-            // Tính thời gian animation
-            long animDurationMs = PlayerSpriteConfig.WATER_FRAMES * PlayerSpriteConfig.WATER_SPEED;
-            int delayInFrames = (int) (animDurationMs / (GameLogicConfig.SECONDS_PER_FRAME * 1000));
-
-            // TODO: Đổi Tile.SOIL thành Tile.SOIL_WET
-            // Hiện tại, chỉ thêm hành động chờ (để reset state), không đổi tile (truyền null)
-            actionManager.addPendingAction(new TimedTileAction(col, row, null, delayInFrames));
+            // Hiển thị text "You need the right tool"
+            mainGameView.showTemporaryText(HudConfig.WRONG_TOOL_TEXT, playerScreenX, playerScreenY);
         }
     }
-
     /**
      * Được gọi từ Controller khi người dùng đổi slot hotbar
      */
@@ -238,13 +247,13 @@ public class GameManager {
         if (this.isPaused) {
             if (gameLoop != null) {
                 gameLoop.stop(); // ⬅️ Dừng game loop
-                System.out.println("Game Loop đã dừng.");
+                //System.out.println("Game Loop đã dừng.");
             }
             mainGameView.showSettingsMenu(mainPlayer.getName(), mainPlayer.getLevel());
         } else {
             if (gameLoop != null) {
                 gameLoop.start(); // ⬅️ Tiếp tục game loop
-                System.out.println("Game Loop đã tiếp tục.");
+                //System.out.println("Game Loop đã tiếp tục.");
             }
             mainGameView.hideSettingsMenu();
         }
