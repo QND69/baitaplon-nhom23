@@ -2,11 +2,15 @@ package com.example.farmSimulation.model;
 
 import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+@Getter
+@Setter
 public class ActionManager {
     private final List<TimedTileAction> pendingActions;  // Thêm danh sách hành động chờ
     private boolean mapNeedsUpdate = false;
@@ -38,12 +42,11 @@ public class ActionManager {
             TimedTileAction action = iterator.next();
 
             // Gọi tick(). Nếu nó trả về "true" (hết giờ)
-            if (action.tick()) {
+            if (action.tick()) { // Cho phép action không đổi tile
                 // THỰC THI HÀNH ĐỘNG: Thay đổi Model
-                if (action.getNewType() != null) { // Cho phép action không đổi tile
-                    worldMap.setTileType(action.getCol(), action.getRow(), action.getNewType());
-                    // Báo cho View biết cần vẽ lại bản đồ
-                    this.mapNeedsUpdate = true;
+                if (action.getNewTileData() != null) {
+                    worldMap.setTileData(action.getCol(), action.getRow(), action.getNewTileData());
+                    this.mapNeedsUpdate = true; // Báo cho View biết cần vẽ lại bản đồ
                 }
 
                 // Reset trạng thái Player về IDLE sau khi hành động xong
@@ -51,7 +54,8 @@ public class ActionManager {
                 PlayerView.PlayerState currentState = mainPlayer.getState();
                 if (currentState == PlayerView.PlayerState.HOE ||
                         currentState == PlayerView.PlayerState.WATER ||
-                        currentState == PlayerView.PlayerState.ATTACK) {
+                        currentState == PlayerView.PlayerState.ATTACK ||
+                        currentState == PlayerView.PlayerState.BUSY) {
 
                     mainPlayer.setState(PlayerView.PlayerState.IDLE);
                     playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());

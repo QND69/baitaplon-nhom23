@@ -1,8 +1,12 @@
 package com.example.farmSimulation.view.assets;
 
 import com.example.farmSimulation.config.AssetPaths;
-import com.example.farmSimulation.model.Tile;
+import com.example.farmSimulation.config.CropConfig;
+import com.example.farmSimulation.config.ItemSpriteConfig;
+import com.example.farmSimulation.model.*;
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.WritableImage;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -19,6 +23,15 @@ public class AssetManager {
     // Cache đặc biệt cho Tile (tối ưu cho Enum)
     private final Map<Tile, Image> tileTextureMap = new EnumMap<>(Tile.class);
 
+    // Cache cho các sprite đã được cắt
+    private final Map<String, Image> spriteCache = new HashMap<>();
+
+    // Cache cho icon của Tool (để dùng cho HUD)
+    private final Map<Tool, Image> toolIconCache = new EnumMap<>(Tool.class);
+
+    // Cache riêng cho Icon trạng thái (Status)
+    private final Map<CropStatusIndicator, Image> statusIconCache = new EnumMap<>(CropStatusIndicator.class);
+
     /**
      * Tải TOÀN BỘ tài nguyên game vào bộ nhớ.
      * Sẽ được gọi 1 lần duy nhất khi game bắt đầu.
@@ -30,17 +43,59 @@ public class AssetManager {
 
         // Tải GUI
         getTexture(AssetPaths.LOGO);
-        getTexture(AssetPaths.TOOLS_SHEET);
+        Image toolsSheet = getTexture(AssetPaths.TOOLS_SHEET); // Load tools
 
         // Tải Tile Textures
         Image grass = getTexture(AssetPaths.GRASS);
         Image soil = getTexture(AssetPaths.SOIL);
         Image water = getTexture(AssetPaths.WATER);
 
+        // Tải các tài nguyên trồng trọt
+        Image soilWet = getTexture(AssetPaths.SOIL_WET); // Tải đất ướt
+        getTexture(AssetPaths.FERTILIZER_OVERLAY); // Tải phân bón
+        getTexture(AssetPaths.CROP_SHEET); // Tải ảnh cây
+        getTexture(AssetPaths.ICON_BG); // Tải nền icon
+
         // Liên kết Tile (Model) với Image (View)
         tileTextureMap.put(Tile.GRASS, grass);
         tileTextureMap.put(Tile.SOIL, soil);
         tileTextureMap.put(Tile.WATER, water);
+        tileTextureMap.put(Tile.SOIL_WET, soilWet);
+
+        // Cắt và cache các icon trạng thái từ Tools Sheet
+        loadStatusIcons(toolsSheet);
+    }
+
+    /**
+     * Cắt icon từ tools5.png để làm icon trạng thái
+     */
+    private void loadStatusIcons(Image toolsSheet) {
+        if (toolsSheet == null) return;
+        PixelReader reader = toolsSheet.getPixelReader();
+
+        // Cắt Icon Nước (Watering Can)
+        WritableImage waterIcon = new WritableImage(reader,
+                (int)(ItemSpriteConfig.TOOL_WATERING_CAN_COL * ItemSpriteConfig.TOOL_SPRITE_WIDTH), 0,
+                (int)ItemSpriteConfig.TOOL_SPRITE_WIDTH, (int)ItemSpriteConfig.TOOL_SPRITE_HEIGHT);
+        statusIconCache.put(CropStatusIndicator.NEEDS_WATER, waterIcon);
+
+        // Cắt Icon Phân bón (Fertilizer)
+        WritableImage fertilizerIcon = new WritableImage(reader,
+                (int)(ItemSpriteConfig.TOOL_FERTILISER_COL * ItemSpriteConfig.TOOL_SPRITE_WIDTH), 0,
+                (int)ItemSpriteConfig.TOOL_SPRITE_WIDTH, (int)ItemSpriteConfig.TOOL_SPRITE_HEIGHT);
+        statusIconCache.put(CropStatusIndicator.NEEDS_FERTILIZER, fertilizerIcon);
+
+        // Tạo Icon Kép (Nước + Phân bón)
+        WritableImage combinedIcon = new WritableImage(reader,
+                (int)(ItemSpriteConfig.TOOL_WATERING_CAN_COL * ItemSpriteConfig.TOOL_SPRITE_WIDTH), 0,
+                (int)(ItemSpriteConfig.TOOL_SPRITE_WIDTH * 2), (int)ItemSpriteConfig.TOOL_SPRITE_HEIGHT);
+        statusIconCache.put(CropStatusIndicator.NEED_WATER_AND_FERTILIZER, combinedIcon);
+
+        // Icon Thu hoạch
+        WritableImage harvestIcon = new WritableImage(reader,
+                (int)(ItemSpriteConfig.TOOL_SCYTHE_COL * ItemSpriteConfig.TOOL_SPRITE_WIDTH), 0,
+                (int)ItemSpriteConfig.TOOL_SPRITE_WIDTH, (int)ItemSpriteConfig.TOOL_SPRITE_HEIGHT);
+        statusIconCache.put(CropStatusIndicator.READY_TO_HARVEST, harvestIcon);
     }
 
     /**
@@ -66,5 +121,97 @@ public class AssetManager {
     public Image getTileTexture(Tile tileType) {
         // Trả về ảnh mặc định (GRASS) nếu không tìm thấy
         return tileTextureMap.getOrDefault(tileType, tileTextureMap.get(Tile.GRASS));
+    }
+
+    /**
+     * Lấy ảnh lớp phủ phân bón (đã cache)
+     */
+    public Image getFertilizerTexture() {
+        return getTexture(AssetPaths.FERTILIZER_OVERLAY);
+    }
+
+    // Lấy ảnh nền Icon
+    public Image getIconBG() {
+        return getTexture(AssetPaths.ICON_BG);
+    }
+
+    // Lấy icon trạng thái đã cache
+    public Image getStatusIcon(CropStatusIndicator status) {
+        return statusIconCache.get(status);
+    }
+
+    /**
+     * Lấy sprite của cây trồng và cache lại.
+     */
+    public Image getCropTexture(CropData cropData) {
+        if (cropData == null) {
+            return null;
+        }
+
+        // Kiểm tra nếu cây chết hoặc dữ liệu sai
+        if (cropData.getGrowthStage() < 0) {
+            return null;
+        }
+
+        // Tạo key cache
+        String key = cropData.getType().name() + "_" + cropData.getGrowthStage();
+
+        // Dùng computeIfAbsent để cắt 1 lần duy nhất
+        return spriteCache.computeIfAbsent(key, k -> {
+            Image cropSheet = getTexture(AssetPaths.CROP_SHEET);
+            if (cropSheet == null) return null;
+
+            PixelReader reader = cropSheet.getPixelReader();
+
+            // Tính toán vị trí (x, y) để cắt
+            double w = CropConfig.CROP_SPRITE_WIDTH;
+            double h = CropConfig.CROP_SPRITE_HEIGHT;
+            int x = (int) (cropData.getGrowthStage() * w);
+            int y = (int) (cropData.getType().getSpriteRow() * h);
+
+            if (x < 0 || y < 0 || x + w > cropSheet.getWidth() || y + h > cropSheet.getHeight()) return null;
+
+            // Cắt và tạo ảnh mới
+            return new WritableImage(reader, x, y, (int) w, (int) h);
+        });
+    }
+
+    /**
+     * Lấy icon hạt giống từ CROP_SHEET (Frame 0)
+     */
+    public Image getSeedIcon(CropType type) {
+        Image cropSheet = getTexture(AssetPaths.CROP_SHEET);
+        if (cropSheet == null) return null;
+
+        PixelReader reader = cropSheet.getPixelReader();
+
+        // Lấy Frame 0 (Giai đoạn hạt giống)
+        int x = 0;
+        // Lấy hàng tương ứng với loại cây
+        int y = (int) (type.getSpriteRow() * CropConfig.CROP_SPRITE_HEIGHT);
+
+        return new WritableImage(reader, x, y, (int)CropConfig.CROP_SPRITE_WIDTH, (int)CropConfig.CROP_SPRITE_HEIGHT);
+    }
+
+    /**
+     * Lưu trữ icon của tool (dùng cho HUD)
+     * Hàm này sẽ được gọi bởi HotbarView khi nó tải icon.
+     */
+    public void cacheToolIcon(Tool tool, Image icon) {
+        toolIconCache.put(tool, icon);
+    }
+
+    /**
+     * Lấy icon bình tưới nước (dùng cho HUD)
+     */
+    public Image getWaterCanIcon() {
+        return toolIconCache.get(Tool.WATERING_CAN);
+    }
+
+    /**
+     * Lấy icon phân bón (dùng cho HUD)
+     */
+    public Image getFertilizerIcon() {
+        return toolIconCache.get(Tool.FERTILIZER);
     }
 }

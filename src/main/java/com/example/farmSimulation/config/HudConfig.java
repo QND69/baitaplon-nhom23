@@ -27,6 +27,19 @@ public class HudConfig {
     public static final double TIMER_X_POSITION = 10.0;
     public static final double TIMER_Y_POSITION = 10.0;
 
+    /** Settings của icon thông báo*/
+    // Nền mờ cho icon
+    public static final double ICON_BG_SIZE = 64.0;
+
+    // Icon bên trong
+    public static final double ICON_SIZE = 24.0;
+
+    // Vị trí toàn bộ cụm thông báo (bay cao hơn cây)
+    public static final double ICON_Y_OFFSET = 32.0 + CropConfig.CROP_Y_OFFSET;
+
+    // Căn chỉnh Icon nằm gọn trong phần "bong bóng" của Background
+    // Vì Background 64x64 nhưng phần vẽ chỉ chiếm 2/3 trên, ta cần đẩy Icon lên một chút so với tâm BG
+    public static final double ICON_PADDING_TOP = 12.0;
     private HudConfig() {
     }
 }

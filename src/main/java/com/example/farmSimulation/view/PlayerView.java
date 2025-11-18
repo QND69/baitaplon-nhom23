@@ -23,6 +23,7 @@ public class PlayerView {
         ATTACK,
         HOE,
         WATER,
+        BUSY, // Trạng thái "bận" (dùng anim IDLE)
         DEAD
     }
 
@@ -155,6 +156,14 @@ public class PlayerView {
         idleMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.IDLE_RIGHT_ROW, PlayerSpriteConfig.IDLE_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
         idleMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.IDLE_LEFT_ROW, PlayerSpriteConfig.IDLE_FRAMES, PlayerSpriteConfig.AnimationType.LOOP));
         animationMap.put(PlayerState.IDLE, idleMap);
+
+        // BUSY (Bận) - Dùng 1 frame của IDLE
+        Map<Direction, AnimData> busyMap = new EnumMap<>(Direction.class);
+        busyMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.IDLE_DOWN_ROW, 1, PlayerSpriteConfig.AnimationType.LOOP));
+        busyMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.IDLE_UP_ROW, 1, PlayerSpriteConfig.AnimationType.LOOP));
+        busyMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.IDLE_RIGHT_ROW, 1, PlayerSpriteConfig.AnimationType.LOOP));
+        busyMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.IDLE_LEFT_ROW, 1, PlayerSpriteConfig.AnimationType.LOOP));
+        animationMap.put(PlayerState.BUSY, busyMap);
 
         // WALK (Di chuyển) - Dùng playerSheet
         Map<Direction, AnimData> walkMap = new EnumMap<>(Direction.class);

@@ -4,6 +4,7 @@ import com.example.farmSimulation.config.AssetPaths;
 import com.example.farmSimulation.config.HotbarConfig;
 import com.example.farmSimulation.config.ItemSpriteConfig;
 import com.example.farmSimulation.config.WindowConfig;
+import com.example.farmSimulation.model.CropType;
 import com.example.farmSimulation.model.Player;
 import com.example.farmSimulation.model.Tool;
 import com.example.farmSimulation.view.assets.AssetManager;
@@ -20,6 +21,8 @@ import java.util.Map;
 public class HotbarView extends Pane {
 
     private final Player player;
+    private final AssetManager assetManager;
+
     private final Rectangle[] slotBackgrounds; // Nền ô
     private final ImageView[] slotIcons;       // Icon công cụ
     private final Rectangle slotSelector;      // Ô chọn
@@ -30,6 +33,7 @@ public class HotbarView extends Pane {
 
     public HotbarView(Player player, AssetManager assetManager) {
         this.player = player;
+        this.assetManager = assetManager;
         this.toolTextureMap = new EnumMap<>(Tool.class);
         this.slotBackgrounds = new Rectangle[HotbarConfig.HOTBAR_SLOT_COUNT];
         this.slotIcons = new ImageView[HotbarConfig.HOTBAR_SLOT_COUNT];
@@ -124,10 +128,43 @@ public class HotbarView extends Pane {
         Image toolsSheet = assetManager.getTexture(AssetPaths.TOOLS_SHEET);
         if (toolsSheet == null) return;
 
+        // Tất cả các tool
+
         // Helper cắt ảnh
-        toolTextureMap.put(Tool.HOE, getToolSprite(toolsSheet, ItemSpriteConfig.TOOL_HOE_COL));
-        toolTextureMap.put(Tool.PICKAXE, getToolSprite(toolsSheet, ItemSpriteConfig.TOOL_PICKAXE_COL));
-        toolTextureMap.put(Tool.WATERING_CAN, getToolSprite(toolsSheet, ItemSpriteConfig.TOOL_WATERING_CAN_COL));
+        // (Hàm này sẽ cắt ảnh, lưu vào map, VÀ cache vào AssetManager)
+        cacheToolSprite(toolsSheet, Tool.HOE, ItemSpriteConfig.TOOL_HOE_COL);
+        cacheToolSprite(toolsSheet, Tool.PICKAXE, ItemSpriteConfig.TOOL_PICKAXE_COL);
+        cacheToolSprite(toolsSheet, Tool.WATERING_CAN, ItemSpriteConfig.TOOL_WATERING_CAN_COL);
+        cacheToolSprite(toolsSheet, Tool.FERTILIZER, ItemSpriteConfig.TOOL_FERTILISER_COL);
+        cacheToolSprite(toolsSheet, Tool.SHOVEL, ItemSpriteConfig.TOOL_SHOVEL_COL);
+
+        // Tải icon túi hạt giống
+        Image seedBagIcon = getToolSprite(toolsSheet, ItemSpriteConfig.ITEM_SEEDS_BAGS_COL);
+
+        // Icon của các hạt giống (Frame 0 của cây)
+        cacheToolSprite(Tool.SEEDS_STRAWBERRY, assetManager.getSeedIcon(CropType.STRAWBERRY));
+        cacheToolSprite(Tool.SEEDS_RADISH, assetManager.getSeedIcon(CropType.RADISH));
+        cacheToolSprite(Tool.SEEDS_POTATO, assetManager.getSeedIcon(CropType.POTATO));
+        cacheToolSprite(Tool.SEEDS_CARROT, assetManager.getSeedIcon(CropType.CARROT));
+    }
+
+    /**
+     * Hàm helper mới để vừa cắt, vừa cache vào map, vừa cache vào AssetManager
+     */
+    private void cacheToolSprite(Image sheet, Tool tool, int col) {
+        Image icon = getToolSprite(sheet, col);
+        toolTextureMap.put(tool, icon);
+        assetManager.cacheToolIcon(tool, icon);
+    }
+
+    /**
+     * Hàm helper mới để cache icon đã có sẵn (dùng cho hạt giống)
+     */
+    private void cacheToolSprite(Tool tool, Image icon) {
+        if (icon != null) {
+            toolTextureMap.put(tool, icon);
+            assetManager.cacheToolIcon(tool, icon);
+        }
     }
 
     /**

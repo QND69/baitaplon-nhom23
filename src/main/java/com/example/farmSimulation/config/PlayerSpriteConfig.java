@@ -34,7 +34,7 @@ public class PlayerSpriteConfig {
      * Bật/Tắt hiển thị khung viền (bounding box)
      * và tâm (center dot) của player.
      */
-    public static final boolean DEBUG_PLAYER_BOUNDS = true;
+    public static final boolean DEBUG_PLAYER_BOUNDS = false;
     public static final Color DEBUG_BOUNDING_BOX_COLOR = Color.RED;
     public static final Color DEBUG_CENTER_DOT_COLOR = Color.CYAN;
     public static final Color DEBUG_RANGE_COLOR = Color.GREENYELLOW;

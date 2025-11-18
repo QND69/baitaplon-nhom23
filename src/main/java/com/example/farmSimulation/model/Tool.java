@@ -5,5 +5,12 @@ public enum Tool {
     WATERING_CAN,
     PICKAXE,
     SHOVEL,
-    HAND
+    HAND,
+    FERTILIZER,
+
+    // Thêm các loại hạt giống
+    SEEDS_STRAWBERRY,
+    SEEDS_RADISH,
+    SEEDS_POTATO,
+    SEEDS_CARROT
 }
