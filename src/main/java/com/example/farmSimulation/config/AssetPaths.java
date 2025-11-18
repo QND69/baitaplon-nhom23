@@ -5,18 +5,27 @@ public final class AssetPaths {
 
     // Player
     public static final String PLAYER_SHEET = "/assets/images/entities/player/player_scaled_4x.png";
+    public static final String PLAYER_ACTIONS_SHEET = "/assets/images/entities/player/player6_actions_scaled_4x.png";
 
     // World Tiles
-    public static final String GRASS = "/assets/images/world/grassDraft.png";
-    public static final String SOIL = "/assets/images/world/soil_scaled_4x.png";
-    public static final String WATER = "/assets/images/world/waterDraft.png";
+    public static final String GRASS = "/assets/images/world/grass5.png";
+    public static final String SOIL = "/assets/images/world/soil1.png";
+    public static final String WATER = "/assets/images/world/water4.png";
+    /** Ảnh đất đã tưới (sẫm màu hơn) */
+    public static final String SOIL_WET = "/assets/images/world/soil_wet.png";
+
+    /** Ảnh lớp phủ (overlay) phân bón */
+    public static final String FERTILIZER_OVERLAY = "/assets/images/world/fertilizer_layer.png";
+
+    /** Spritesheet cho tất cả cây trồng (Dâu, Cà rốt...) */
+    public static final String CROP_SHEET = "/assets/images/items/crops/seed_scaled_4x.png";
 
     // GUI
     public static final String LOGO = "/assets/images/GUI/logo.png";
 
-    public static final String TOOLS_SHEET = "/assets/images/items/tools/tools3.png";
+    public static final String TOOLS_SHEET = "/assets/images/items/tools/tools5.png";
 
-    public static final String PLAYER_ACTIONS_SHEET = "/assets/images/entities/player/player6_actions_scaled_4x.png";
+    public static final String ICON_BG = "/assets/images/GUI/icon_white_bg3.png";
 
     private AssetPaths() {
     }

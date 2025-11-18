@@ -11,12 +11,12 @@ public class ItemSpriteConfig {
     public static final int TOOL_HAMMER_COL = 1;
     public static final int TOOL_HOE_COL = 2;
     public static final int TOOL_PICKAXE_COL = 3;
-    public static final int ITEM_SEEDS_BAGS_COL = 4;
-    public static final int TOOL_WATERING_CAN_COL = 5;
+    public static final int TOOL_WATERING_CAN_COL = 4;
+    public static final int TOOL_FERTILISER_COL = 5;
     public static final int TOOL_SCYTHE_COL = 6;
-    public static final double TOOL_SHOVEL_COL = 7;
-    public static final double TOOL_FERTILISER_COL = 8;
+    public static final int TOOL_SHOVEL_COL = 7;
+    public static final int TOOL_SCISSORS_COL = 8;
+    public static final int ITEM_SEEDS_BAGS_COL = 9;
 
-    // (Tool.SHOVEL và Tool.HAND không có icon trong sheet này)
     private ItemSpriteConfig() {}
 }

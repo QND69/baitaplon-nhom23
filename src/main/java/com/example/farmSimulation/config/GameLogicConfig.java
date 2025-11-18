@@ -21,9 +21,13 @@ public class GameLogicConfig {
     // HAND (Mặc định)
     public static final double HAND_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.2; // Tầm hoạt động
 
+    // --- THỜI GIAN & HÀNH ĐỘNG ---
+    // Delay cho hành động không anim
+    public static final long GENERIC_ACTION_DURATION_MS = 800;
+
     // HOE (Cuốc)
     public static final double HOE_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.2; // Tầm hoạt động
-    public static final int HOE_REPETITIONS = 3; // Số lần lặp
+    public static final int HOE_REPETITIONS = 4; // Số lần lặp
     public static final long HOE_DURATION_PER_REPETITION_MS = 500; // Thời gian (ms) mỗi lần
 
     // WATERING CAN (Bình tưới)
@@ -33,13 +37,13 @@ public class GameLogicConfig {
 
     // PICKAXE (Cúp)
     public static final double PICKAXE_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.2;
-    public static final int PICKAXE_REPETITIONS = 3; // (Ví dụ)
+    public static final int PICKAXE_REPETITIONS = 3;
     public static final long PICKAXE_DURATION_PER_REPETITION_MS = 300; // (Ví dụ)
 
     // SHOVEL (Xẻng)
     public static final double SHOVEL_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.2;
-    public static final int SHOVEL_REPETITIONS = 2; // (Ví dụ)
-    public static final long SHOVEL_DURATION_PER_REPETITION_MS = 250; // (Ví dụ)
+    public static final int SHOVEL_REPETITIONS = 2;
+    public static final long SHOVEL_DURATION_PER_REPETITION_MS = 250;
 
     private GameLogicConfig() {}
 }

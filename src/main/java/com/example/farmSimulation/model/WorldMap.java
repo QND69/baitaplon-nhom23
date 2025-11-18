@@ -1,15 +1,16 @@
 package com.example.farmSimulation.model;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 
 // Class này lưu trữ TOÀN BỘ dữ liệu bản đồ (Model).
 // Đây là bản đồ hữu hạn
 public class WorldMap {
-    private HashMap<Long, Tile> tiles; // HashMap<Long, Tile> lưu trữ loại ô tại mỗi tọa độ [hàng][cột] và loại ô
+    private HashMap<Long, TileData> tileDataMap; // Lưu trữ loại ô tại mỗi tọa độ [hàng][cột] và loại ô
 
     public WorldMap() {
-        tiles = new HashMap<>();
+        tileDataMap = new HashMap<>();
     }
 
     //hàm tạo khóa
@@ -19,11 +20,54 @@ public class WorldMap {
         return ((long) col << 32) | (row & 0xffffffffL);
     }
 
+    /**
+     * Hàm sẽ lấy TileData (hoặc tạo mới nếu không tồn tại)
+     * và trả về loại đất CƠ BẢN (baseTileType) của nó.
+     */
     public Tile getTileType(int col, int row) {
-        return tiles.getOrDefault(toKey(col, row), Tile.GRASS);
+        return getTileData(col, row).getBaseTileType();
     }
 
+    /**
+     * Hàm này giờ sẽ lấy TileData và set loại đất CƠ BẢN.
+     */
     public void setTileType(int col, int row, Tile newTile) {
-        tiles.put(toKey(col, row), newTile);
+        // Lấy data (hoặc tạo mới) và set loại tile
+        TileData data = getTileData(col, row);
+        data.setBaseTileType(newTile);
+        // Put lại vào map
+        tileDataMap.put(toKey(col, row), data);
+    }
+
+    /**
+     * Hàm quan trọng: Lấy TOÀN BỘ DỮ LIỆU của một ô.
+     * Nếu ô đó không tồn tại trong map (ví dụ: vùng đất mới),
+     * nó sẽ tự động tạo một TileData (GRASS) mặc định, lưu lại và trả về.
+     */
+    public TileData getTileData(int col, int row) {
+        long key = toKey(col, row);
+        // Sử dụng computeIfAbsent để code gọn hơn
+        // computeIfAbsent là một method của Map (Java 8+).
+        // computeIfAbsent: Nếu 'path' chưa có trong cache,
+        // nó sẽ chạy hàm lambda (v -> new Image(...)) để tải ảnh,
+        // sau đó tự động 'put' vào cache và return ảnh đó.
+        // Cú pháp nếu ko dùng ->: V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction)
+        return tileDataMap.computeIfAbsent(key, k -> new TileData(Tile.GRASS));
+    }
+
+    /**
+     * Hàm helper để lưu lại TileData sau khi logic (ví dụ: InteractionManager)
+     * đã thay đổi nó.
+     */
+    public void setTileData(int col, int row, TileData data) {
+        tileDataMap.put(toKey(col, row), data);
+    }
+
+    /**
+     * Trả về tất cả các TileData đang được lưu trữ.
+     * (Dùng cho CropManager để cập nhật cây trồng)
+     */
+    public Collection<TileData> getAllTileData() {
+        return tileDataMap.values();
     }
 }

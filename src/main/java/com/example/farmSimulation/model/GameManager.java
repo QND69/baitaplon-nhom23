@@ -24,6 +24,7 @@ public class GameManager {
     private final PlayerMovementHandler movementHandler;
     private final Camera camera;
     private final InteractionManager interactionManager;
+    private final CropManager cropManager;
 
     // --- Trạng thái Game ---
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
@@ -48,6 +49,7 @@ public class GameManager {
         this.actionManager = new ActionManager(player, playerView); // Truyền player/playerView
         this.movementHandler = new PlayerMovementHandler(player, playerView, gameController, camera, mainGameView);
         this.interactionManager = new InteractionManager(this.actionManager);
+        this.cropManager = new CropManager(this.worldMap);
     }
 
     public void startGame() {
@@ -61,7 +63,7 @@ public class GameManager {
         this.gameLoop = new AnimationTimer() {
             @Override
             public void handle(long now) {
-                updateGameLogic();
+                updateGameLogic(now);
             }
         };
         gameLoop.start();
@@ -71,14 +73,14 @@ public class GameManager {
     /**
      * Hàm update chính, chỉ điều phối các hàm con
      */
-    private void updateGameLogic() {
+    private void updateGameLogic(long now) {
         // ⚠️ BỔ SUNG: Dừng ngay lập tức nếu game đang tạm dừng
         if (this.isPaused) {
             return;
         }
 
         // Cập nhật thời gian & chu kỳ ngày đêm
-        timeManager.update();
+        //timeManager.update();
 
         // Cập nhật di chuyển & trạng thái Player
         movementHandler.update();
@@ -88,6 +90,12 @@ public class GameManager {
 
         // Cập nhật các hành động chờ
         actionManager.updateTimedActions(worldMap, mainGameView, camera.getWorldOffsetX(), camera.getWorldOffsetY());
+
+        // Cập nhật logic cây trồng
+        boolean cropsUpdated = cropManager.updateCrops(now); // Truyền 'now'
+        if (cropsUpdated) {
+            actionManager.setMapNeedsUpdate(true); // Báo map cần vẽ lại
+        }
 
         // Cập nhật chuột
         updateMouseSelector();

@@ -10,7 +10,8 @@ import lombok.Setter;
 public class TimedTileAction {
     private int col; // Tọa độ X
     private int row; // Tọa độ Y
-    private Tile newType; // Loại Tile mới sẽ đổi thành
+    // Nếu null nghĩa là không thay đổi dữ liệu map
+    private TileData newTileData; // Loại Tile mới sẽ đổi thành
     private int framesRemaining; // Số frame còn lại
 
     public boolean tick() {

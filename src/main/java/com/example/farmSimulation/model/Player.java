@@ -42,8 +42,11 @@ public class Player {
         // Gán công cụ vào hotbar (ví dụ)
         this.hotbarTools[0] = Tool.HOE;
         this.hotbarTools[1] = Tool.WATERING_CAN;
-        this.hotbarTools[2] = Tool.PICKAXE;
-        this.hotbarTools[3] = Tool.SHOVEL;
+        this.hotbarTools[2] = Tool.SEEDS_STRAWBERRY;
+        this.hotbarTools[3] = Tool.SEEDS_CARROT;
+        this.hotbarTools[4] = Tool.FERTILIZER;
+        this.hotbarTools[5] = Tool.PICKAXE;
+        this.hotbarTools[6] = Tool.SHOVEL;
         // Các ô khác là null (sẽ là Tool.HAND)
     }
 
