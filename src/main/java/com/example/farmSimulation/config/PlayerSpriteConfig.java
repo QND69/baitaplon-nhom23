@@ -77,5 +77,26 @@ public class PlayerSpriteConfig {
     public static final int WATER_RIGHT_ROW = 11;
     public static final int WATER_LEFT_ROW = 11;
 
+    // PLANT (Trồng cây)
+    public static final int PLANT_FRAMES = 2;
+    public static final int PLANT_DOWN_ROW = 12;
+    public static final int PLANT_UP_ROW = 14;
+    public static final int PLANT_RIGHT_ROW = 13;
+    public static final int PLANT_LEFT_ROW = 13;
+
+    // DIG (Xúc đất)
+    public static final int DIG_FRAMES = 2;
+    public static final int DIG_DOWN_ROW = 16;
+    public static final int DIG_UP_ROW = 15;
+    public static final int DIG_RIGHT_ROW = 15;
+    public static final int DIG_LEFT_ROW = 17;
+
+    // FERTILZED (Bón phân)
+    public static final int FERTILZED_FRAMES = 2;
+    public static final int FERTILZED_DOWN_ROW = 18;
+    public static final int FERTILZED_UP_ROW = 19;
+    public static final int FERTILZED_RIGHT_ROW = 20;
+    public static final int FERTILZED_LEFT_ROW = 20;
+
     private PlayerSpriteConfig() {}
 }

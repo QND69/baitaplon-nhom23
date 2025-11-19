@@ -124,7 +124,7 @@ public class GameManager {
     /**
      * Kiểm tra xem người chơi có trong tầm tương tác không
      */
-    private boolean isPlayerInRange(int col, int row, Tool tool) {
+    private boolean isPlayerInRange(int col, int row, ItemStack currentStack) {
         // Tọa độ pixel logic của Tâm người chơi, lấy nửa dưới để tính khoảng cách
         double playerX = mainPlayer.getTileX() + PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2;
         double playerY = mainPlayer.getTileY() + PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT / 2 + PlayerSpriteConfig.PLAYER_FRAME_WIDTH / 8;
@@ -138,25 +138,29 @@ public class GameManager {
                 Math.pow(playerX - targetX, 2) + Math.pow(playerY - targetY, 2)
         );
 
+        // Mặc định là HAND range
+        double range = GameLogicConfig.HAND_INTERACTION_RANGE;
+
         // Lấy tầm tương tác dựa trên công cụ
-        double range;
-        switch (tool) {
-            case HOE:
+        if (currentStack != null) {
+            ItemType type = currentStack.getItemType();
+
+            if (type == ItemType.HOE) {
                 range = GameLogicConfig.HOE_INTERACTION_RANGE;
-                break;
-            case WATERING_CAN:
+            } else if (type == ItemType.WATERING_CAN) {
                 range = GameLogicConfig.WATERING_CAN_INTERACTION_RANGE;
-                break;
-            case PICKAXE:
+            } else if (type == ItemType.PICKAXE) {
                 range = GameLogicConfig.PICKAXE_INTERACTION_RANGE;
-                break;
-            case SHOVEL:
+            } else if (type == ItemType.SHOVEL) {
                 range = GameLogicConfig.SHOVEL_INTERACTION_RANGE;
-                break;
-            case HAND:
-            default:
+            } else if (type == ItemType.FERTILIZER) {
+                range = GameLogicConfig.FERTILIZER_INTERACTION_RANGE;
+            } else if (type.name().startsWith("SEEDS_")) {
+                range = GameLogicConfig.PLANT_INTERACTION_RANGE; // Áp dụng cho tất cả loại hạt
+            } else {
+                // Các item khác dùng mặc định HAND range
                 range = GameLogicConfig.HAND_INTERACTION_RANGE;
-                break;
+            }
         }
 
         return distance <= range;
@@ -205,10 +209,10 @@ public class GameManager {
         }
 
         // Lấy công cụ *trước* khi kiểm tra tầm
-        Tool currentTool = mainPlayer.getCurrentTool();
+        ItemStack currentStack = mainPlayer.getCurrentItem();
 
         // Kiểm tra tầm hoạt động (Sử dụng hàm isPlayerInRange)
-        if (!isPlayerInRange(col, row, currentTool)) {
+        if (!isPlayerInRange(col, row, currentStack)) {
             // Vị trí hiển thị của text
             double playerScreenX = playerView.getSpriteContainer().getLayoutX();
             double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
@@ -221,23 +225,14 @@ public class GameManager {
         // Quay người chơi về hướng ô target
         updatePlayerDirectionTowards(col, row);
 
-        // Ủy thác logic xử lý cho InteractionManager
-        boolean actionTaken = interactionManager.processInteraction(
-                mainPlayer,
-                playerView,
-                worldMap,
-                col,
-                row
-        );
+        // Nhận thông báo lỗi trực tiếp từ hàm processInteraction
+        String errorMsg = interactionManager.processInteraction(mainPlayer, playerView, worldMap, col, row);
 
-        // Xử lý nếu không có quy tắc nào khớp (dùng sai tool)
-        if (!actionTaken) {
-            // Vị trí hiển thị của text
+        // Nếu errorMsg != null nghĩa là có lỗi hoặc không hành động được -> Hiển thị text
+        if (errorMsg != null) {
             double playerScreenX = playerView.getSpriteContainer().getLayoutX();
             double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
-
-            // Hiển thị text "You need the right tool"
-            mainGameView.showTemporaryText(HudConfig.WRONG_TOOL_TEXT, playerScreenX, playerScreenY);
+            mainGameView.showTemporaryText(errorMsg, playerScreenX, playerScreenY);
         }
     }
     /**
@@ -248,6 +243,14 @@ public class GameManager {
             mainPlayer.setSelectedHotbarSlot(slotIndex);
             mainGameView.updateHotbar(); // Yêu cầu View vẽ lại
         }
+    }
+
+    /**
+     * Được gọi từ HotbarView khi người dùng kéo thả item
+     */
+    public void swapHotbarItems(int indexA, int indexB) {
+        mainPlayer.swapHotbarItems(indexA, indexB);
+        mainGameView.updateHotbar(); // Cập nhật lại giao diện ngay
     }
 
     public void toggleSettingsMenu() {

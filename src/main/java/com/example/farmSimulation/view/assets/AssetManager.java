@@ -26,8 +26,8 @@ public class AssetManager {
     // Cache cho các sprite đã được cắt
     private final Map<String, Image> spriteCache = new HashMap<>();
 
-    // Cache cho icon của Tool (để dùng cho HUD)
-    private final Map<Tool, Image> toolIconCache = new EnumMap<>(Tool.class);
+    // Cache cho icon của Item (để dùng cho HUD)
+    private final Map<ItemType, Image> itemIconCache = new EnumMap<>(ItemType.class);
 
     // Cache riêng cho Icon trạng thái (Status)
     private final Map<CropStatusIndicator, Image> statusIconCache = new EnumMap<>(CropStatusIndicator.class);
@@ -194,24 +194,33 @@ public class AssetManager {
     }
 
     /**
+     * Lấy icon sản phẩm thu hoạch (Frame cuối cùng của cây)
+     */
+    public Image getHarvestIcon(CropType type) {
+        Image cropSheet = getTexture(AssetPaths.CROP_SHEET);
+        if (cropSheet == null) return null;
+
+        PixelReader reader = cropSheet.getPixelReader();
+
+        // Lấy Frame cuối cùng (MaxStages)
+        int x = (int) (type.getMaxStages() * CropConfig.CROP_SPRITE_WIDTH);
+        int y = (int) (type.getSpriteRow() * CropConfig.CROP_SPRITE_HEIGHT);
+
+        return new WritableImage(reader, x, y, (int)CropConfig.CROP_SPRITE_WIDTH, (int)CropConfig.CROP_SPRITE_HEIGHT);
+    }
+
+    /**
      * Lưu trữ icon của tool (dùng cho HUD)
      * Hàm này sẽ được gọi bởi HotbarView khi nó tải icon.
      */
-    public void cacheToolIcon(Tool tool, Image icon) {
-        toolIconCache.put(tool, icon);
+    public void cacheItemIcon(ItemType type, Image icon) {
+        itemIconCache.put(type, icon);
     }
 
     /**
-     * Lấy icon bình tưới nước (dùng cho HUD)
+     * Lấy icon của item để hiển thị
      */
-    public Image getWaterCanIcon() {
-        return toolIconCache.get(Tool.WATERING_CAN);
-    }
-
-    /**
-     * Lấy icon phân bón (dùng cho HUD)
-     */
-    public Image getFertilizerIcon() {
-        return toolIconCache.get(Tool.FERTILIZER);
+    public Image getItemIcon(ItemType type) {
+        return itemIconCache.get(type);
     }
 }

@@ -1,14 +1,18 @@
 package com.example.farmSimulation.view;
 
+import com.example.farmSimulation.config.HudConfig;
 import com.example.farmSimulation.config.PlayerSpriteConfig;
 import com.example.farmSimulation.config.WindowConfig;
+import com.example.farmSimulation.config.WorldConfig;
 import com.example.farmSimulation.model.GameManager;
 import com.example.farmSimulation.config.AssetPaths;
 import com.example.farmSimulation.controller.GameController;
+import com.example.farmSimulation.model.ItemStack;
+import com.example.farmSimulation.model.ItemType;
 import com.example.farmSimulation.model.WorldMap;
 import com.example.farmSimulation.view.assets.AssetManager;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
@@ -31,6 +35,9 @@ public class MainGameView {
     private SettingsMenuView settingsMenu;
     private HotbarView hotbarView;
 
+    // [MỚI] Manager quản lý hiệu ứng
+    private final VisualEffectManager visualEffectManager;
+
     /**
      * Constructor (Hàm khởi tạo) nhận các thành phần nó cần
      * (Dependency Injection)
@@ -39,6 +46,7 @@ public class MainGameView {
         this.assetManager = assetManager;
         this.worldMap = worldMap;
         this.hotbarView = hotbarView;
+        this.visualEffectManager = new VisualEffectManager(); // Khởi tạo
     }
     /**
      * initUI nhận Controller và PlayerSprite từ bên ngoài (từ class Game)
@@ -147,5 +155,66 @@ public class MainGameView {
     // Hàm cập nhật hotbar
     public void updateHotbar() {
         hotbarView.updateView();
+    }
+
+    // Hàm hiển thị animation thu hoạch bay về túi
+    public void playHarvestAnimation(ItemType itemType, int col, int row, double worldOffsetX, double worldOffsetY) {
+        // Xác định tọa độ bắt đầu (Tại ô đất)
+        // Căn giữa icon vào ô đất
+        double startX = col * WorldConfig.TILE_SIZE + worldOffsetX + (WorldConfig.TILE_SIZE - HudConfig.HARVEST_ICON_SIZE) / 2;
+        double startY = row * WorldConfig.TILE_SIZE + worldOffsetY + (WorldConfig.TILE_SIZE - HudConfig.HARVEST_ICON_SIZE) / 2;
+
+        // Xác định tọa độ đích (Ô trong Hotbar)
+        // Tìm xem item này đang nằm ở slot nào trong túi
+        int targetSlotIndex = findSlotIndexForItem(itemType);
+
+        // Mặc định bay về giữa màn hình dưới nếu không tìm thấy (dự phòng)
+        double endX = WindowConfig.SCREEN_WIDTH / 2;
+        double endY = WindowConfig.SCREEN_HEIGHT - 50;
+
+        if (targetSlotIndex != -1) {
+            Point2D slotCenter = hotbarView.getSlotCenter(targetSlotIndex);
+            if (slotCenter != null) {
+                endX = slotCenter.getX() - (HudConfig.HARVEST_ICON_SIZE / 2); // Căn chỉnh tâm
+                endY = slotCenter.getY() - (HudConfig.HARVEST_ICON_SIZE / 2);
+            }
+        }
+
+        // Gọi Manager xử lý hiệu ứng
+        visualEffectManager.playItemFlyAnimation(
+                rootPane,
+                assetManager.getItemIcon(itemType),
+                startX, startY,
+                endX, endY
+        );
+    }
+
+    /**
+     * Hàm helper tìm vị trí slot chứa item (Ưu tiên slot đang chọn nếu trùng)
+     */
+    private int findSlotIndexForItem(ItemType type) {
+        if (gameManager == null || gameManager.getMainPlayer() == null) return -1;
+
+        ItemStack[] items = gameManager.getMainPlayer().getHotbarItems();
+        int selectedSlot = gameManager.getMainPlayer().getSelectedHotbarSlot();
+
+        // Ưu tiên 1: Nếu slot đang chọn có item này -> Bay về đây
+        if (items[selectedSlot] != null && items[selectedSlot].getItemType() == type) {
+            return selectedSlot;
+        }
+
+        // Ưu tiên 2: Tìm slot đầu tiên chứa item này
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null && items[i].getItemType() == type) {
+                return i;
+            }
+        }
+
+        // Ưu tiên 3: Item mới nhặt (chưa có trong túi)?
+        // Logic Player.addItem đã thêm vào ô trống đầu tiên.
+        // Ta tìm ô nào có item này (vừa được thêm vào)
+        // (Code trên đã bao phủ trường hợp này vì addItem đã chạy xong rồi)
+
+        return selectedSlot; // Fallback về slot đang chọn
     }
 }

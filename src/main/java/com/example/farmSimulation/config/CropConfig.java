@@ -21,6 +21,9 @@ public class CropConfig {
     public static final long FERTILIZER_WARNING_DELAY_MS = 20_000; // Thời gian "Buff ẩn" sau khi phân hết
     public static final double FERTILIZER_BUFF = 2; // Thời gian nhanh hơn khi dùng phân bón
 
+    // Giai đoạn tối thiểu để được bón phân (Stage 0: Hạt, Stage 1: Mầm, Stage 2: Cây nhỏ...)
+    public static final int MIN_GROWTH_STAGE_FOR_FERTILIZER = 2;
+
     /**
      * Thời gian (ms) cây có thể sống sót trên đất khô.
      * Nếu đất khô quá thời gian này, cây sẽ chết (biến mất).

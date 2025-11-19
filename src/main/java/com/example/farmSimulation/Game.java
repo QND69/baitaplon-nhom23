@@ -54,6 +54,12 @@ public class Game {
         // Controller cần biết về GameManager để gọi logic
         gameController.setGameManager(gameManager);
 
+        // Liên kết callback kéo thả item: HotbarView -> GameManager
+        // Khi UI phát hiện swap, nó gọi hàm swap của GameManager
+        hotbarView.setOnSwapListener((indexA, indexB) -> {
+            gameManager.swapHotbarItems(indexA, indexB);
+        });
+
         // Khởi tạo UI (Truyền các thành phần cần thiết)
         // UI cần Controller (để lắng nghe input) và PlayerSprite (để vẽ)
         mainGameView.initUI(

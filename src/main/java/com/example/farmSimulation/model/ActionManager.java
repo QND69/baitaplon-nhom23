@@ -49,13 +49,31 @@ public class ActionManager {
                     this.mapNeedsUpdate = true; // Báo cho View biết cần vẽ lại bản đồ
                 }
 
-                // Reset trạng thái Player về IDLE sau khi hành động xong
-                // Chỉ reset nếu player VẪN đang trong trạng thái hành động đó
+                // XỬ LÝ TIÊU THỤ ITEM / ĐỘ BỀN
+                // Logic này giờ chạy ĐỒNG BỘ với việc thay đổi Map
+                if (action.isConsumeItem()) {
+                    // Gọi hàm tiêu thụ item ở slot đã lưu
+                    // (Hàm này sẽ xử lý cả việc trừ số lượng stackable hoặc trừ độ bền tool)
+                    mainPlayer.consumeItemAtSlot(action.getItemSlotIndex(), 1);
+
+                    // Cập nhật UI Hotbar ngay lập tức
+                    mainGameView.updateHotbar();
+                }
+
+                // KÍCH HOẠT ANIMATION THU HOẠCH
+                if (action.getHarvestedItem() != null) {
+                    // Truyền offset để View tính toán đúng vị trí trên màn hình
+                    mainGameView.playHarvestAnimation(action.getHarvestedItem(), action.getCol(), action.getRow(), worldOffsetX, worldOffsetY);
+                    mainGameView.updateHotbar(); // Update lại số lượng
+                }
+
+                // [ĐÃ SỬA LOGIC LẶP] Reset trạng thái Player về IDLE sau khi hành động xong
+                // Logic cũ: Chỉ check HOE, WATER... -> Thiếu các state mới (PLANT, SHOVEL, FERTILIZE) nên bị lặp vô tận
+                // Logic mới: Check nếu KHÔNG PHẢI các state cơ bản (IDLE, WALK, DEAD) thì reset hết.
                 PlayerView.PlayerState currentState = mainPlayer.getState();
-                if (currentState == PlayerView.PlayerState.HOE ||
-                        currentState == PlayerView.PlayerState.WATER ||
-                        currentState == PlayerView.PlayerState.ATTACK ||
-                        currentState == PlayerView.PlayerState.BUSY) {
+                if (currentState != PlayerView.PlayerState.IDLE &&
+                        currentState != PlayerView.PlayerState.WALK &&
+                        currentState != PlayerView.PlayerState.DEAD) {
 
                     mainPlayer.setState(PlayerView.PlayerState.IDLE);
                     playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());

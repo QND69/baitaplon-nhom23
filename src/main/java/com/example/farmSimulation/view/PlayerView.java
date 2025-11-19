@@ -23,6 +23,9 @@ public class PlayerView {
         ATTACK,
         HOE,
         WATER,
+        PLANT,
+        SHOVEL,
+        FERTILIZE,
         BUSY, // Trạng thái "bận" (dùng anim IDLE)
         DEAD
     }
@@ -145,9 +148,14 @@ public class PlayerView {
         stateSheetMap.put(PlayerState.IDLE, playerSheet);
         stateSheetMap.put(PlayerState.WALK, playerSheet);
         stateSheetMap.put(PlayerState.ATTACK, playerSheet);
-        stateSheetMap.put(PlayerState.HOE, playerActionsSheet); // Dùng sheet hành động
-        stateSheetMap.put(PlayerState.WATER, playerActionsSheet); // Dùng sheet hành động
         stateSheetMap.put(PlayerState.DEAD, playerSheet);
+
+        // Dùng sheet hành động
+        stateSheetMap.put(PlayerState.HOE, playerActionsSheet);
+        stateSheetMap.put(PlayerState.WATER, playerActionsSheet);
+        stateSheetMap.put(PlayerState.PLANT, playerActionsSheet);
+        stateSheetMap.put(PlayerState.SHOVEL, playerActionsSheet);
+        stateSheetMap.put(PlayerState.FERTILIZE, playerActionsSheet);
 
         // IDLE (Đứng yên) - Dùng playerSheet
         Map<Direction, AnimData> idleMap = new EnumMap<>(Direction.class);
@@ -196,6 +204,31 @@ public class PlayerView {
         waterMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.WATER_RIGHT_ROW, PlayerSpriteConfig.WATER_FRAMES, GameLogicConfig.WATERING_CAN_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
         waterMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.WATER_LEFT_ROW, PlayerSpriteConfig.WATER_FRAMES, GameLogicConfig.WATERING_CAN_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
         animationMap.put(PlayerState.WATER, waterMap);
+
+        // PLANT (Trồng cây) - Dùng playerActionsSheet
+        Map<Direction, AnimData> plantMap = new EnumMap<>(Direction.class);
+        plantMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.PLANT_DOWN_ROW, PlayerSpriteConfig.PLANT_FRAMES, GameLogicConfig.PLANT_DURATION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        plantMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.PLANT_UP_ROW, PlayerSpriteConfig.PLANT_FRAMES, GameLogicConfig.PLANT_DURATION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        plantMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.PLANT_RIGHT_ROW, PlayerSpriteConfig.PLANT_FRAMES, GameLogicConfig.PLANT_DURATION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        plantMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.PLANT_LEFT_ROW, PlayerSpriteConfig.PLANT_FRAMES, GameLogicConfig.PLANT_DURATION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        animationMap.put(PlayerState.PLANT, plantMap);
+
+        // SHOVEL / DIG (Xúc đất) - Dùng playerActionsSheet
+        // Lưu ý: Sử dụng row DIG nhưng map vào state SHOVEL
+        Map<Direction, AnimData> shovelMap = new EnumMap<>(Direction.class);
+        shovelMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.DIG_DOWN_ROW, PlayerSpriteConfig.DIG_FRAMES, GameLogicConfig.SHOVEL_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        shovelMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.DIG_UP_ROW, PlayerSpriteConfig.DIG_FRAMES, GameLogicConfig.SHOVEL_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        shovelMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.DIG_RIGHT_ROW, PlayerSpriteConfig.DIG_FRAMES, GameLogicConfig.SHOVEL_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        shovelMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.DIG_LEFT_ROW, PlayerSpriteConfig.DIG_FRAMES, GameLogicConfig.SHOVEL_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        animationMap.put(PlayerState.SHOVEL, shovelMap);
+
+        // FERTILIZE (Bón phân) - Dùng playerActionsSheet
+        Map<Direction, AnimData> fertilizeMap = new EnumMap<>(Direction.class);
+        fertilizeMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.FERTILZED_DOWN_ROW, PlayerSpriteConfig.FERTILZED_FRAMES, GameLogicConfig.FERTILIZER_DURATION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        fertilizeMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.FERTILZED_UP_ROW, PlayerSpriteConfig.FERTILZED_FRAMES, GameLogicConfig.FERTILIZER_DURATION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        fertilizeMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.FERTILZED_RIGHT_ROW, PlayerSpriteConfig.FERTILZED_FRAMES, GameLogicConfig.FERTILIZER_DURATION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        fertilizeMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.FERTILZED_LEFT_ROW, PlayerSpriteConfig.FERTILZED_FRAMES, GameLogicConfig.FERTILIZER_DURATION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        animationMap.put(PlayerState.FERTILIZE, fertilizeMap);
 
 //        // DEAD (Ngất)
 //        Map<Direction, AnimData> deadMap = new EnumMap<>(Direction.class);

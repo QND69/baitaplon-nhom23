@@ -110,6 +110,7 @@ public class CropManager {
                     boolean hasBuff = false;
                     if (data.getFertilizerStartTime() > 0) {
                         long timeSinceFertilizer = (currentTime - data.getFertilizerStartTime()) / 1_000_000;
+                        // Chỉ BUFF khi còn trong thời gian hiệu lực
                         if (timeSinceFertilizer <= (CropConfig.FERTILIZER_EFFECT_DURATION_MS + CropConfig.FERTILIZER_WARNING_DELAY_MS)) {
                             hasBuff = true;
                         }
@@ -123,6 +124,10 @@ public class CropManager {
 
                     if (targetStage > crop.getGrowthStage()) {
                         crop.setGrowthStage(targetStage);
+                        // Nếu cây đã lớn tối đa (Chín) -> Mất lớp phân bón ngay lập tức
+                        if (targetStage >= crop.getType().getMaxStages() - 1) {
+                            data.setFertilized(false);
+                        }
                         changed = true;
                     }
                 } else {
@@ -165,7 +170,8 @@ public class CropManager {
         // Warning Phân bón:
         boolean fertilizerWarning = false;
 
-        if (crop.getGrowthStage() > 0) { // Chỉ xét khi Stage > 0
+        // Chỉ xét cảnh báo phân bón khi đủ tuổi và chưa chín
+        if (crop.getGrowthStage() >= CropConfig.MIN_GROWTH_STAGE_FOR_FERTILIZER && crop.getGrowthStage() < crop.getType().getMaxStages() - 1) {
             if (data.isFertilized()) {
                 // Đang có phân trên đất -> KHÔNG hiện cảnh báo
                 fertilizerWarning = false;
@@ -179,7 +185,7 @@ public class CropManager {
                         fertilizerWarning = true;
                     }
                 } else {
-                    // Chưa bón bao giờ mà cây > Stage 0 -> Cần bón
+                    // Chưa bón bao giờ -> Cần bón
                     fertilizerWarning = true;
                 }
             }
