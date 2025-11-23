@@ -57,5 +57,15 @@ public class GameLogicConfig {
     public static final double FERTILIZER_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.0;
     public static final long FERTILIZER_DURATION_MS = 1400;
 
+    // --- Cấu hình Performance Optimization ---
+    // Tần suất update cây trồng (ms). Thay vì update mỗi frame (16ms), update mỗi 100ms để tiết kiệm CPU
+    public static final long CROP_UPDATE_INTERVAL_MS = 100;
+    
+    // Tần suất update map render (ms). Chỉ update map khi cần thiết
+    public static final long MAP_UPDATE_INTERVAL_MS = 50;
+    
+    // Số lượng tiles tối đa được update mỗi frame trong CropManager (để tránh lag spike)
+    public static final int MAX_CROPS_UPDATE_PER_FRAME = 100;
+
     private GameLogicConfig() {}
 }
