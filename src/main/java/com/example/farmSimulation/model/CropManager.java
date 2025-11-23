@@ -1,13 +1,20 @@
 package com.example.farmSimulation.model;
 
 import com.example.farmSimulation.config.CropConfig;
+import com.example.farmSimulation.config.GameLogicConfig;
 
 // Class quản lý hệ thống ngầm của cây
 public class CropManager {
     private final WorldMap worldMap;
 
-    // [MỚI] Biến để theo dõi thời gian frame trước
+    // Biến để theo dõi thời gian frame trước
     private long lastUpdateTime = 0;
+    
+    // Thời gian update lần cuối (để sử dụng interval)
+    private long lastCropUpdateTimeMs = 0;
+    
+    // Index để track tiles đã update (để phân bổ update qua nhiều frame)
+    private int lastProcessedIndex = 0;
 
     public CropManager(WorldMap worldMap) {
         this.worldMap = worldMap;
@@ -34,13 +41,42 @@ public class CropManager {
         // Tính delta time (thời gian trôi qua giữa 2 frame)
         if (lastUpdateTime == 0) {
             lastUpdateTime = currentTime;
+            lastCropUpdateTimeMs = currentTimeMs;
             return false; // Frame đầu chưa làm gì
         }
         long deltaTime = currentTime - lastUpdateTime;
         lastUpdateTime = currentTime;
 
-        for (TileData data : worldMap.getAllTileData()) {
+        // Chỉ update crops theo interval, không phải mỗi frame
+        if (currentTimeMs - lastCropUpdateTimeMs < GameLogicConfig.CROP_UPDATE_INTERVAL_MS) {
+            return false; // Chưa đến lúc update
+        }
+        lastCropUpdateTimeMs = currentTimeMs;
+
+        // Lấy tất cả tiles và chỉ xử lý những tiles cần thiết
+        // Tối ưu: Chỉ update tiles có cây trồng, đất ướt, hoặc đất khô cần kiểm tra
+        java.util.Collection<TileData> allTiles = worldMap.getAllTileData();
+        java.util.ArrayList<TileData> tilesToUpdate = new java.util.ArrayList<>();
+        
+        // Lọc ra các tiles cần update (có cây, đất ướt, hoặc đất khô)
+        for (TileData data : allTiles) {
+            if (data.getCropData() != null || 
+                data.isWatered() || 
+                data.isFertilized() || 
+                (data.getBaseTileType() == Tile.SOIL && data.getDryStartTime() > 0)) {
+                tilesToUpdate.add(data);
+            }
+        }
+
+        // Giới hạn số lượng tiles update mỗi lần để tránh lag spike
+        int processedCount = 0;
+        int startIndex = lastProcessedIndex;
+        
+        for (int i = 0; i < tilesToUpdate.size() && processedCount < GameLogicConfig.MAX_CROPS_UPDATE_PER_FRAME; i++) {
+            int index = (startIndex + i) % tilesToUpdate.size();
+            TileData data = tilesToUpdate.get(index);
             boolean changed = false;
+            processedCount++;
 
             // --- LOGIC TƯỚI NƯỚC & ĐẤT ---
             if (data.isWatered()) {
@@ -148,8 +184,16 @@ public class CropManager {
                 changed = true;
             }
 
-            if (changed) mapNeedsRedraw = true;
+            if (changed) {
+                mapNeedsRedraw = true;
+            }
         }
+        
+        // Cập nhật index để lần sau tiếp tục từ vị trí này
+        if (tilesToUpdate.size() > 0) {
+            lastProcessedIndex = (startIndex + processedCount) % tilesToUpdate.size();
+        }
+        
         return mapNeedsRedraw;
     }
 
