@@ -68,7 +68,8 @@ public class Game {
                 playerView.getSpriteContainer(),
                 playerView.getDebugBoundingBox(),
                 playerView.getDebugCenterDot(),
-                playerView.getDebugRangeCircle()
+                playerView.getDebugRangeCircle(),
+                playerView.getDebugCollisionHitbox()
         );
 
         // Bắt đầu Game Loop

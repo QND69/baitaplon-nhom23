@@ -20,10 +20,16 @@ public final class AssetPaths {
     /** Spritesheet cho tất cả cây trồng (Dâu, Cà rốt...) */
     public static final String CROP_SHEET = "/assets/images/items/crops/seed7_scaled_4x.png";
 
+    /** Spritesheet cho cây tự nhiên (tree_64x64.png) */
+    public static final String TREE_SHEET = "/assets/images/world/tree_64x96.png";
+
+    /** Spritesheet cho hàng rào (fences_64x64.png) */
+    public static final String FENCE_SHEET = "/assets/images/world/fences_64x64.png";
+
     // GUI
     public static final String LOGO = "/assets/images/GUI/logo.png";
 
-    public static final String TOOLS_SHEET = "/assets/images/items/tools/tools5.png";
+    public static final String TOOLS_SHEET = "/assets/images/items/tools/tools_32x32.png";
 
     public static final String ICON_BG = "/assets/images/GUI/icon_white_bg3.png";
 

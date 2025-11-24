@@ -20,6 +20,7 @@ public class TimedTileAction {
 
     // Item thu hoạch (nếu có) để kích hoạt animation
     private ItemType harvestedItem;
+    private int harvestedAmount; // Số lượng item thu hoạch được
 
     // Constructor (dành cho các hành động không tốn item như Cuốc)
     public TimedTileAction(int col, int row, TileData newTileData, int framesRemaining) {
@@ -35,6 +36,7 @@ public class TimedTileAction {
         this.consumeItem = consumeItem;
         this.itemSlotIndex = itemSlotIndex;
         this.harvestedItem = null; // Mặc định không có item thu hoạch
+        this.harvestedAmount = 0; // Mặc định số lượng = 0
     }
 
     public boolean tick() {

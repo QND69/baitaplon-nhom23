@@ -18,11 +18,16 @@ public class ActionManager {
     // Thêm tham chiếu đến Model và View của Player
     private final Player mainPlayer;
     private final PlayerView playerView;
+    private FenceManager fenceManager; // Quản lý hàng rào (sẽ được set từ bên ngoài)
 
     public ActionManager(Player mainPlayer, PlayerView playerView) {
         this.pendingActions = new ArrayList<>();
         this.mainPlayer = mainPlayer;
         this.playerView = playerView;
+    }
+    
+    public void setFenceManager(FenceManager fenceManager) {
+        this.fenceManager = fenceManager;
     }
 
     public void addPendingAction(TimedTileAction action) {
@@ -45,8 +50,23 @@ public class ActionManager {
             if (action.tick()) { // Cho phép action không đổi tile
                 // THỰC THI HÀNH ĐỘNG: Thay đổi Model
                 if (action.getNewTileData() != null) {
-                    worldMap.setTileData(action.getCol(), action.getRow(), action.getNewTileData());
+                    // [SỬA] Lưu lại trạng thái cũ để kiểm tra xem có phải vừa phá rào không
+                    TileData oldData = worldMap.getTileData(action.getCol(), action.getRow());
+                    boolean wasFence = (oldData.getBaseTileType() == Tile.FENCE);
+
+                    TileData newData = action.getNewTileData();
+                    worldMap.setTileData(action.getCol(), action.getRow(), newData);
                     this.mapNeedsUpdate = true; // Báo cho View biết cần vẽ lại bản đồ
+                    
+                    // Nếu vừa ĐẶT hàng rào (GRASS -> FENCE)
+                    if (newData.getFenceData() != null && newData.getBaseTileType() == Tile.FENCE && fenceManager != null) {
+                        fenceManager.updateFencePattern(action.getCol(), action.getRow());
+                    }
+                    // [SỬA] Nếu vừa PHÁ hàng rào (FENCE -> GRASS)
+                    // Cần gọi update để các ô hàng xóm biết mà ngắt kết nối
+                    else if (wasFence && newData.getBaseTileType() != Tile.FENCE && fenceManager != null) {
+                        fenceManager.updateFencePattern(action.getCol(), action.getRow());
+                    }
                 }
 
                 // XỬ LÝ TIÊU THỤ ITEM / ĐỘ BỀN
@@ -60,8 +80,11 @@ public class ActionManager {
                     mainGameView.updateHotbar();
                 }
 
-                // KÍCH HOẠT ANIMATION THU HOẠCH
-                if (action.getHarvestedItem() != null) {
+                // KÍCH HOẠT ANIMATION THU HOẠCH VÀ THÊM ITEM VÀO INVENTORY
+                if (action.getHarvestedItem() != null && action.getHarvestedAmount() > 0) {
+                    // Thêm item vào inventory với số lượng đúng
+                    mainPlayer.addItem(action.getHarvestedItem(), action.getHarvestedAmount());
+                    
                     // Truyền offset để View tính toán đúng vị trí trên màn hình
                     mainGameView.playHarvestAnimation(action.getHarvestedItem(), action.getCol(), action.getRow(), worldOffsetX, worldOffsetY);
                     mainGameView.updateHotbar(); // Update lại số lượng

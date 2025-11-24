@@ -16,6 +16,12 @@ public class TileData {
     // Dữ liệu trồng trọt
     private CropData cropData; // Cây đang trồng (null nếu không có)
 
+    // Dữ liệu cây tự nhiên
+    private TreeData treeData; // Cây tự nhiên (null nếu không có)
+
+    // Dữ liệu hàng rào
+    private FenceData fenceData; // Hàng rào (null nếu không có)
+
     // Logic tưới nước
     private boolean isWatered = false; // Đã được tưới chưa
     private long lastWateredTime = 0; // Thời điểm tưới lần cuối
@@ -46,6 +52,8 @@ public class TileData {
     public TileData(TileData other) {
         this.baseTileType = other.baseTileType;
         this.cropData = other.cropData; // Lưu ý: CropData là object, nếu cần deep copy phải clone thêm
+        this.treeData = other.treeData; // Lưu ý: TreeData là object, nếu cần deep copy phải clone thêm
+        this.fenceData = other.fenceData; // Lưu ý: FenceData là object, nếu cần deep copy phải clone thêm
         this.isWatered = other.isWatered;
         this.lastWateredTime = other.lastWateredTime;
         this.dryStartTime = other.dryStartTime;

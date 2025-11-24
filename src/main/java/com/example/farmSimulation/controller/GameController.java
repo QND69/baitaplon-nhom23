@@ -101,6 +101,18 @@ public class GameController {
     }
 
     public void handleMouseClick(MouseEvent event) {
+        // Xử lý click chuột phải (SECONDARY) để mở/đóng hàng rào
+        if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
+            if (gameManager != null) {
+                gameManager.toggleFence(
+                        gameManager.getCurrentMouseTileX(),
+                        gameManager.getCurrentMouseTileY()
+                );
+            }
+            return;
+        }
+        
+        // Xử lý click chuột trái (PRIMARY) cho các hành động khác
         if (event.getButton() != javafx.scene.input.MouseButton.PRIMARY) return;
         // GỌI HÀM LOGIC GAME (Ném hành động vào hàng đợi)
         gameManager.interactWithTile(

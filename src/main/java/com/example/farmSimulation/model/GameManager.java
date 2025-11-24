@@ -25,6 +25,9 @@ public class GameManager {
     private final Camera camera;
     private final InteractionManager interactionManager;
     private final CropManager cropManager;
+    private final TreeManager treeManager; // Quản lý cây tự nhiên
+    private final FenceManager fenceManager; // Quản lý hàng rào
+    private final CollisionManager collisionManager; // Quản lý collision
 
     // --- Trạng thái Game ---
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
@@ -50,6 +53,13 @@ public class GameManager {
         this.movementHandler = new PlayerMovementHandler(player, playerView, gameController, camera, mainGameView);
         this.interactionManager = new InteractionManager(this.actionManager);
         this.cropManager = new CropManager(this.worldMap);
+        this.treeManager = new TreeManager(this.worldMap);
+        this.fenceManager = new FenceManager(this.worldMap);
+        this.collisionManager = new CollisionManager(this.worldMap);
+        
+        // Liên kết các Manager với nhau
+        this.actionManager.setFenceManager(this.fenceManager);
+        this.movementHandler.setCollisionManager(this.collisionManager);
     }
 
     public void startGame() {
@@ -97,8 +107,20 @@ public class GameManager {
             actionManager.setMapNeedsUpdate(true); // Báo map cần vẽ lại
         }
 
+        // Cập nhật logic cây tự nhiên
+        boolean treesUpdated = treeManager.updateTrees(now, mainPlayer.getTileX(), mainPlayer.getTileY());
+        if (treesUpdated) {
+            actionManager.setMapNeedsUpdate(true); // Báo map cần vẽ lại
+        }
+
         // Cập nhật chuột
         updateMouseSelector();
+        
+        // Cập nhật ghost placement
+        updateGhostPlacement();
+        
+        // Cập nhật collision hitbox (debug mode)
+        updateCollisionHitbox();
     }
 
     /**
@@ -119,6 +141,35 @@ public class GameManager {
                 camera.getWorldOffsetX(),     // Vị trí X của thế giới
                 camera.getWorldOffsetY()      // Vị trí Y của thế giới
         );
+    }
+    
+    /**
+     * Cập nhật ghost placement (bóng mờ khi cầm item có thể đặt)
+     */
+    private void updateGhostPlacement() {
+        ItemStack currentItem = mainPlayer.getCurrentItem();
+        mainGameView.updateGhostPlacement(
+                this.currentMouseTileX,
+                this.currentMouseTileY,
+                camera.getWorldOffsetX(),
+                camera.getWorldOffsetY(),
+                currentItem
+        );
+    }
+    
+    /**
+     * Cập nhật collision hitbox (debug mode)
+     */
+    private void updateCollisionHitbox() {
+        if (com.example.farmSimulation.config.PlayerSpriteConfig.DEBUG_PLAYER_BOUNDS) {
+            mainGameView.updateCollisionHitbox(
+                    mainPlayer.getTileX(),
+                    mainPlayer.getTileY(),
+                    camera.getWorldOffsetX(),
+                    camera.getWorldOffsetY(),
+                    playerView.getDebugCollisionHitbox()
+            );
+        }
     }
 
     /**
@@ -251,6 +302,28 @@ public class GameManager {
     public void swapHotbarItems(int indexA, int indexB) {
         mainPlayer.swapHotbarItems(indexA, indexB);
         mainGameView.updateHotbar(); // Cập nhật lại giao diện ngay
+    }
+
+    /**
+     * Mở/đóng hàng rào (được gọi từ Controller khi click chuột phải)
+     */
+    public void toggleFence(int col, int row) {
+        // [SỬA] Thêm kiểm tra tầm hoạt động bằng Tay (Hand)
+        // Truyền null vào currentStack để sử dụng HAND_INTERACTION_RANGE mặc định
+        if (!isPlayerInRange(col, row, null)) {
+            // Hiển thị thông báo "Xa quá"
+            double playerScreenX = playerView.getSpriteContainer().getLayoutX();
+            double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
+            mainGameView.showTemporaryText(HudConfig.TOO_FAR_TEXT, playerScreenX, playerScreenY);
+            return; 
+        }
+
+        TileData data = worldMap.getTileData(col, row);
+        if (data.getFenceData() != null) {
+            fenceManager.toggleFence(col, row);
+            actionManager.setMapNeedsUpdate(true);
+            mainGameView.updateMap(camera.getWorldOffsetX(), camera.getWorldOffsetY(), true);
+        }
     }
 
     public void toggleSettingsMenu() {

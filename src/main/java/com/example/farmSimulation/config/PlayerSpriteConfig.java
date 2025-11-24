@@ -29,15 +29,23 @@ public class PlayerSpriteConfig {
     public static final double PLAYER_SPRITE_OFFSET_X = (BASE_PLAYER_FRAME_WIDTH - PLAYER_FRAME_WIDTH) / 2;
     public static final double PLAYER_SPRITE_OFFSET_Y = (BASE_PLAYER_FRAME_HEIGHT - PLAYER_FRAME_HEIGHT) / 2;
 
+    // Kích thước Hitbox va chạm (nhỏ hơn người, nằm ở chân)
+    public static final double COLLISION_BOX_WIDTH = 33.0;  // Hẹp hơn chiều rộng người
+    public static final double COLLISION_BOX_HEIGHT = 12.0; // Thấp, chỉ lấy phần chân
+    
+    /** Padding đáy để căn chỉnh hitbox collision (tính từ đáy sprite lên trên) */
+    public static final double COLLISION_BOX_BOTTOM_PADDING = 69.0;
+
     // --- Hằng số Debug ---
     /**
      * Bật/Tắt hiển thị khung viền (bounding box)
      * và tâm (center dot) của player.
      */
-    public static final boolean DEBUG_PLAYER_BOUNDS = false;
+    public static final boolean DEBUG_PLAYER_BOUNDS = true;
     public static final Color DEBUG_BOUNDING_BOX_COLOR = Color.RED;
     public static final Color DEBUG_CENTER_DOT_COLOR = Color.CYAN;
     public static final Color DEBUG_RANGE_COLOR = Color.GREENYELLOW;
+    public static final Color DEBUG_COLLISION_HITBOX_COLOR = Color.ORANGE;
 
     // --- DỮ LIỆU ANIMATION ---
 
@@ -97,6 +105,14 @@ public class PlayerSpriteConfig {
     public static final int FERTILZED_UP_ROW = 19;
     public static final int FERTILZED_RIGHT_ROW = 20;
     public static final int FERTILZED_LEFT_ROW = 20;
+
+    // AXE (Chặt cây bằng rìu) - Dùng player_action_merged.png
+    public static final int AXE_FRAMES = 2; // Số frame của hành động
+    public static final int AXE_DOWN_ROW = 4; // Row 8 trong player_action_merged.png
+    public static final int AXE_UP_ROW = 5; // Row 9 trong player_action_merged.png
+    public static final int AXE_RIGHT_ROW = 3; // Row 10 trong player_action_merged.png
+    public static final int AXE_LEFT_ROW = 3; // Row 11 trong player_action_merged.png
+    public static final long AXE_SPEED = 100; // Tốc độ chặt cây (ms/frame)
 
     private PlayerSpriteConfig() {}
 }

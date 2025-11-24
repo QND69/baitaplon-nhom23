@@ -21,6 +21,7 @@ public class PlayerView {
         IDLE,
         WALK,
         ATTACK,
+        AXE, // Trạng thái chặt cây bằng rìu
         HOE,
         WATER,
         PLANT,
@@ -68,6 +69,7 @@ public class PlayerView {
     private Rectangle debugBoundingBox; // Hộp debug
     private Circle debugCenterDot;      // Chấm debug
     private Circle debugRangeCircle;    // Vòng tròn Range
+    private Rectangle debugCollisionHitbox; // Collision hitbox
 
     // Trạng thái mặc định
     private PlayerState currentState = PlayerState.IDLE;
@@ -127,11 +129,23 @@ public class PlayerView {
             this.debugRangeCircle.setStrokeWidth(1.0);
             this.debugRangeCircle.setMouseTransparent(true);
 
+            // Khởi tạo collision hitbox
+            this.debugCollisionHitbox = new Rectangle(
+                PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH,
+                PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT
+            );
+            this.debugCollisionHitbox.setFill(null);
+            this.debugCollisionHitbox.setStroke(PlayerSpriteConfig.DEBUG_COLLISION_HITBOX_COLOR);
+            this.debugCollisionHitbox.setStrokeWidth(2.0);
+            this.debugCollisionHitbox.setMouseTransparent(true);
+            this.debugCollisionHitbox.setVisible(false); // Sẽ được cập nhật từ bên ngoài
+
         } else {
             // Nếu debug TẮT, giữ chúng là null
             this.debugBoundingBox = null;
             this.debugCenterDot = null;
             this.debugRangeCircle = null;
+            this.debugCollisionHitbox = null;
         }
         // --- Hết phần Debug ---
 
@@ -151,6 +165,7 @@ public class PlayerView {
         stateSheetMap.put(PlayerState.DEAD, playerSheet);
 
         // Dùng sheet hành động
+        stateSheetMap.put(PlayerState.AXE, playerActionsSheet); // AXE dùng playerActionsSheet
         stateSheetMap.put(PlayerState.HOE, playerActionsSheet);
         stateSheetMap.put(PlayerState.WATER, playerActionsSheet);
         stateSheetMap.put(PlayerState.PLANT, playerActionsSheet);
@@ -188,6 +203,15 @@ public class PlayerView {
         attackMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.ATTACK_RIGHT_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
         attackMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.ATTACK_LEFT_ROW, PlayerSpriteConfig.ATTACK_FRAMES, PlayerSpriteConfig.ATTACK_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
         animationMap.put(PlayerState.ATTACK, attackMap);
+
+        // AXE (Chặt cây bằng rìu) - Dùng playerActionsSheet
+        // AXE là hành động lặp lại (ACTION_LOOP) giống như HOE và WATER
+        Map<Direction, AnimData> axeMap = new EnumMap<>(Direction.class);
+        axeMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.AXE_DOWN_ROW, PlayerSpriteConfig.AXE_FRAMES, GameLogicConfig.AXE_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        axeMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.AXE_UP_ROW, PlayerSpriteConfig.AXE_FRAMES, GameLogicConfig.AXE_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        axeMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.AXE_RIGHT_ROW, PlayerSpriteConfig.AXE_FRAMES, GameLogicConfig.AXE_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        axeMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.AXE_LEFT_ROW, PlayerSpriteConfig.AXE_FRAMES, GameLogicConfig.AXE_DURATION_PER_REPETITION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
+        animationMap.put(PlayerState.AXE, axeMap);
 
         // HOE (Cuốc đất) - Dùng playerActionsSheet
         Map<Direction, AnimData> hoeMap = new EnumMap<>(Direction.class);
