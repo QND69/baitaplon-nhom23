@@ -10,6 +10,10 @@ public class WorldConfig {
     // --- Cấu hình Selector ---
     public static final Paint SELECTOR_COLOR = Color.BLACK;
     public static final double SELECTOR_STROKE_WIDTH = 1.0;
+    
+    // --- Cấu hình Ghost Placement ---
+    /** Độ mờ (opacity) của ghost placement khi hiển thị bóng mờ (0.0 - 1.0) */
+    public static final double GHOST_PLACEMENT_OPACITY = 0.5;
 
     // Tính toán số tile hiển thị trên màn hình
     // (Phụ thuộc vào WindowConfig và TILE_SIZE)

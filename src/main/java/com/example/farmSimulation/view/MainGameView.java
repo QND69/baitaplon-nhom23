@@ -52,7 +52,7 @@ public class MainGameView {
      * initUI nhận Controller và PlayerSprite từ bên ngoài (từ class Game)
      */
     public void initUI(Stage primaryStage, GameController gameController, Pane playerSpriteContainer,
-                       Rectangle debugBox, Circle debugDot, Circle debugRangeCircle) {
+                       Rectangle debugBox, Circle debugDot, Circle debugRangeCircle, Rectangle debugCollisionHitbox) {
         this.rootPane = new Pane();
 
         // Khởi tạo các View con
@@ -68,6 +68,7 @@ public class MainGameView {
         rootPane.getChildren().addAll(
                 worldRenderer.getWorldPane(),   // Lớp 1: Bản đồ
                 worldRenderer.getTileSelector(),// Lớp 2: Ô chọn
+                worldRenderer.getGhostPlacement(), // Bóng mờ nằm ở đây (Layer tĩnh)
                 playerSpriteContainer,          // Lớp 3: "Khung" Player
                 hudView,                        // Lớp 4: HUD (Timer, Text, Darkness)
                 hotbarView,                     // Lớp 5: Hotbar
@@ -81,12 +82,12 @@ public class MainGameView {
         // --- Ghim (bind) vị trí của debug nodes (CHỈ KHI DEBUG BẬT) ---
         // (Nếu debug=false, các node này sẽ là NULL)
         if (PlayerSpriteConfig.DEBUG_PLAYER_BOUNDS) {
-            // Thêm vào rootPane (ở lớp trên cùng)
-            rootPane.getChildren().addAll(debugBox, debugDot, debugRangeCircle);
+            // Thêm vào rootPane (ở lớp trên cùng) - Bỏ debugBox (hình vuông đỏ)
+            rootPane.getChildren().addAll(debugDot, debugRangeCircle, debugCollisionHitbox);
 
-            // Ghim vị trí Khung
-            debugBox.layoutXProperty().bind(playerSpriteContainer.layoutXProperty());
-            debugBox.layoutYProperty().bind(playerSpriteContainer.layoutYProperty());
+            // Bỏ ghim vị trí Khung (không hiển thị bounding box)
+            // debugBox.layoutXProperty().bind(playerSpriteContainer.layoutXProperty());
+            // debugBox.layoutYProperty().bind(playerSpriteContainer.layoutYProperty());
 
             // Ghim tâm chấm vào "Tâm Logic"
             double logicCenterX = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2;
@@ -98,6 +99,8 @@ public class MainGameView {
             // Ghim Vòng tròn Range vào "Tâm Logic" (48, 72)
             debugRangeCircle.layoutXProperty().bind(playerSpriteContainer.layoutXProperty().add(logicCenterX));
             debugRangeCircle.layoutYProperty().bind(playerSpriteContainer.layoutYProperty().add(logicCenterY));
+            
+            // Collision hitbox sẽ được cập nhật động trong updateCollisionHitbox()
         }
         // --- Hết phần Debug ---
 
@@ -122,6 +125,42 @@ public class MainGameView {
     // Hàm cập nhật ô được chọn
     public void updateSelector(int tileSelectedX, int tileSelectedY, double worldOffsetX, double worldOffsetY) {
         worldRenderer.updateSelector(tileSelectedX, tileSelectedY, worldOffsetX, worldOffsetY);
+    }
+    
+    // Hàm cập nhật ghost placement
+    public void updateCollisionHitbox(double playerWorldX, double playerWorldY, double worldOffsetX, double worldOffsetY, javafx.scene.shape.Rectangle debugCollisionHitbox) {
+        if (debugCollisionHitbox != null && PlayerSpriteConfig.DEBUG_PLAYER_BOUNDS) {
+            // 1. Cập nhật kích thước hitbox theo Config mới
+            if (debugCollisionHitbox.getWidth() != PlayerSpriteConfig.COLLISION_BOX_WIDTH) {
+                debugCollisionHitbox.setWidth(PlayerSpriteConfig.COLLISION_BOX_WIDTH);
+                debugCollisionHitbox.setHeight(PlayerSpriteConfig.COLLISION_BOX_HEIGHT);
+            }
+
+            // 2. Tính toán vị trí trên màn hình
+            double screenX = playerWorldX + worldOffsetX;
+            double screenY = playerWorldY + worldOffsetY;
+            
+            // 3. Căn chỉnh:
+            // X: Căn giữa theo chiều ngang của nhân vật
+            // Y: Căn xuống dưới chân (chân nằm ở cuối ảnh)
+            
+            // Player gốc rộng 128x128 (hoặc 192x192 tùy action), hitbox nằm ở giữa trục X và dưới đáy trục Y
+            double playerSpriteWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH; // 192
+            double playerSpriteHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT; // 192
+            
+            // Offset X: (Rộng người - Rộng hitbox) / 2
+            double offsetX = (playerSpriteWidth - PlayerSpriteConfig.COLLISION_BOX_WIDTH) / 2;
+            
+            // Offset Y: (Cao người - Cao hitbox) - một chút padding đáy
+            double offsetY = playerSpriteHeight - PlayerSpriteConfig.COLLISION_BOX_HEIGHT - PlayerSpriteConfig.COLLISION_BOX_BOTTOM_PADDING; 
+
+            debugCollisionHitbox.setLayoutX(screenX + offsetX);
+            debugCollisionHitbox.setLayoutY(screenY + offsetY);
+            
+            debugCollisionHitbox.setVisible(true);
+        } else if (debugCollisionHitbox != null) {
+            debugCollisionHitbox.setVisible(false);
+        }
     }
 
     // Hàm cập nhật text trên đầu nhân vật
@@ -155,6 +194,13 @@ public class MainGameView {
     // Hàm cập nhật hotbar
     public void updateHotbar() {
         hotbarView.updateView();
+    }
+
+    // Hàm cập nhật bóng mờ (Ghost Placement) - Ủy quyền cho WorldRenderer xử lý
+    public void updateGhostPlacement(int tileX, int tileY, double worldOffsetX, double worldOffsetY, ItemStack currentItem) {
+        if (worldRenderer != null) {
+            worldRenderer.updateGhostPlacement(tileX, tileY, worldOffsetX, worldOffsetY, currentItem);
+        }
     }
 
     // Hàm hiển thị animation thu hoạch bay về túi

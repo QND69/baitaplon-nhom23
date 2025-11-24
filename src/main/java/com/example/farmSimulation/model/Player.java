@@ -52,6 +52,9 @@ public class Player {
         this.hotbarItems[5] = new ItemStack(ItemType.SEEDS_CARROT, 5);
         this.hotbarItems[6] = new ItemStack(ItemType.FERTILIZER, 3);
 
+        this.hotbarItems[7] = new ItemStack(ItemType.AXE, 1);   // Thêm 1 cái Rìu vào ô số 8
+        this.hotbarItems[8] = new ItemStack(ItemType.WOOD, 36); // Thêm 36 Gỗ vào ô số 9
+
         // Các ô khác là null (sẽ là Tool.HAND)
     }
 

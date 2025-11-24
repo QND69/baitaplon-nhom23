@@ -13,6 +13,7 @@ public class PlayerMovementHandler {
     private final GameController gameController;
     private final Camera camera;
     private final MainGameView mainGameView;
+    private CollisionManager collisionManager; // Quản lý collision (sẽ được set từ bên ngoài)
 
     public PlayerMovementHandler(Player mainPlayer, PlayerView playerView, GameController gameController, Camera camera, MainGameView mainGameView) {
         this.mainPlayer = mainPlayer;
@@ -20,6 +21,10 @@ public class PlayerMovementHandler {
         this.gameController = gameController;
         this.camera = camera;
         this.mainGameView = mainGameView;
+    }
+    
+    public void setCollisionManager(CollisionManager collisionManager) {
+        this.collisionManager = collisionManager;
     }
 
     // Hàm update chính cho di chuyển
@@ -99,14 +104,36 @@ public class PlayerMovementHandler {
     private void updatePlayerPosition(double dx, double dy) {
         // Cập nhật Map nếu di chuyển
         if (dx != 0 || dy != 0) {
-            // (Sau này thêm logic va chạm (Collision) ở đây)
+            // Tính vị trí mới của player
+            double newX = mainPlayer.getTileX() - dx;
+            double newY = mainPlayer.getTileY() - dy;
+            
+            // Kiểm tra collision trước khi di chuyển
+            if (collisionManager != null) {
+                double hitboxWidth = com.example.farmSimulation.config.PlayerSpriteConfig.COLLISION_BOX_WIDTH;
+                double hitboxHeight = com.example.farmSimulation.config.PlayerSpriteConfig.COLLISION_BOX_HEIGHT;
+                
+                // Tâm kiểm tra va chạm phải là TÂM CỦA HITBOX Ở CHÂN
+                double feetCenterX = newX + (com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2.0);
+                
+                // [SỬA DÒNG NÀY] Thay số 40.0 bằng hằng số COLLISION_BOX_BOTTOM_PADDING
+                double feetCenterY = newY + com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT 
+                                     - (hitboxHeight / 2.0) 
+                                     - com.example.farmSimulation.config.PlayerSpriteConfig.COLLISION_BOX_BOTTOM_PADDING; 
 
+                // Kiểm tra collision tại vị trí chân mới
+                if (collisionManager.checkCollision(feetCenterX, feetCenterY, hitboxWidth, hitboxHeight)) {
+                    return;
+                }
+            }
+
+            // Không có collision, di chuyển bình thường
             // Cập nhật camera
             camera.move(dx, dy);
 
             // Cập nhật tọa độ logic của Player
-            mainPlayer.setTileX(mainPlayer.getTileX() - dx);
-            mainPlayer.setTileY(mainPlayer.getTileY() - dy);
+            mainPlayer.setTileX(newX);
+            mainPlayer.setTileY(newY);
 
             // *** YÊU CẦU VIEW VẼ LẠI MAP DỰA TRÊN VỊ TRÍ MỚI ***
             // Truyền vào vị trí offset (dịch chuyển) của worldPane

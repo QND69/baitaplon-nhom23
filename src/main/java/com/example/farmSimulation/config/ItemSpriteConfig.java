@@ -17,6 +17,7 @@ public class ItemSpriteConfig {
     public static final int TOOL_SHOVEL_COL = 7;
     public static final int TOOL_SCISSORS_COL = 8;
     public static final int ITEM_SEEDS_BAGS_COL = 9;
+    public static final int ITEM_WOOD_COL = 10;
 
     private ItemSpriteConfig() {}
 }

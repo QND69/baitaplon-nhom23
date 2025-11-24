@@ -318,6 +318,7 @@ public class HotbarView extends Pane {
         cacheItemSprite(toolsSheet, ItemType.PICKAXE, ItemSpriteConfig.TOOL_PICKAXE_COL);
         cacheItemSprite(toolsSheet, ItemType.SHOVEL, ItemSpriteConfig.TOOL_SHOVEL_COL);
         cacheItemSprite(toolsSheet, ItemType.FERTILIZER, ItemSpriteConfig.TOOL_FERTILISER_COL);
+        cacheItemSprite(toolsSheet, ItemType.AXE, ItemSpriteConfig.TOOL_AXE_COL);
 
         // Cache Seeds (Frame 0)
         cacheItemSprite(ItemType.SEEDS_STRAWBERRY, assetManager.getSeedIcon(CropType.STRAWBERRY));
@@ -330,6 +331,9 @@ public class HotbarView extends Pane {
         cacheItemSprite(ItemType.RADISH, assetManager.getHarvestIcon(CropType.RADISH));
         cacheItemSprite(ItemType.POTATO, assetManager.getHarvestIcon(CropType.POTATO));
         cacheItemSprite(ItemType.CARROT, assetManager.getHarvestIcon(CropType.CARROT));
+        
+        // Cache Wood (Frame 3 từ tree_64x64.png)
+        cacheItemSprite(ItemType.WOOD, assetManager.getWoodIcon());
     }
 
     /**

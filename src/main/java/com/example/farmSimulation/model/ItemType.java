@@ -9,6 +9,7 @@ public enum ItemType {
     WATERING_CAN("Watering Can", 1, false, GameLogicConfig.MAX_WATER_CAPACITY),
     PICKAXE("Pickaxe", 1, false, GameLogicConfig.MAX_DURABILITY_PICKAXE),
     SHOVEL("Shovel", 1, false, GameLogicConfig.MAX_DURABILITY_SHOVEL),
+    AXE("Axe", 1, false, GameLogicConfig.MAX_DURABILITY_AXE), // Rìu để chặt cây
     FERTILIZER("Fertilizer", 36, true, 0),
 
     // --- HẠT GIỐNG (SEEDS) ---
@@ -21,7 +22,10 @@ public enum ItemType {
     STRAWBERRY("Strawberry", 36, true, 0),
     RADISH("Radish", 36, true, 0),
     POTATO("Potato", 36, true, 0),
-    CARROT("Carrot", 36, true, 0);
+    CARROT("Carrot", 36, true, 0),
+    
+    // --- VẬT LIỆU (MATERIALS) ---
+    WOOD("Wood", 36, true, 0); // Gỗ để xây hàng rào
 
     @Getter
     private final String name;

@@ -49,6 +49,12 @@ public class GameLogicConfig {
     public static final long SHOVEL_DURATION_PER_REPETITION_MS = 1000;
     public static final int MAX_DURABILITY_SHOVEL = 25;
 
+    // AXE (Rìu)
+    public static final double AXE_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.0;
+    public static final int AXE_REPETITIONS = 3;
+    public static final long AXE_DURATION_PER_REPETITION_MS = 600;
+    public static final int MAX_DURABILITY_AXE = 30;
+
     // PLANT (Trồng cây)
     public static final double PLANT_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 0.85;
     public static final long PLANT_DURATION_MS = 1200;
