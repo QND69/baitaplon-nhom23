@@ -59,6 +59,7 @@ public class FenceConfig {
     /** Màu viền hitbox của rào */
     public static final Color DEBUG_FENCE_HITBOX_COLOR = Color.CYAN;
     
-    private FenceConfig() {}
+    private FenceConfig() {
+    }
 }
 

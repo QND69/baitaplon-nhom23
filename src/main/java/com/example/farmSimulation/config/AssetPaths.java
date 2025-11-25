@@ -29,7 +29,10 @@ public final class AssetPaths {
     // GUI
     public static final String LOGO = "/assets/images/GUI/logo.png";
 
-    public static final String TOOLS_SHEET = "/assets/images/items/tools/tools_32x32.png";
+    public static final String ITEMS_SHEET = "/assets/images/items/tools/items_32x32.png";
+
+    /** Spritesheet cho icon vật nuôi (animal_item_32x32.png) */
+    public static final String ANIMAL_ITEM_SHEET = "/assets/images/items/tools/animal_item_32x32.png";
 
     public static final String ICON_BG = "/assets/images/GUI/icon_white_bg3.png";
 

@@ -1,5 +1,6 @@
 package com.example.farmSimulation.model;
 
+import com.example.farmSimulation.config.WorldConfig;
 import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
 import lombok.Getter;
@@ -19,7 +20,8 @@ public class ActionManager {
     private final Player mainPlayer;
     private final PlayerView playerView;
     private FenceManager fenceManager; // Quản lý hàng rào (sẽ được set từ bên ngoài)
-
+    private AnimalManager animalManager; // Quản lý động vật (sẽ được set từ bên ngoài)
+    
     public ActionManager(Player mainPlayer, PlayerView playerView) {
         this.pendingActions = new ArrayList<>();
         this.mainPlayer = mainPlayer;
@@ -28,6 +30,10 @@ public class ActionManager {
     
     public void setFenceManager(FenceManager fenceManager) {
         this.fenceManager = fenceManager;
+    }
+    
+    public void setAnimalManager(AnimalManager animalManager) {
+        this.animalManager = animalManager;
     }
 
     public void addPendingAction(TimedTileAction action) {
@@ -73,11 +79,21 @@ public class ActionManager {
                 // Logic này giờ chạy ĐỒNG BỘ với việc thay đổi Map
                 if (action.isConsumeItem()) {
                     // Gọi hàm tiêu thụ item ở slot đã lưu
-                    // (Hàm này sẽ xử lý cả việc trừ số lượng stackable hoặc trừ độ bền tool)
+                    // (Hàm này sẽ xử lý cả việc trừ số lượng stackable hoặc trừ độ bền item)
                     mainPlayer.consumeItemAtSlot(action.getItemSlotIndex(), 1);
 
                     // Cập nhật UI Hotbar ngay lập tức
                     mainGameView.updateHotbar();
+                }
+
+                // XỬ LÝ ĐỘNG VẬT: Xóa động vật sau khi action hoàn thành (cho nhặt trứng)
+                if (action.getAnimalWorldX() != 0 || action.getAnimalWorldY() != 0) {
+                    if (animalManager != null) {
+                        Animal animalToRemove = animalManager.getAnimalAt(action.getAnimalWorldX(), action.getAnimalWorldY(), WorldConfig.TILE_SIZE);
+                        if (animalToRemove != null) {
+                            animalManager.removeAnimal(animalToRemove);
+                        }
+                    }
                 }
 
                 // KÍCH HOẠT ANIMATION THU HOẠCH VÀ THÊM ITEM VÀO INVENTORY

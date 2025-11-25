@@ -30,11 +30,16 @@ public class PlayerSpriteConfig {
     public static final double PLAYER_SPRITE_OFFSET_Y = (BASE_PLAYER_FRAME_HEIGHT - PLAYER_FRAME_HEIGHT) / 2;
 
     // Kích thước Hitbox va chạm (nhỏ hơn người, nằm ở chân)
-    public static final double COLLISION_BOX_WIDTH = 33.0;  // Hẹp hơn chiều rộng người
-    public static final double COLLISION_BOX_HEIGHT = 12.0; // Thấp, chỉ lấy phần chân
+    public static final double COLLISION_BOX_WIDTH = 30.0;  // Hẹp hơn chiều rộng người
+    public static final double COLLISION_BOX_HEIGHT = 11.0; // Thấp, chỉ lấy phần chân
     
-    /** Padding đáy để căn chỉnh hitbox collision (tính từ đáy sprite lên trên) */
-    public static final double COLLISION_BOX_BOTTOM_PADDING = 69.0;
+    /** * Padding đáy để căn chỉnh hitbox collision (tính từ đáy sprite lên trên).
+     * [SỬA] Điều chỉnh lại để khớp với chân ở tỷ lệ 0.6.
+     * 192 * 0.6 = 115.2 (Height thực). Chân nhân vật nằm ở khoảng pixel 110.
+     * Để hitbox nằm đúng chân, ta cần đẩy nó từ dưới lên khoảng 75-80px (theo tọa độ gốc 192)
+     * Giá trị 85.0 trước đó hơi cao, giảm xuống 78.0.
+     */
+    public static final double COLLISION_BOX_BOTTOM_PADDING = 68.0;
 
     // --- Hằng số Debug ---
     /**

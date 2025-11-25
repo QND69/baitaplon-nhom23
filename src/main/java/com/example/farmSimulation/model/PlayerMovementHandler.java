@@ -28,9 +28,9 @@ public class PlayerMovementHandler {
     }
 
     // Hàm update chính cho di chuyển
-    public void update() {
+    public void update(double deltaTime) {
         // Xử lý Input
-        Point2D movementDelta = handleInput(); // Trả về (dx, dy)
+        Point2D movementDelta = handleInput(deltaTime); // Trả về (dx, dy) - đã nhân với deltaTime
         double dx = movementDelta.getX();
         double dy = movementDelta.getY();
 
@@ -40,9 +40,10 @@ public class PlayerMovementHandler {
     }
 
     /**
-     * Xử lý input và trả về vector di chuyển
+     * Xử lý input và trả về vector di chuyển (đã nhân với deltaTime)
+     * @param deltaTime Thời gian trôi qua (giây) - để di chuyển độc lập với FPS
      */
-    private Point2D handleInput() {
+    private Point2D handleInput(double deltaTime) {
         // Tính toán hướng di chuyển (delta X, delta Y)
         double dx = 0;
         double dy = 0;
@@ -51,17 +52,20 @@ public class PlayerMovementHandler {
         if (mainPlayer.getState() == PlayerView.PlayerState.IDLE ||
                 mainPlayer.getState() == PlayerView.PlayerState.WALK) {
 
+            // Tính tốc độ di chuyển dựa trên deltaTime (pixel/giây * giây = pixel)
+            double movementSpeed = GameLogicConfig.PLAYER_SPEED * deltaTime;
+
             if (gameController.isKeyPressed(KeyCode.W)) { // Di chuyển PLAYER đi LÊN
-                dy += GameLogicConfig.PLAYER_SPEED; // Di chuyển WORLD đi XUỐNG
+                dy += movementSpeed; // Di chuyển WORLD đi XUỐNG
             }
             if (gameController.isKeyPressed(KeyCode.S)) { // Di chuyển PLAYER đi XUỐNG
-                dy -= GameLogicConfig.PLAYER_SPEED; // Di chuyển WORLD đi LÊN
+                dy -= movementSpeed; // Di chuyển WORLD đi LÊN
             }
             if (gameController.isKeyPressed(KeyCode.A)) { // Di chuyển PLAYER đi TRÁI
-                dx += GameLogicConfig.PLAYER_SPEED; // Di chuyển WORLD đi PHẢI
+                dx += movementSpeed; // Di chuyển WORLD đi PHẢI
             }
             if (gameController.isKeyPressed(KeyCode.D)) { // Di chuyển PLAYER đi PHẢI
-                dx -= GameLogicConfig.PLAYER_SPEED; // Di chuyển WORLD đi TRÁI
+                dx -= movementSpeed; // Di chuyển WORLD đi TRÁI
             }
         }
         return new Point2D(dx, dy);
@@ -114,10 +118,12 @@ public class PlayerMovementHandler {
                 double hitboxHeight = com.example.farmSimulation.config.PlayerSpriteConfig.COLLISION_BOX_HEIGHT;
                 
                 // Tâm kiểm tra va chạm phải là TÂM CỦA HITBOX Ở CHÂN
-                double feetCenterX = newX + (com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2.0);
+                // [SỬA] Nhân width với Scale để lấy đúng tâm visual
+                double feetCenterX = newX + (com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE / 2.0);
                 
-                // [SỬA DÒNG NÀY] Thay số 40.0 bằng hằng số COLLISION_BOX_BOTTOM_PADDING
-                double feetCenterY = newY + com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT 
+                // [SỬA] Tính toán Y dựa trên HEIGHT đã SCALE.
+                // Công thức: Vị trí Y + (Chiều cao gốc * Tỷ lệ) - (Nửa chiều cao hitbox) - Padding
+                double feetCenterY = newY + (com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE)
                                      - (hitboxHeight / 2.0) 
                                      - com.example.farmSimulation.config.PlayerSpriteConfig.COLLISION_BOX_BOTTOM_PADDING; 
 

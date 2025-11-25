@@ -15,7 +15,8 @@ public class SettingsMenuView extends VBox {
     private final GameManager gameManager;
     private final Label nameLabel;
     private final Label levelLabel;
-    private double hotbarScale = HotbarConfig.DEFAULT_HOTBAR_SCALE;
+    private double hotbarScale = HotbarConfig.DEFAULT_HOTBAR_SCALE; // Scale hiện tại của hotbar
+    private Slider hotbarScaleSlider; // Slider điều chỉnh hotbar scale (lưu reference để có thể cập nhật khi show())
 
     private boolean musicOn = SettingsMenuConfig.DEFAULT_MUSIC_ON;
     private boolean soundOn = SettingsMenuConfig.DEFAULT_SOUND_ON;
@@ -96,12 +97,15 @@ public class SettingsMenuView extends VBox {
         hotbarLabel.setTextFill(SettingsMenuConfig.SETTINGS_MENU_FONT_COLOR);
         hotbarLabel.setFont(Font.font(SettingsMenuConfig.SETTINGS_MENU_FONT_FAMILY, SettingsMenuConfig.SETTINGS_MENU_BODY_FONT_SIZE));
 
-        Slider hotbarScaleSlider = new Slider(0.2, 1.5, hotbarScale); // Min 20%, Max 150%
+        this.hotbarScaleSlider = new Slider(0.2, 1.5, hotbarScale); // Min 20%, Max 150%
         hotbarScaleSlider.setPrefWidth(SettingsMenuConfig.SETTINGS_MENU_BUTTON_WIDTH);
         hotbarScaleSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            // [MỚI] Gọi thẳng đến HotbarView để update layout
+            hotbarScale = newVal.doubleValue(); // Lưu giá trị scale
+            // Gọi thẳng đến HotbarView để update layout và view
             if (gameManager != null && gameManager.getMainGameView() != null && gameManager.getMainGameView().getHotbarView() != null) {
-                gameManager.getMainGameView().getHotbarView().updateLayout(newVal.doubleValue());
+                HotbarView hotbarView = gameManager.getMainGameView().getHotbarView();
+                hotbarView.updateLayout(hotbarScale);
+                hotbarView.updateView(); // Cập nhật lại view để label tên item được căn giữa đúng
             }
         });
 
@@ -132,6 +136,14 @@ public class SettingsMenuView extends VBox {
     }
 
     public void show() {
+        // Load scale hiện tại từ HotbarView khi mở menu
+        if (gameManager != null && gameManager.getMainGameView() != null && gameManager.getMainGameView().getHotbarView() != null) {
+            hotbarScale = gameManager.getMainGameView().getHotbarView().getCurrentScale();
+            // Cập nhật giá trị slider
+            if (hotbarScaleSlider != null) {
+                hotbarScaleSlider.setValue(hotbarScale);
+            }
+        }
         setVisible(true);
     }
 

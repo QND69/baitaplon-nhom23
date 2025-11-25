@@ -11,11 +11,11 @@ public class GameLogicConfig {
     public static final double MAX_DARKNESS_OPACITY = 0.8; // Độ tối tối đa (80%)
 
     // --- Cấu hình vật lý & Logic ---
-    public static final double PLAYER_SPEED = 5.0; // Tốc độ di chuyển
+    public static final double PLAYER_SPEED = 300.0; // Tốc độ di chuyển (pixel/giây) - đã chuyển từ pixel/frame sang pixel/giây
     public static final double PLAYER_START_X = 0.0; // Tọa độ X spawn
     public static final double PLAYER_START_Y = 0.0; // Tọa độ Y spawn
 
-    // --- CẤU HÌNH CHO TỪNG TOOL ---
+    // --- CẤU HÌNH CHO TỪNG ITEM ---
     // (Bao gồm Tầm tương tác và Thời gian hành động)
 
     // HAND (Mặc định)
@@ -54,6 +54,12 @@ public class GameLogicConfig {
     public static final int AXE_REPETITIONS = 3;
     public static final long AXE_DURATION_PER_REPETITION_MS = 600;
     public static final int MAX_DURABILITY_AXE = 30;
+
+    // SWORD (Kiếm)
+    public static final double SWORD_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 1.5;
+    public static final int SWORD_REPETITIONS = 3;
+    public static final long SWORD_DURATION_PER_REPETITION_MS = 600;
+    public static final int MAX_DURABILITY_SWORD = 30;
 
     // PLANT (Trồng cây)
     public static final double PLANT_INTERACTION_RANGE = WorldConfig.TILE_SIZE * 0.85;

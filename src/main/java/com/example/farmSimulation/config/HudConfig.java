@@ -11,10 +11,11 @@ public class HudConfig {
     // --- TEXT THÔNG BÁO (trên đầu Player) ---
     public static final String TOO_FAR_TEXT = "It's too far"; // Nội dung text
     public static final String WRONG_TOOL_TEXT = "Can't use this here";
+    public static final String CANT_PLACE_TEXT = "Can't place this here";
     public static final String TEXT_INVENTORY_FULL = "Inventory Full";
     public static final String TEXT_PLANT_CAN_NOT_BE_FERTILIZED = "This plant cannot be fertilized";
     public static final String TEXT_WATER_EMPTY = "Watering Can is empty";
-    public static final String TEXT_PLAYER_BLOCKING = "You are standing there";
+    public static final String TEXT_PLAYER_BLOCKING = "You are blocking the fence";
 
     public static final Paint TEMP_TEXT_COLOR = Color.WHITE; // Màu text
     public static final double TEMP_TEXT_STROKE_WIDTH = 0.9; // Độ dày viền

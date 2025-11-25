@@ -1,11 +1,14 @@
 package com.example.farmSimulation.view;
 
+import com.example.farmSimulation.config.AnimalConfig;
 import com.example.farmSimulation.config.CropConfig;
 import com.example.farmSimulation.config.HudConfig;
 import com.example.farmSimulation.config.WorldConfig;
 import com.example.farmSimulation.config.TreeConfig;
 import com.example.farmSimulation.config.FenceConfig;
+import com.example.farmSimulation.config.ItemSpriteConfig;
 import com.example.farmSimulation.config.PlayerSpriteConfig;
+import com.example.farmSimulation.model.Animal;
 import com.example.farmSimulation.model.Tile;
 import com.example.farmSimulation.model.TileData;
 import com.example.farmSimulation.model.WorldMap;
@@ -16,6 +19,9 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 import lombok.Getter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
 public class WorldRenderer {
     // Mảng 2D LƯU TRỮ các ImageView
@@ -24,13 +30,15 @@ public class WorldRenderer {
     private final ImageView[][] cropTiles;    // Lớp 3: Cây trồng (crops)
     private final ImageView[][] treeTiles;    // Lớp 4: Cây tự nhiên (trees)
     private final ImageView[][] fenceTiles;   // Lớp 5: Hàng rào (fences)
-    private final ImageView[][] statusIconTiles; // Lớp 6: Icon báo hiệu
-    private final ImageView[][] statusBackground; // Lớp 7: Mảng chứa nền mờ
+    private final ImageView[][] groundItemTiles; // Lớp 6: Item trên đất (thịt rơi ra)
+    private final ImageView[][] statusIconTiles; // Lớp 7: Icon báo hiệu
+    private final ImageView[][] statusBackground; // Lớp 8: Mảng chứa nền mờ
 
     private final AssetManager assetManager; // Để lấy textures
     private final WorldMap worldMap;         // Để biết vẽ tile gì
 
     private final Pane worldPane;   // Pane "thế giới" chứa lưới, chỉ dùng để di chuyển cuộn mượt
+    private final Pane entityPane;  // Pane tĩnh chứa các thực thể động (Animals)
     private final Rectangle tileSelector; // Hình vuông chứa ô được chọn
     
     // Ghost placement: Hiển thị bóng mờ khi cầm item có thể đặt
@@ -41,14 +49,20 @@ public class WorldRenderer {
     
     // Debug: Hitbox collision của rào (chỉ hiển thị khi DEBUG_FENCE_HITBOX = true)
     private final Rectangle[][] fenceHitboxes;
+    
+    // Động vật: Map lưu ImageView cho mỗi con vật (key = Animal object reference)
+    private final Map<Animal, ImageView> animalViews;
+    private final Map<Animal, ImageView> animalStatusIcons; // Icon trạng thái (đói/sản phẩm)
+    private final Map<Animal, ImageView> animalStatusBackgrounds; // Nền icon
 
     // Lưu lại vị trí render map lần cuối
     private int lastRenderedStartCol = -1;
     private int lastRenderedStartRow = -1;
 
-    public WorldRenderer(AssetManager assetManager, WorldMap worldMap) {
+    public WorldRenderer(AssetManager assetManager, WorldMap worldMap, Pane entityPane) {
         this.assetManager = assetManager;
         this.worldMap = worldMap;
+        this.entityPane = entityPane;
 
         // Khởi tạo tất cả các lớp
         this.baseTiles = new ImageView[WorldConfig.NUM_ROWS_ON_SCREEN][WorldConfig.NUM_COLS_ON_SCREEN];
@@ -56,6 +70,7 @@ public class WorldRenderer {
         this.cropTiles = new ImageView[WorldConfig.NUM_ROWS_ON_SCREEN][WorldConfig.NUM_COLS_ON_SCREEN];
         this.treeTiles = new ImageView[WorldConfig.NUM_ROWS_ON_SCREEN][WorldConfig.NUM_COLS_ON_SCREEN];
         this.fenceTiles = new ImageView[WorldConfig.NUM_ROWS_ON_SCREEN][WorldConfig.NUM_COLS_ON_SCREEN];
+        this.groundItemTiles = new ImageView[WorldConfig.NUM_ROWS_ON_SCREEN][WorldConfig.NUM_COLS_ON_SCREEN];
         this.statusIconTiles = new ImageView[WorldConfig.NUM_ROWS_ON_SCREEN][WorldConfig.NUM_COLS_ON_SCREEN];
         this.statusBackground = new ImageView[WorldConfig.NUM_ROWS_ON_SCREEN][WorldConfig.NUM_COLS_ON_SCREEN];
         
@@ -64,6 +79,11 @@ public class WorldRenderer {
         
         // Khởi tạo mảng hitbox debug cho rào (chỉ khi DEBUG_FENCE_HITBOX = true)
         this.fenceHitboxes = new Rectangle[WorldConfig.NUM_ROWS_ON_SCREEN][WorldConfig.NUM_COLS_ON_SCREEN];
+        
+        // Khởi tạo Map cho động vật
+        this.animalViews = new HashMap<>();
+        this.animalStatusIcons = new HashMap<>();
+        this.animalStatusBackgrounds = new HashMap<>();
 
         this.worldPane = new Pane();
 
@@ -76,6 +96,9 @@ public class WorldRenderer {
                 cropTiles[r][c] = createTileView(c, r, -CropConfig.CROP_Y_OFFSET, CropConfig.CROP_SPRITE_WIDTH, CropConfig.CROP_SPRITE_HEIGHT);
                 treeTiles[r][c] = createTileView(c, r, -TreeConfig.TREE_Y_OFFSET, TreeConfig.TREE_SPRITE_WIDTH, TreeConfig.TREE_SPRITE_HEIGHT);
                 fenceTiles[r][c] = createTileView(c, r, -FenceConfig.FENCE_Y_OFFSET, FenceConfig.FENCE_SPRITE_WIDTH, FenceConfig.FENCE_SPRITE_HEIGHT);
+                
+                // [SỬA VỊ TRÍ RƠI ITEM] Khởi tạo với offset 0, sẽ điều chỉnh bằng translate trong updateMap
+                groundItemTiles[r][c] = createTileView(c, r, 0, ItemSpriteConfig.ITEM_SPRITE_WIDTH, ItemSpriteConfig.ITEM_SPRITE_HEIGHT);
 
                 // Status Background
                 ImageView bg = createTileView(c, r, -HudConfig.ICON_Y_OFFSET, HudConfig.ICON_BG_SIZE, HudConfig.ICON_BG_SIZE);
@@ -139,8 +162,9 @@ public class WorldRenderer {
                         cropTiles[r][c],         // Lớp 3: Cây trồng (crops)
                         treeTiles[r][c],         // Lớp 4: Cây tự nhiên (trees)
                         fenceTiles[r][c],        // Lớp 5: Hàng rào (fences)
-                        statusBackground[r][c],  // Lớp 6: Nền icon
-                        statusIconTiles[r][c]    // Lớp 7: Icon
+                        groundItemTiles[r][c],   // Lớp 6: Item trên đất (thịt) -> Đã căn giữa
+                        statusBackground[r][c],  // Lớp 7: Nền icon
+                        statusIconTiles[r][c]    // Lớp 8: Icon
                 );
                 
                 // Thêm tree hitbox vào worldPane (lớp trên cùng, sau khi thêm tất cả)
@@ -248,6 +272,21 @@ public class WorldRenderer {
                 // --- Lớp 4: Cây tự nhiên (Tree) ---
                 Image treeTexture = assetManager.getTreeTexture(data.getTreeData());
                 this.treeTiles[r][c].setImage(treeTexture);
+                
+                // --- Lớp 6: Item trên đất (Ground Item) ---
+                if (data.getGroundItem() != null && data.getGroundItemAmount() > 0) {
+                    Image itemTexture = assetManager.getItemIcon(data.getGroundItem());
+                    this.groundItemTiles[r][c].setImage(itemTexture);
+                    
+                    // [MỚI] Cập nhật vị trí dựa trên Offset trong TileData
+                    this.groundItemTiles[r][c].setTranslateX(data.getGroundItemOffsetX());
+                    this.groundItemTiles[r][c].setTranslateY(data.getGroundItemOffsetY());
+                    
+                    this.groundItemTiles[r][c].setVisible(true);
+                } else {
+                    this.groundItemTiles[r][c].setImage(null);
+                    this.groundItemTiles[r][c].setVisible(false);
+                }
                 
                 // Cập nhật tree hitbox debug (chỉ khi DEBUG_TREE_HITBOX = true và có cây)
                 if (TreeConfig.DEBUG_TREE_HITBOX && PlayerSpriteConfig.DEBUG_PLAYER_BOUNDS && treeHitboxes[r][c] != null) {
@@ -417,6 +456,148 @@ public class WorldRenderer {
             ghostPlacement.setVisible(true);
         } else {
             ghostPlacement.setVisible(false);
+        }
+    }
+    
+    /**
+     * Cập nhật vẽ động vật
+     * @param animals Danh sách động vật cần vẽ
+     * @param worldOffsetX Offset X của thế giới
+     * @param worldOffsetY Offset Y của thế giới
+     */
+    public void updateAnimals(java.util.List<Animal> animals, double worldOffsetX, double worldOffsetY) {
+        // Xóa các ImageView của động vật đã chết hoặc không còn trong danh sách
+        java.util.List<Animal> toRemove = new java.util.ArrayList<>();
+        for (Animal animal : animalViews.keySet()) {
+            if (!animals.contains(animal) || animal.isDead()) {
+                toRemove.add(animal);
+            }
+        }
+        for (Animal animal : toRemove) {
+            ImageView view = animalViews.remove(animal);
+            ImageView icon = animalStatusIcons.remove(animal);
+            ImageView bg = animalStatusBackgrounds.remove(animal);
+            if (view != null) entityPane.getChildren().remove(view);
+            if (icon != null) entityPane.getChildren().remove(icon);
+            if (bg != null) entityPane.getChildren().remove(bg);
+        }
+        
+        // Cập nhật hoặc tạo mới ImageView cho mỗi động vật
+        for (Animal animal : animals) {
+            if (animal.isDead()) continue;
+            
+            // Lấy hoặc tạo ImageView cho động vật
+            ImageView animalView = animalViews.get(animal);
+            if (animalView == null) {
+                animalView = new ImageView();
+                animalView.setSmooth(false);
+                animalView.setPreserveRatio(true);
+                animalView.setMouseTransparent(true);
+                animalViews.put(animal, animalView);
+                entityPane.getChildren().add(animalView);
+            }
+            
+            // Cập nhật sprite
+            Image animalTexture = assetManager.getAnimalTexture(
+                animal.getType(), 
+                animal.getDirection(), 
+                animal.getCurrentAction()
+            );
+            animalView.setImage(animalTexture);
+            
+            // Cập nhật kích thước
+            double spriteSize = animal.getType().getSpriteSize();
+            animalView.setFitWidth(spriteSize);
+            animalView.setFitHeight(spriteSize);
+            
+            // Cập nhật vị trí (trong entityPane - tọa độ màn hình)
+            double screenX = animal.getX() + worldOffsetX;
+            double screenY = animal.getY() + worldOffsetY + AnimalConfig.ANIMAL_Y_OFFSET;
+            animalView.setLayoutX(screenX - spriteSize / 2.0); // Căn giữa
+            animalView.setLayoutY(screenY - spriteSize); // Căn đáy
+            
+            // Cập nhật icon trạng thái (đói/sản phẩm)
+            updateAnimalStatusIcon(animal, worldOffsetX, worldOffsetY);
+        }
+    }
+    
+    /**
+     * Cập nhật icon trạng thái của động vật (đói/sản phẩm)
+     */
+    private void updateAnimalStatusIcon(Animal animal, double worldOffsetX, double worldOffsetY) {
+        // Lấy hoặc tạo ImageView cho icon và background
+        ImageView iconView = animalStatusIcons.get(animal);
+        ImageView bgView = animalStatusBackgrounds.get(animal);
+        
+        boolean needsIcon = false;
+        Image iconImage = null;
+        
+        // Kiểm tra xem có cần hiển thị icon không
+        if (animal.isHungry()) {
+            // Hiển thị icon đói (dùng icon thức ăn mong muốn)
+            // Tạm thời dùng icon SUPER_FEED
+            iconImage = assetManager.getItemIcon(com.example.farmSimulation.model.ItemType.SUPER_FEED);
+            if (iconImage == null && animal.getType().getAcceptedFood().size() > 0) {
+                // Nếu không có SUPER_FEED, dùng thức ăn đầu tiên
+                iconImage = assetManager.getItemIcon(animal.getType().getAcceptedFood().get(0));
+            }
+            needsIcon = iconImage != null;
+        } else if (animal.isHasProduct() && animal.getType().canProduce()) {
+            // Hiển thị icon sản phẩm
+            iconImage = assetManager.getItemIcon(animal.getType().getProduct());
+            needsIcon = iconImage != null;
+        }
+        
+        if (needsIcon && iconImage != null) {
+            // Tạo icon và background nếu chưa có
+            if (iconView == null) {
+                iconView = new ImageView();
+                iconView.setSmooth(false);
+                iconView.setMouseTransparent(true);
+                animalStatusIcons.put(animal, iconView);
+                entityPane.getChildren().add(iconView);
+            }
+            
+            if (bgView == null) {
+                bgView = new ImageView();
+                bgView.setImage(assetManager.getIconBG());
+                bgView.setSmooth(false);
+                bgView.setMouseTransparent(true);
+                animalStatusBackgrounds.put(animal, bgView);
+                entityPane.getChildren().add(bgView);
+            }
+            
+            // Cập nhật icon
+            iconView.setImage(iconImage);
+            iconView.setFitWidth(HudConfig.ICON_SIZE);
+            iconView.setFitHeight(HudConfig.ICON_SIZE);
+            
+            // Cập nhật background
+            bgView.setFitWidth(HudConfig.ICON_BG_SIZE);
+            bgView.setFitHeight(HudConfig.ICON_BG_SIZE);
+            
+            // Tính vị trí (trên đầu con vật) - tọa độ màn hình
+            double spriteSize = animal.getType().getSpriteSize();
+            double screenX = animal.getX() + worldOffsetX;
+            double screenY = animal.getY() + worldOffsetY + AnimalConfig.ANIMAL_Y_OFFSET - spriteSize;
+            
+            // Căn giữa icon
+            double iconOffset = (HudConfig.ICON_BG_SIZE - HudConfig.ICON_SIZE) / 2.0;
+            bgView.setLayoutX(screenX - HudConfig.ICON_BG_SIZE / 2.0);
+            bgView.setLayoutY(screenY - HudConfig.ICON_BG_SIZE - HudConfig.ICON_Y_OFFSET);
+            iconView.setLayoutX(screenX - HudConfig.ICON_BG_SIZE / 2.0 + iconOffset);
+            iconView.setLayoutY(screenY - HudConfig.ICON_BG_SIZE - HudConfig.ICON_Y_OFFSET + iconOffset);
+            
+            iconView.setVisible(true);
+            bgView.setVisible(true);
+        } else {
+            // Ẩn icon nếu không cần
+            if (iconView != null) {
+                iconView.setVisible(false);
+            }
+            if (bgView != null) {
+                bgView.setVisible(false);
+            }
         }
     }
 }

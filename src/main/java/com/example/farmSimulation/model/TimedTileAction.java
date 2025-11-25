@@ -21,6 +21,16 @@ public class TimedTileAction {
     // Item thu hoạch (nếu có) để kích hoạt animation
     private ItemType harvestedItem;
     private int harvestedAmount; // Số lượng item thu hoạch được
+    
+    // Thông tin động vật cần xóa sau khi action hoàn thành (cho nhặt trứng)
+    private double animalWorldX; // Tọa độ X của động vật cần xóa
+    private double animalWorldY; // Tọa độ Y của động vật cần xóa
+    
+    // Thông tin thịt cần tạo sau khi action hoàn thành (cho giết động vật)
+    private ItemType meatType; // Loại thịt
+    private int meatAmount; // Số lượng thịt
+    private int meatTileCol; // Cột tile để đặt thịt
+    private int meatTileRow; // Hàng tile để đặt thịt
 
     // Constructor (dành cho các hành động không tốn item như Cuốc)
     public TimedTileAction(int col, int row, TileData newTileData, int framesRemaining) {

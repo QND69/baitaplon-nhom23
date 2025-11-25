@@ -34,6 +34,9 @@ public class MainGameView {
     private HudView hudView;
     private SettingsMenuView settingsMenu;
     private HotbarView hotbarView;
+    
+    // Pane tĩnh chứa các thực thể động (Animals)
+    private Pane entityPane;
 
     // [MỚI] Manager quản lý hiệu ứng
     private final VisualEffectManager visualEffectManager;
@@ -55,8 +58,13 @@ public class MainGameView {
                        Rectangle debugBox, Circle debugDot, Circle debugRangeCircle, Rectangle debugCollisionHitbox) {
         this.rootPane = new Pane();
 
+        // Khởi tạo entityPane (pane tĩnh chứa động vật)
+        this.entityPane = new Pane();
+        this.entityPane.setPrefSize(WindowConfig.SCREEN_WIDTH, WindowConfig.SCREEN_HEIGHT);
+        this.entityPane.setMouseTransparent(true); // Không chặn click chuột xuống đất
+
         // Khởi tạo các View con
-        this.worldRenderer = new WorldRenderer(assetManager, worldMap);
+        this.worldRenderer = new WorldRenderer(assetManager, worldMap, entityPane);
         this.hudView = new HudView();
         // ⚠️ Phải khởi tạo SettingsMenu SAU KHI gameManager đã được set
         // Hoặc truyền gameManager vào sau
@@ -66,18 +74,22 @@ public class MainGameView {
 
         // Thêm các thành phần vào rootPane theo đúng thứ tự (lớp)
         rootPane.getChildren().addAll(
-                worldRenderer.getWorldPane(),   // Lớp 1: Bản đồ
+                worldRenderer.getWorldPane(),   // Lớp 1: Bản đồ (Đất/Cây)
                 worldRenderer.getTileSelector(),// Lớp 2: Ô chọn
                 worldRenderer.getGhostPlacement(), // Bóng mờ nằm ở đây (Layer tĩnh)
-                playerSpriteContainer,          // Lớp 3: "Khung" Player
-                hudView,                        // Lớp 4: HUD (Timer, Text, Darkness)
-                hotbarView,                     // Lớp 5: Hotbar
-                settingsMenu                    // Lớp 6: Menu (hiện đang ẩn)
+                entityPane,                     // Lớp 3: Động vật (Animals)
+                playerSpriteContainer,          // Lớp 4: "Khung" Player
+                hudView,                        // Lớp 5: HUD (Timer, Text, Darkness)
+                hotbarView,                     // Lớp 6: Hotbar
+                settingsMenu                    // Lớp 7: Menu (hiện đang ẩn)
         );
 
         // Đặt nhân vật (nhận từ bên ngoài) vào giữa màn hình
-        playerSpriteContainer.setLayoutX(WindowConfig.SCREEN_WIDTH / 2 - PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2);
-        playerSpriteContainer.setLayoutY(WindowConfig.SCREEN_HEIGHT / 2 - PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT / 2);
+        // [SỬA] Tính toán vị trí dựa trên kích thước SAU KHI SCALE để căn giữa chuẩn hơn
+        double scaledWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+        double scaledHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+        playerSpriteContainer.setLayoutX(WindowConfig.SCREEN_WIDTH / 2 - scaledWidth / 2);
+        playerSpriteContainer.setLayoutY(WindowConfig.SCREEN_HEIGHT / 2 - scaledHeight / 2);
 
         // --- Ghim (bind) vị trí của debug nodes (CHỈ KHI DEBUG BẬT) ---
         // (Nếu debug=false, các node này sẽ là NULL)
@@ -85,18 +97,14 @@ public class MainGameView {
             // Thêm vào rootPane (ở lớp trên cùng) - Bỏ debugBox (hình vuông đỏ)
             rootPane.getChildren().addAll(debugDot, debugRangeCircle, debugCollisionHitbox);
 
-            // Bỏ ghim vị trí Khung (không hiển thị bounding box)
-            // debugBox.layoutXProperty().bind(playerSpriteContainer.layoutXProperty());
-            // debugBox.layoutYProperty().bind(playerSpriteContainer.layoutYProperty());
-
-            // Ghim tâm chấm vào "Tâm Logic"
-            double logicCenterX = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2;
-            double logicCenterY = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT / 2 + PlayerSpriteConfig.PLAYER_FRAME_WIDTH / 8;
+            // Ghim tâm chấm vào "Tâm Logic" (đã scale)
+            double logicCenterX = scaledWidth / 2;
+            double logicCenterY = scaledHeight / 2;
 
             debugDot.layoutXProperty().bind(playerSpriteContainer.layoutXProperty().add(logicCenterX));
             debugDot.layoutYProperty().bind(playerSpriteContainer.layoutYProperty().add(logicCenterY));
 
-            // Ghim Vòng tròn Range vào "Tâm Logic" (48, 72)
+            // Ghim Vòng tròn Range
             debugRangeCircle.layoutXProperty().bind(playerSpriteContainer.layoutXProperty().add(logicCenterX));
             debugRangeCircle.layoutYProperty().bind(playerSpriteContainer.layoutYProperty().add(logicCenterY));
             
@@ -140,19 +148,21 @@ public class MainGameView {
             double screenX = playerWorldX + worldOffsetX;
             double screenY = playerWorldY + worldOffsetY;
             
-            // 3. Căn chỉnh:
-            // X: Căn giữa theo chiều ngang của nhân vật
-            // Y: Căn xuống dưới chân (chân nằm ở cuối ảnh)
+            // 3. Căn chỉnh (ĐÃ SỬA LẠI CÔNG THỨC):
+            // Player gốc rộng 192x192, nhưng đã Scale 0.6
+            // => Kích thước thực tế hiển thị = 192 * 0.6 = 115.2
             
-            // Player gốc rộng 128x128 (hoặc 192x192 tùy action), hitbox nằm ở giữa trục X và dưới đáy trục Y
-            double playerSpriteWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH; // 192
-            double playerSpriteHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT; // 192
+            double scaledPlayerWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+            double scaledPlayerHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             
-            // Offset X: (Rộng người - Rộng hitbox) / 2
-            double offsetX = (playerSpriteWidth - PlayerSpriteConfig.COLLISION_BOX_WIDTH) / 2;
+            // Offset X: Căn giữa hitbox theo chiều ngang của nhân vật đã scale
+            double offsetX = (scaledPlayerWidth - PlayerSpriteConfig.COLLISION_BOX_WIDTH) / 2;
             
-            // Offset Y: (Cao người - Cao hitbox) - một chút padding đáy
-            double offsetY = playerSpriteHeight - PlayerSpriteConfig.COLLISION_BOX_HEIGHT - PlayerSpriteConfig.COLLISION_BOX_BOTTOM_PADDING; 
+            // Offset Y: Căn xuống dưới chân (chân nằm ở cuối ảnh đã scale)
+            // Logic: (Chiều cao đã scale) - (Cao hitbox) - (Padding đáy)
+            double offsetY = scaledPlayerHeight 
+                             - PlayerSpriteConfig.COLLISION_BOX_HEIGHT 
+                             - PlayerSpriteConfig.COLLISION_BOX_BOTTOM_PADDING; 
 
             debugCollisionHitbox.setLayoutX(screenX + offsetX);
             debugCollisionHitbox.setLayoutY(screenY + offsetY);
@@ -165,9 +175,9 @@ public class MainGameView {
 
     // Hàm cập nhật text trên đầu nhân vật
     public void showTemporaryText(String message, double playerScreenX, double playerScreenY) {
-        // Căn lề text dựa trên Base Width
-        // (playerScreenX là layoutX của "khung")
-        double playerCenterX = playerScreenX + PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2;
+        // Căn lề text dựa trên Base Width (đã scale)
+        double scaledWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+        double playerCenterX = playerScreenX + scaledWidth / 2;
         hudView.showTemporaryText(message, playerCenterX, playerScreenY);
     }
     // Hàm hiện setting
@@ -200,6 +210,15 @@ public class MainGameView {
     public void updateGhostPlacement(int tileX, int tileY, double worldOffsetX, double worldOffsetY, ItemStack currentItem) {
         if (worldRenderer != null) {
             worldRenderer.updateGhostPlacement(tileX, tileY, worldOffsetX, worldOffsetY, currentItem);
+        }
+    }
+    
+    /**
+     * Cập nhật vẽ động vật
+     */
+    public void updateAnimals(java.util.List<com.example.farmSimulation.model.Animal> animals, double worldOffsetX, double worldOffsetY) {
+        if (worldRenderer != null) {
+            worldRenderer.updateAnimals(animals, worldOffsetX, worldOffsetY);
         }
     }
 

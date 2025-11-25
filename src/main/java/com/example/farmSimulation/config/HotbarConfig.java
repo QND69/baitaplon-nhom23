@@ -47,8 +47,11 @@ public class HotbarConfig {
     public static boolean SHOW_DURABILITY_BAR = true; // Bật/tắt hiển thị thanh độ bền (có thể chỉnh trong Settings)
     public static final double HOTBAR_NUMBER_FONT_SIZE = 11.0; // Số thứ tự (1-9)
     public static final double HOTBAR_QUANTITY_FONT_SIZE = 14.0; // Số lượng (x36)
+    public static final double BASE_ITEM_NAME_FONT_SIZE = 18.0; // Font size cơ sở cho tên item (sẽ scale)
+    public static final double ITEM_NAME_Y_OFFSET = 20.0; // Khoảng cách từ hotbar lên trên (cơ sở, sẽ scale)
     public static final Font HOTBAR_NUMBER_FONT = Font.font("Arial", FontWeight.BOLD, HOTBAR_NUMBER_FONT_SIZE);
     public static final Font HOTBAR_QUANTITY_FONT = Font.font("Arial", FontWeight.BOLD, HOTBAR_QUANTITY_FONT_SIZE);
+    public static final Font HOTBAR_ITEM_NAME_FONT = Font.font("Arial", FontWeight.BOLD, BASE_ITEM_NAME_FONT_SIZE);
     public static final Color HOTBAR_TEXT_COLOR = Color.WHITE;
     public static final Color HOTBAR_TEXT_STROKE_COLOR = Color.BLACK;
     public static final double HOTBAR_TEXT_STROKE_WIDTH = 0.5;

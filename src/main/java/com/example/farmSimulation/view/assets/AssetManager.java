@@ -1,10 +1,10 @@
 package com.example.farmSimulation.view.assets;
 
+import com.example.farmSimulation.config.AnimalConfig;
 import com.example.farmSimulation.config.AssetPaths;
 import com.example.farmSimulation.config.CropConfig;
 import com.example.farmSimulation.config.ItemSpriteConfig;
 import com.example.farmSimulation.config.TreeConfig;
-import com.example.farmSimulation.config.FenceConfig;
 import com.example.farmSimulation.model.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
@@ -45,7 +45,8 @@ public class AssetManager {
 
         // Tải GUI
         getTexture(AssetPaths.LOGO);
-        Image toolsSheet = getTexture(AssetPaths.TOOLS_SHEET); // Load tools
+        Image itemsSheet = getTexture(AssetPaths.ITEMS_SHEET); // Load items sheet
+        getTexture(AssetPaths.ANIMAL_ITEM_SHEET); // Load animal item sheet
 
         // Tải Tile Textures
         Image grass = getTexture(AssetPaths.GRASS);
@@ -61,6 +62,9 @@ public class AssetManager {
         // Tải các tài nguyên cây và hàng rào
         getTexture(AssetPaths.TREE_SHEET); // Tải ảnh cây tự nhiên
         getTexture(AssetPaths.FENCE_SHEET); // Tải ảnh hàng rào
+        
+        // Tải các tài nguyên động vật
+        loadAnimalTextures();
 
         // Liên kết Tile (Model) với Image (View)
         tileTextureMap.put(Tile.GRASS, grass);
@@ -69,39 +73,39 @@ public class AssetManager {
         tileTextureMap.put(Tile.SOIL_WET, soilWet);
         // TREE và FENCE không có texture cố định, sẽ được vẽ từ spritesheet
 
-        // Cắt và cache các icon trạng thái từ Tools Sheet
-        loadStatusIcons(toolsSheet);
+        // Cắt và cache các icon trạng thái từ Items Sheet
+        loadStatusIcons(itemsSheet);
     }
 
     /**
-     * Cắt icon từ tools5.png để làm icon trạng thái
+     * Cắt icon từ items_32x32.png để làm icon trạng thái
      */
-    private void loadStatusIcons(Image toolsSheet) {
-        if (toolsSheet == null) return;
-        PixelReader reader = toolsSheet.getPixelReader();
+    private void loadStatusIcons(Image itemsSheet) {
+        if (itemsSheet == null) return;
+        PixelReader reader = itemsSheet.getPixelReader();
 
         // Cắt Icon Nước (Watering Can)
         WritableImage waterIcon = new WritableImage(reader,
-                (int)(ItemSpriteConfig.TOOL_WATERING_CAN_COL * ItemSpriteConfig.TOOL_SPRITE_WIDTH), 0,
-                (int)ItemSpriteConfig.TOOL_SPRITE_WIDTH, (int)ItemSpriteConfig.TOOL_SPRITE_HEIGHT);
+                (int)(ItemSpriteConfig.ITEM_WATERING_CAN_COL * ItemSpriteConfig.ITEM_SPRITE_WIDTH), 0,
+                (int)ItemSpriteConfig.ITEM_SPRITE_WIDTH, (int)ItemSpriteConfig.ITEM_SPRITE_HEIGHT);
         statusIconCache.put(CropStatusIndicator.NEEDS_WATER, waterIcon);
 
         // Cắt Icon Phân bón (Fertilizer)
         WritableImage fertilizerIcon = new WritableImage(reader,
-                (int)(ItemSpriteConfig.TOOL_FERTILISER_COL * ItemSpriteConfig.TOOL_SPRITE_WIDTH), 0,
-                (int)ItemSpriteConfig.TOOL_SPRITE_WIDTH, (int)ItemSpriteConfig.TOOL_SPRITE_HEIGHT);
+                (int)(ItemSpriteConfig.ITEM_FERTILISER_COL * ItemSpriteConfig.ITEM_SPRITE_WIDTH), 0,
+                (int)ItemSpriteConfig.ITEM_SPRITE_WIDTH, (int)ItemSpriteConfig.ITEM_SPRITE_HEIGHT);
         statusIconCache.put(CropStatusIndicator.NEEDS_FERTILIZER, fertilizerIcon);
 
         // Tạo Icon Kép (Nước + Phân bón)
         WritableImage combinedIcon = new WritableImage(reader,
-                (int)(ItemSpriteConfig.TOOL_WATERING_CAN_COL * ItemSpriteConfig.TOOL_SPRITE_WIDTH), 0,
-                (int)(ItemSpriteConfig.TOOL_SPRITE_WIDTH * 2), (int)ItemSpriteConfig.TOOL_SPRITE_HEIGHT);
+                (int)(ItemSpriteConfig.ITEM_WATERING_CAN_COL * ItemSpriteConfig.ITEM_SPRITE_WIDTH), 0,
+                (int)(ItemSpriteConfig.ITEM_SPRITE_WIDTH * 2), (int)ItemSpriteConfig.ITEM_SPRITE_HEIGHT);
         statusIconCache.put(CropStatusIndicator.NEED_WATER_AND_FERTILIZER, combinedIcon);
 
         // Icon Thu hoạch
         WritableImage harvestIcon = new WritableImage(reader,
-                (int)(ItemSpriteConfig.TOOL_SCYTHE_COL * ItemSpriteConfig.TOOL_SPRITE_WIDTH), 0,
-                (int)ItemSpriteConfig.TOOL_SPRITE_WIDTH, (int)ItemSpriteConfig.TOOL_SPRITE_HEIGHT);
+                (int)(ItemSpriteConfig.ITEM_SCYTHE_COL * ItemSpriteConfig.ITEM_SPRITE_WIDTH), 0,
+                (int)ItemSpriteConfig.ITEM_SPRITE_WIDTH, (int)ItemSpriteConfig.ITEM_SPRITE_HEIGHT);
         statusIconCache.put(CropStatusIndicator.READY_TO_HARVEST, harvestIcon);
     }
 
@@ -217,7 +221,7 @@ public class AssetManager {
     }
 
     /**
-     * Lưu trữ icon của tool (dùng cho HUD)
+     * Lưu trữ icon của item (dùng cho HUD)
      * Hàm này sẽ được gọi bởi HotbarView khi nó tải icon.
      */
     public void cacheItemIcon(ItemType type, Image icon) {
@@ -230,6 +234,184 @@ public class AssetManager {
     public Image getItemIcon(ItemType type) {
         return itemIconCache.get(type);
     }
+    
+    /**
+     * Tải tất cả texture động vật
+     */
+    private void loadAnimalTextures() {
+        // Tải spritesheet cho từng loại động vật
+        for (AnimalType animalType : AnimalType.values()) {
+            getTexture(animalType.getAssetPath());
+        }
+    }
+    
+    /**
+     * Lấy sprite của động vật dựa trên type và direction
+     * @param animalType Loại động vật
+     * @param direction Hướng (0: Down, 1: Right, 2: Left, 3: Up)
+     * @param action Hành động (IDLE, WALK, EAT)
+     * @return Image sprite của động vật
+     */
+    public Image getAnimalTexture(AnimalType animalType, int direction, Animal.Action action) {
+        if (animalType == null) return null;
+        
+        // Tạo key cache: type_direction_action_frame (thêm frame index để cache từng frame riêng)
+        // Frame index sẽ là 0 cho lần đầu (sẽ được cập nhật động trong animation)
+        int frameIndex = 0; // Frame hiện tại (sẽ được quản lý bởi animation system)
+        String key = animalType.name() + "_" + direction + "_" + action.name() + "_" + frameIndex;
+        
+        return spriteCache.computeIfAbsent(key, k -> {
+            Image animalSheet = getTexture(animalType.getAssetPath());
+            if (animalSheet == null) return null;
+            
+            PixelReader reader = animalSheet.getPixelReader();
+            double spriteSize = animalType.getSpriteSize();
+            
+            int row = 0;
+            int col = 0;
+            
+            // Xử lý riêng cho EGG_ENTITY (trứng đặt dưới đất)
+            if (animalType == AnimalType.EGG_ENTITY) {
+                // EGG_ENTITY nằm ở hàng 4 (Idle Down theo logic Standard)
+                row = AnimalConfig.STANDARD_IDLE_DOWN_ROW;
+                // Lấy 1 trong 2 frame trứng (cột 4 và 5)
+                // Sử dụng hằng số mới từ AnimalConfig
+                int eggFrameStart = AnimalConfig.EGG_FRAME_START_INDEX;
+                col = eggFrameStart + (key.hashCode() % AnimalConfig.EGG_FRAME_COUNT); // Random 0 hoặc 1, cộng vào frameStart -> frame 4 hoặc 5
+            }
+            // Xử lý riêng cho CHICKEN (chicken_32x32.png)
+            else if (animalType == AnimalType.CHICKEN) {
+                // Phân loại hướng thành 2 nhóm
+                // Nhóm A (Trái/Xuống): direction = 2 (LEFT) hoặc 0 (DOWN)
+                // Nhóm B (Phải/Trên): direction = 1 (RIGHT) hoặc 3 (UP)
+                boolean isGroupA = (direction == 2 || direction == 0); // LEFT hoặc DOWN
+                
+                if (action == Animal.Action.IDLE) {
+                    // IDLE: Nhóm A dùng Hàng 0 (8 frames), Nhóm B dùng Hàng 1 (8 frames)
+                    row = isGroupA ? 0 : 1;
+                } else if (action == Animal.Action.WALK) {
+                    // WALK: Nhóm A dùng Hàng 2 (4 frames), Nhóm B dùng Hàng 3 (4 frames)
+                    row = isGroupA ? 2 : 3;
+                } else {
+                    // EAT: Fallback về IDLE
+                    row = isGroupA ? 0 : 1;
+                }
+                col = 0; // Lấy frame đầu tiên (frameIndex sẽ được xử lý trong animation)
+            }
+            // Xử lý cho các động vật khác & Gà con (Standard layout)
+            else {
+                // Mapping direction sang index hàng: Down(0)->Row 0, Up(3)->Row 1, Left(2)->Row 2, Right(1)->Row 3
+                int mappedRowIndex;
+                switch (direction) {
+                    case 0: mappedRowIndex = 0; break; // Down -> Row 0
+                    case 3: mappedRowIndex = 1; break; // Up -> Row 1
+                    case 2: mappedRowIndex = 2; break; // Left -> Row 2
+                    case 1: mappedRowIndex = 3; break; // Right -> Row 3
+                    default: mappedRowIndex = 0; break;
+                }
+                
+                if (action == Animal.Action.WALK) {
+                    // WALK: Dùng 4 hàng đầu (Row 0-3), mỗi hàng có 6 frames
+                    row = mappedRowIndex;
+                } else if (action == Animal.Action.IDLE) {
+                    // IDLE: Dùng 4 hàng sau (Row 4-7), mỗi hàng có 4 frames
+                    row = mappedRowIndex + 4;
+                } else {
+                    // EAT: Fallback về IDLE
+                    row = mappedRowIndex + 4;
+                }
+                col = 0; // Lấy frame đầu tiên (frameIndex sẽ được xử lý trong animation)
+            }
+            
+            int x = (int) (col * spriteSize);
+            int y = (int) (row * spriteSize);
+            
+            if (x < 0 || y < 0 || x + spriteSize > animalSheet.getWidth() || y + spriteSize > animalSheet.getHeight()) {
+                // Nếu không đủ frame, dùng frame đầu tiên
+                x = 0;
+                y = 0;
+            }
+            
+            return new WritableImage(reader, x, y, (int) spriteSize, (int) spriteSize);
+        });
+    }
+    
+    /**
+     * Lấy icon item cho vật nuôi (ITEM_COW, ITEM_CHICKEN, etc.)
+     * Lấy từ animal_item_32x32.png
+     */
+    public Image getAnimalItemIcon(ItemType itemType) {
+        // Map ItemType -> Cột trong animal_item_32x32.png
+        int col = -1;
+        if (itemType == ItemType.ITEM_COW) {
+            col = ItemSpriteConfig.ANIMAL_ITEM_COW_COL;
+        } else if (itemType == ItemType.ITEM_CHICKEN) {
+            col = ItemSpriteConfig.ANIMAL_ITEM_CHICKEN_COL;
+        } else if (itemType == ItemType.ITEM_SHEEP) {
+            col = ItemSpriteConfig.ANIMAL_ITEM_SHEEP_COL;
+        } else if (itemType == ItemType.ITEM_PIG) {
+            col = ItemSpriteConfig.ANIMAL_ITEM_PIG_COL;
+        }
+        
+        if (col < 0) return null;
+        
+        // Tạo key cache
+        String cacheKey = "animal_item_icon_" + itemType.name();
+        
+        // Kiểm tra cache trước
+        if (spriteCache.containsKey(cacheKey)) {
+            return spriteCache.get(cacheKey);
+        }
+        
+        // Lấy từ animal_item_32x32.png
+        Image animalItemSheet = getTexture(AssetPaths.ANIMAL_ITEM_SHEET);
+        if (animalItemSheet == null) return null;
+        
+        PixelReader reader = animalItemSheet.getPixelReader();
+        double spriteWidth = ItemSpriteConfig.ITEM_SPRITE_WIDTH;
+        double spriteHeight = ItemSpriteConfig.ITEM_SPRITE_HEIGHT;
+        
+        // Lấy từ animal_item_32x32.png ở cột tương ứng, hàng 0
+        int x = (int) (col * spriteWidth);
+        int y = 0;
+        
+        if (x < 0 || y < 0 || x + spriteWidth > animalItemSheet.getWidth() || y + spriteHeight > animalItemSheet.getHeight()) {
+            return null;
+        }
+        
+        Image icon = new WritableImage(reader, x, y, (int) spriteWidth, (int) spriteHeight);
+        
+        // Cache và trả về
+        spriteCache.put(cacheKey, icon);
+        return icon;
+    }
+    
+    /**
+     * Lấy icon cho trứng (EGG item) trong túi đồ
+     * Lấy từ items_32x32.png ở cột ITEM_EGG_COL (Row 0)
+     */
+    public Image getEggItemIcon() {
+        String key = "egg_item_icon";
+        return spriteCache.computeIfAbsent(key, k -> {
+            Image itemsSheet = getTexture(AssetPaths.ITEMS_SHEET);
+            if (itemsSheet == null) return null;
+            
+            PixelReader reader = itemsSheet.getPixelReader();
+            double spriteWidth = ItemSpriteConfig.ITEM_SPRITE_WIDTH;
+            double spriteHeight = ItemSpriteConfig.ITEM_SPRITE_HEIGHT;
+            
+            // Lấy từ items_32x32.png ở cột ITEM_EGG_COL, hàng 0
+            int x = (int) (ItemSpriteConfig.ITEM_EGG_COL * spriteWidth);
+            int y = 0;
+            
+            if (x < 0 || y < 0 || x + spriteWidth > itemsSheet.getWidth() || y + spriteHeight > itemsSheet.getHeight()) {
+                return null;
+            }
+            
+            return new WritableImage(reader, x, y, (int) spriteWidth, (int) spriteHeight);
+        });
+    }
+    
 
     /**
      * Lấy sprite của cây tự nhiên dựa trên growth stage
@@ -262,27 +444,31 @@ public class AssetManager {
     }
 
     /**
-     * Lấy icon gỗ (WOOD) từ frame cuối cùng của tools_32x32.png
+     * Lấy icon gỗ (WOOD) từ items_32x32.png
+     * WOOD nằm ở cột cuối cùng của items_32x32.png
      */
     public Image getWoodIcon() {
         String key = "wood_icon";
         return spriteCache.computeIfAbsent(key, k -> {
-            Image toolsSheet = getTexture(AssetPaths.TOOLS_SHEET);
-            if (toolsSheet == null) return null;
-
-            PixelReader reader = toolsSheet.getPixelReader();
-            double w = ItemSpriteConfig.TOOL_SPRITE_WIDTH;
-            double h = ItemSpriteConfig.TOOL_SPRITE_HEIGHT;
+            Image itemsSheet = getTexture(AssetPaths.ITEMS_SHEET);
+            if (itemsSheet == null) return null;
             
-            // Frame cuối cùng trong tools sheet (cột ITEM_WOOD_COL)
-            int x = (int) (ItemSpriteConfig.ITEM_WOOD_COL * w);
+            PixelReader reader = itemsSheet.getPixelReader();
+            double spriteWidth = ItemSpriteConfig.ITEM_SPRITE_WIDTH;
+            double spriteHeight = ItemSpriteConfig.ITEM_SPRITE_HEIGHT;
+            
+            // Lấy từ items_32x32.png ở cột ITEM_WOOD_COL, hàng 0
+            int x = (int) (ItemSpriteConfig.ITEM_WOOD_COL * spriteWidth);
             int y = 0;
-
-            if (x < 0 || y < 0 || x + w > toolsSheet.getWidth() || y + h > toolsSheet.getHeight()) return null;
-
-            return new WritableImage(reader, x, y, (int) w, (int) h);
+            
+            if (x < 0 || y < 0 || x + spriteWidth > itemsSheet.getWidth() || y + spriteHeight > itemsSheet.getHeight()) {
+                return null;
+            }
+            
+            return new WritableImage(reader, x, y, (int) spriteWidth, (int) spriteHeight);
         });
     }
+    
 
     /**
      * Lấy sprite của hàng rào dựa trên pattern và trạng thái mở/đóng

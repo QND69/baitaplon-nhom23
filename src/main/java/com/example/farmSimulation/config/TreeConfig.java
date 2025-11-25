@@ -24,7 +24,7 @@ public class TreeConfig {
      * Muốn thưa hơn -> GIẢM xuống (ví dụ: 0.05 hoặc 0.08)
      * Muốn dày hơn -> TĂNG lên (ví dụ: 0.3)
      */
-    public static final double TREE_GENERATION_PROBABILITY = 0.02;
+    public static final double TREE_GENERATION_PROBABILITY = 0.015;
 
     /** Bán kính "giãn cách xã hội" giữa các cây.
      * Càng lớn thì các cây càng cách xa nhau.
@@ -70,7 +70,7 @@ public class TreeConfig {
     // --- Cấu hình Debug Hitbox ---
     
     /** Bật/Tắt hiển thị hitbox collision của cây (chỉ khi DEBUG_PLAYER_BOUNDS = true) */
-    public static final boolean DEBUG_TREE_HITBOX = false;
+    public static final boolean DEBUG_TREE_HITBOX = true;
     
     /** Màu viền hitbox của cây */
     public static final Color DEBUG_TREE_HITBOX_COLOR = Color.MAGENTA;

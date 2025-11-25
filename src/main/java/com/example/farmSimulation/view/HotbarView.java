@@ -18,6 +18,8 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
 import java.util.EnumMap;
@@ -33,8 +35,9 @@ public class HotbarView extends Pane {
     private final StackPane[] slots;
     private final Rectangle slotSelector; // Ô chọn
     private final Map<ItemType, Image> itemTextureMap; // Map ItemType -> Image
+    private final Text itemNameLabel; // Label hiển thị tên item đang cầm (ở giữa HUD, phía trên hotbar)
 
-    // Biến lưu trữ scale hiện tại
+    // Biến lưu trữ scale hiện tại của hotbar (được cập nhật từ Settings)
     private double currentScale = HotbarConfig.DEFAULT_HOTBAR_SCALE;
 
     // Biến cho Drag & Drop
@@ -112,6 +115,15 @@ public class HotbarView extends Pane {
         this.slotSelector.setFill(null);
         this.slotSelector.setStroke(HotbarConfig.SLOT_SELECTED_BORDER_COLOR);
         this.getChildren().add(slotSelector);
+
+        // Khởi tạo Label hiển thị tên item
+        this.itemNameLabel = new Text("");
+        this.itemNameLabel.setFont(HotbarConfig.HOTBAR_ITEM_NAME_FONT);
+        this.itemNameLabel.setFill(HotbarConfig.HOTBAR_TEXT_COLOR);
+        this.itemNameLabel.setStroke(HotbarConfig.HOTBAR_TEXT_STROKE_COLOR);
+        this.itemNameLabel.setStrokeWidth(HotbarConfig.HOTBAR_TEXT_STROKE_WIDTH);
+        this.itemNameLabel.setVisible(false); // Ẩn ban đầu
+        this.getChildren().add(itemNameLabel);
 
         // Thêm ghost icon vào view (lớp trên cùng)
         this.getChildren().add(ghostIcon);
@@ -303,37 +315,65 @@ public class HotbarView extends Pane {
 
         this.setLayoutX((WindowConfig.SCREEN_WIDTH - totalWidth) / 2); // Tự động căn giữa
         this.setLayoutY(WindowConfig.SCREEN_HEIGHT - currentSlotSize - yOffset); // Cách đáy
+        
+        // Cập nhật Label tên item (ở giữa, phía trên hotbar)
+        double itemNameFontSize = HotbarConfig.BASE_ITEM_NAME_FONT_SIZE * scale;
+        itemNameLabel.setFont(Font.font("Arial", FontWeight.BOLD, itemNameFontSize));
+        itemNameLabel.setStrokeWidth(HotbarConfig.HOTBAR_TEXT_STROKE_WIDTH * scale);
+        
+        // Tính vị trí Y của label (phía trên hotbar) - sẽ được cập nhật trong updateView()
+        double itemNameY = -HotbarConfig.ITEM_NAME_Y_OFFSET * scale;
+        itemNameLabel.setY(itemNameY);
+        itemNameLabel.setTextOrigin(javafx.geometry.VPos.BASELINE); // Căn theo baseline
     }
 
     /**
-     * Cắt ảnh từ sprite sheet tools.png và cache
+     * Cắt ảnh từ sprite sheet items_32x32.png và cache
      */
     private void loadItemTextures(AssetManager assetManager) {
-        Image toolsSheet = assetManager.getTexture(AssetPaths.TOOLS_SHEET);
-        if (toolsSheet == null) return;
+        Image itemsSheet = assetManager.getTexture(AssetPaths.ITEMS_SHEET);
+        if (itemsSheet == null) return;
 
-        // Cache Tools
-        cacheItemSprite(toolsSheet, ItemType.HOE, ItemSpriteConfig.TOOL_HOE_COL);
-        cacheItemSprite(toolsSheet, ItemType.WATERING_CAN, ItemSpriteConfig.TOOL_WATERING_CAN_COL);
-        cacheItemSprite(toolsSheet, ItemType.PICKAXE, ItemSpriteConfig.TOOL_PICKAXE_COL);
-        cacheItemSprite(toolsSheet, ItemType.SHOVEL, ItemSpriteConfig.TOOL_SHOVEL_COL);
-        cacheItemSprite(toolsSheet, ItemType.FERTILIZER, ItemSpriteConfig.TOOL_FERTILISER_COL);
-        cacheItemSprite(toolsSheet, ItemType.AXE, ItemSpriteConfig.TOOL_AXE_COL);
+        // Cache Items (công cụ)
+        cacheItemSprite(itemsSheet, ItemType.HOE, ItemSpriteConfig.ITEM_HOE_COL);
+        cacheItemSprite(itemsSheet, ItemType.WATERING_CAN, ItemSpriteConfig.ITEM_WATERING_CAN_COL);
+        cacheItemSprite(itemsSheet, ItemType.PICKAXE, ItemSpriteConfig.ITEM_PICKAXE_COL);
+        cacheItemSprite(itemsSheet, ItemType.SHOVEL, ItemSpriteConfig.ITEM_SHOVEL_COL);
+        cacheItemSprite(itemsSheet, ItemType.FERTILIZER, ItemSpriteConfig.ITEM_FERTILISER_COL);
+        cacheItemSprite(itemsSheet, ItemType.AXE, ItemSpriteConfig.ITEM_AXE_COL);
+        cacheItemSprite(itemsSheet, ItemType.SWORD, ItemSpriteConfig.ITEM_SWORD_COL); // Kiếm
+        cacheItemSprite(itemsSheet, ItemType.SHEARS, ItemSpriteConfig.ITEM_SCISSORS_COL); // Kéo
 
-        // Cache Seeds (Frame 0)
+        // Cache Seeds (Frame 0 từ crop sheet)
         cacheItemSprite(ItemType.SEEDS_STRAWBERRY, assetManager.getSeedIcon(CropType.STRAWBERRY));
         cacheItemSprite(ItemType.SEEDS_RADISH, assetManager.getSeedIcon(CropType.RADISH));
         cacheItemSprite(ItemType.SEEDS_POTATO, assetManager.getSeedIcon(CropType.POTATO));
         cacheItemSprite(ItemType.SEEDS_CARROT, assetManager.getSeedIcon(CropType.CARROT));
 
-        // Cache Harvest Items (Frame cuối)
+        // Cache Harvest Items (Frame cuối từ crop sheet)
         cacheItemSprite(ItemType.STRAWBERRY, assetManager.getHarvestIcon(CropType.STRAWBERRY));
         cacheItemSprite(ItemType.RADISH, assetManager.getHarvestIcon(CropType.RADISH));
         cacheItemSprite(ItemType.POTATO, assetManager.getHarvestIcon(CropType.POTATO));
         cacheItemSprite(ItemType.CARROT, assetManager.getHarvestIcon(CropType.CARROT));
         
-        // Cache Wood (Frame 3 từ tree_64x64.png)
+        // Cache Wood (từ tree sheet)
         cacheItemSprite(ItemType.WOOD, assetManager.getWoodIcon());
+        
+        // Cache các item mới từ items_32x32.png
+        cacheItemSprite(itemsSheet, ItemType.MILK_BUCKET, ItemSpriteConfig.ITEM_MILK_BUCKET_COL);
+        cacheItemSprite(itemsSheet, ItemType.FULL_MILK_BUCKET, ItemSpriteConfig.ITEM_FULL_MILK_BUCKET_COL);
+        cacheItemSprite(itemsSheet, ItemType.MEAT_CHICKEN, ItemSpriteConfig.ITEM_MEAT_CHICKEN_COL);
+        cacheItemSprite(itemsSheet, ItemType.MEAT_COW, ItemSpriteConfig.ITEM_MEAT_COW_COL);
+        cacheItemSprite(itemsSheet, ItemType.MEAT_PIG, ItemSpriteConfig.ITEM_MEAT_PIG_COL);
+        cacheItemSprite(itemsSheet, ItemType.MEAT_SHEEP, ItemSpriteConfig.ITEM_MEAT_SHEEP_COL);
+        cacheItemSprite(itemsSheet, ItemType.EGG, ItemSpriteConfig.ITEM_EGG_COL);
+        cacheItemSprite(itemsSheet, ItemType.WOOL, ItemSpriteConfig.ITEM_WOOL_COL);
+        
+        // Cache các item vật nuôi sống (sử dụng getAnimalItemIcon để lấy icon đã resize)
+        cacheItemSprite(ItemType.ITEM_COW, assetManager.getAnimalItemIcon(ItemType.ITEM_COW));
+        cacheItemSprite(ItemType.ITEM_CHICKEN, assetManager.getAnimalItemIcon(ItemType.ITEM_CHICKEN));
+        cacheItemSprite(ItemType.ITEM_SHEEP, assetManager.getAnimalItemIcon(ItemType.ITEM_SHEEP));
+        cacheItemSprite(ItemType.ITEM_PIG, assetManager.getAnimalItemIcon(ItemType.ITEM_PIG));
     }
 
     /**
@@ -341,7 +381,7 @@ public class HotbarView extends Pane {
      */
     private void cacheItemSprite(Image sheet, ItemType type, int col) {
         PixelReader reader = sheet.getPixelReader();
-        WritableImage icon = new WritableImage(reader, (int) (col * ItemSpriteConfig.TOOL_SPRITE_WIDTH), 0, (int) ItemSpriteConfig.TOOL_SPRITE_WIDTH, (int) ItemSpriteConfig.TOOL_SPRITE_HEIGHT);
+        WritableImage icon = new WritableImage(reader, (int) (col * ItemSpriteConfig.ITEM_SPRITE_WIDTH), 0, (int) ItemSpriteConfig.ITEM_SPRITE_WIDTH, (int) ItemSpriteConfig.ITEM_SPRITE_HEIGHT);
         itemTextureMap.put(type, icon);
         // Gọi cacheItemIcon
         assetManager.cacheItemIcon(type, icon);
@@ -367,6 +407,21 @@ public class HotbarView extends Pane {
         // Tính bar width max cho tính toán tỉ lệ
         double slotSize = HotbarConfig.BASE_SLOT_SIZE * currentScale;
         double maxBarWidth = slotSize * HotbarConfig.DURABILITY_BAR_WIDTH_RATIO;
+        
+        // Cập nhật Label tên item đang cầm
+        ItemStack currentItem = player.getCurrentItem();
+        if (currentItem != null) {
+            itemNameLabel.setText(currentItem.getItemType().getName());
+            itemNameLabel.setVisible(true);
+            // Cập nhật lại vị trí sau khi set text (vì width thay đổi)
+            // Tính lại totalWidth của hotbar
+            double totalWidth = (HotbarConfig.HOTBAR_SLOT_COUNT * slotSize) + ((HotbarConfig.HOTBAR_SLOT_COUNT - 1) * (HotbarConfig.BASE_SLOT_SPACING * currentScale));
+            // Căn giữa theo hotbar (vì label có parent là HotbarView)
+            double labelWidth = itemNameLabel.getLayoutBounds().getWidth();
+            itemNameLabel.setX((totalWidth - labelWidth) / 2);
+        } else {
+            itemNameLabel.setVisible(false);
+        }
 
         for (int i = 0; i < HotbarConfig.HOTBAR_SLOT_COUNT; i++) {
             ItemStack stack = items[i];
@@ -449,5 +504,12 @@ public class HotbarView extends Pane {
         double centerY = this.getLayoutY() + (currentSlotSize / 2);
 
         return new Point2D(centerX, centerY);
+    }
+
+    /**
+     * Lấy scale hiện tại của hotbar
+     */
+    public double getCurrentScale() {
+        return currentScale;
     }
 }

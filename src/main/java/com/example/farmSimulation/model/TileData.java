@@ -1,5 +1,7 @@
 package com.example.farmSimulation.model;
 
+import com.example.farmSimulation.config.ItemSpriteConfig;
+import com.example.farmSimulation.config.WorldConfig;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,12 +35,21 @@ public class TileData {
 
     // Visual
     private CropStatusIndicator statusIndicator = CropStatusIndicator.NONE;
+    
+    // Item trên đất (thịt rơi ra khi giết động vật)
+    private ItemType groundItem; // Item trên đất (null nếu không có)
+    private int groundItemAmount; // Số lượng item trên đất
+    
+    // [MỚI] Lưu độ lệch của item so với góc trên trái của ô (để item không bị dính vào giữa ô)
+    private double groundItemOffsetX;
+    private double groundItemOffsetY;
 
     /**
      * Constructor mặc định, tạo ra một ô GRASS
      */
     public TileData() {
         this.baseTileType = Tile.GRASS; // Mặc định là CỎ
+        setDefaultItemOffset();
     }
 
     /**
@@ -46,6 +57,7 @@ public class TileData {
      */
     public TileData(Tile baseTileType) {
         this.baseTileType = baseTileType;
+        setDefaultItemOffset();
     }
 
     // Copy constructor để tạo bản sao (dùng cho InteractionManager)
@@ -60,5 +72,21 @@ public class TileData {
         this.isFertilized = other.isFertilized;
         this.fertilizerStartTime = other.fertilizerStartTime;
         this.statusIndicator = other.statusIndicator;
+        this.groundItem = other.groundItem;
+        this.groundItemAmount = other.groundItemAmount;
+        
+        // [MỚI] Copy offset
+        this.groundItemOffsetX = other.groundItemOffsetX;
+        this.groundItemOffsetY = other.groundItemOffsetY;
+    }
+    
+    /**
+     * Thiết lập offset mặc định (Căn giữa ô)
+     * Dùng khi drop item từ túi hoặc khởi tạo
+     */
+    public void setDefaultItemOffset() {
+        // Căn giữa: (TileSize - ItemSize) / 2
+        this.groundItemOffsetX = (WorldConfig.TILE_SIZE - ItemSpriteConfig.ITEM_SPRITE_WIDTH) / 2.0;
+        this.groundItemOffsetY = (WorldConfig.TILE_SIZE - ItemSpriteConfig.ITEM_SPRITE_HEIGHT) / 2.0;
     }
 }

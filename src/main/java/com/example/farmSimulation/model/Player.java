@@ -41,21 +41,17 @@ public class Player {
         this.selectedHotbarSlot = 0;
 
         // Gán Item ban đầu (Số lượng tùy ý)
-        // Tools: Stackable = false -> Quantity = 1
-        this.hotbarItems[0] = new ItemStack(ItemType.HOE, 1);
-        this.hotbarItems[1] = new ItemStack(ItemType.WATERING_CAN, 1);
-        this.hotbarItems[2] = new ItemStack(ItemType.PICKAXE, 1);
-        this.hotbarItems[3] = new ItemStack(ItemType.SHOVEL, 1);
+        this.hotbarItems[0] = new ItemStack(ItemType.AXE, 1);
+        this.hotbarItems[1] = new ItemStack(ItemType.SWORD, 1);
+        this.hotbarItems[2] = new ItemStack(ItemType.SHEARS, 1);
+        this.hotbarItems[3] = new ItemStack(ItemType.EGG, 9);
+        this.hotbarItems[4] = new ItemStack(ItemType.ITEM_COW, 2);
+        this.hotbarItems[5] = new ItemStack(ItemType.ITEM_CHICKEN, 5);
+        this.hotbarItems[6] = new ItemStack(ItemType.ITEM_PIG, 3);
+        this.hotbarItems[7] = new ItemStack(ItemType.ITEM_SHEEP, 2);
+        this.hotbarItems[8] = new ItemStack(ItemType.WOOD, 30);
 
-        // Items: Stackable = true -> Quantity > 1
-        this.hotbarItems[4] = new ItemStack(ItemType.SEEDS_STRAWBERRY, 2);
-        this.hotbarItems[5] = new ItemStack(ItemType.SEEDS_CARROT, 5);
-        this.hotbarItems[6] = new ItemStack(ItemType.FERTILIZER, 3);
-
-        this.hotbarItems[7] = new ItemStack(ItemType.AXE, 1);   // Thêm 1 cái Rìu vào ô số 8
-        this.hotbarItems[8] = new ItemStack(ItemType.WOOD, 36); // Thêm 36 Gỗ vào ô số 9
-
-        // Các ô khác là null (sẽ là Tool.HAND)
+        // Các ô khác là null (tay không)
     }
 
     /**
@@ -105,8 +101,8 @@ public class Player {
 
                 // Bình tưới nước: Hết độ bền (hết nước) -> KHÔNG MẤT, chỉ không dùng được
                 if (broken && stack.getItemType() != ItemType.WATERING_CAN) {
-                    hotbarItems[slotIndex] = null; // Tool thường gãy thì mất
-                    System.out.println("Tool broken!");
+                    hotbarItems[slotIndex] = null; // Item thường gãy thì mất
+                    System.out.println("Item broken!");
                 }
             } else {
                 // Item thường -> Giảm số lượng

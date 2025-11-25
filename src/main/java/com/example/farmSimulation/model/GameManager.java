@@ -28,14 +28,20 @@ public class GameManager {
     private final TreeManager treeManager; // Quản lý cây tự nhiên
     private final FenceManager fenceManager; // Quản lý hàng rào
     private final CollisionManager collisionManager; // Quản lý collision
+    private final AnimalManager animalManager; // Quản lý động vật
 
     // --- Trạng thái Game ---
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
     private boolean isPaused = false;
+    private long lastUpdateTime = 0; // Thời gian update lần cuối (nanoTime) - để tính deltaTime
 
     // Tọa độ ô chuột đang trỏ tới
     private int currentMouseTileX = 0;
     private int currentMouseTileY = 0;
+    
+    // [MỚI] Tọa độ chuột thực tế trong thế giới
+    private double currentMouseWorldX = 0;
+    private double currentMouseWorldY = 0;
 
     // Constructor nhận tất cả các thành phần cốt lõi
     public GameManager(Player player, WorldMap worldMap, MainGameView mainGameView,
@@ -56,10 +62,15 @@ public class GameManager {
         this.treeManager = new TreeManager(this.worldMap);
         this.fenceManager = new FenceManager(this.worldMap);
         this.collisionManager = new CollisionManager(this.worldMap);
+        this.animalManager = new AnimalManager(this.worldMap, this.collisionManager);
         
         // Liên kết các Manager với nhau
         this.actionManager.setFenceManager(this.fenceManager);
+        this.actionManager.setAnimalManager(this.animalManager); // Liên kết AnimalManager với ActionManager
         this.movementHandler.setCollisionManager(this.collisionManager);
+        this.interactionManager.setAnimalManager(this.animalManager); // Liên kết AnimalManager với InteractionManager
+        this.interactionManager.setCollisionManager(this.collisionManager); // Liên kết CollisionManager với InteractionManager
+        this.interactionManager.setWorldMap(this.worldMap); // Liên kết WorldMap với InteractionManager
     }
 
     public void startGame() {
@@ -89,11 +100,23 @@ public class GameManager {
             return;
         }
 
+        // Tính deltaTime (thời gian trôi qua giữa 2 frame) - tính bằng giây
+        double deltaTime = 0.0;
+        if (lastUpdateTime > 0) {
+            long deltaNanos = now - lastUpdateTime;
+            deltaTime = deltaNanos / 1_000_000_000.0; // Chuyển từ nano giây sang giây
+            // Giới hạn deltaTime tối đa để tránh lag spike (ví dụ: 0.1 giây = 100ms)
+            if (deltaTime > 0.1) {
+                deltaTime = 0.1;
+            }
+        }
+        lastUpdateTime = now;
+
         // Cập nhật thời gian & chu kỳ ngày đêm
         //timeManager.update();
 
-        // Cập nhật di chuyển & trạng thái Player
-        movementHandler.update();
+        // Cập nhật di chuyển & trạng thái Player (truyền deltaTime)
+        movementHandler.update(deltaTime);
 
         // Cập nhật animation (View tự chạy)
         playerView.updateAnimation(); // [QUAN TRỌNG] Yêu cầu PlayerView tự chạy animation
@@ -112,6 +135,15 @@ public class GameManager {
         if (treesUpdated) {
             actionManager.setMapNeedsUpdate(true); // Báo map cần vẽ lại
         }
+        
+        // Cập nhật logic động vật
+        boolean animalsUpdated = animalManager.updateAnimals(now);
+        if (animalsUpdated) {
+            actionManager.setMapNeedsUpdate(true); // Báo map cần vẽ lại
+        }
+        
+        // Cập nhật vẽ động vật
+        mainGameView.updateAnimals(animalManager.getAnimals(), camera.getWorldOffsetX(), camera.getWorldOffsetY());
 
         // Cập nhật chuột
         updateMouseSelector();
@@ -128,12 +160,12 @@ public class GameManager {
      */
     private void updateMouseSelector() {
         // Tọa độ logic của chuột trong thế giới
-        double mouseWorldX = -camera.getWorldOffsetX() + gameController.getMouseX();
-        double mouseWorldY = -camera.getWorldOffsetY() + gameController.getMouseY();
+        this.currentMouseWorldX = -camera.getWorldOffsetX() + gameController.getMouseX();
+        this.currentMouseWorldY = -camera.getWorldOffsetY() + gameController.getMouseY();
 
         // Tọa độ logic của ô mà chuột trỏ tới
-        this.currentMouseTileX = (int) Math.floor(mouseWorldX / WorldConfig.TILE_SIZE);
-        this.currentMouseTileY = (int) Math.floor(mouseWorldY / WorldConfig.TILE_SIZE);
+        this.currentMouseTileX = (int) Math.floor(currentMouseWorldX / WorldConfig.TILE_SIZE);
+        this.currentMouseTileY = (int) Math.floor(currentMouseWorldY / WorldConfig.TILE_SIZE);
 
         mainGameView.updateSelector(
                 this.currentMouseTileX,       // Vị trí X của ô được chọn
@@ -148,6 +180,11 @@ public class GameManager {
      */
     private void updateGhostPlacement() {
         ItemStack currentItem = mainPlayer.getCurrentItem();
+        // [SỬA] Truyền thêm thông tin tọa độ thực tế vào MainGameView để hỗ trợ đặt động vật tự do
+        // (MainGameView và WorldRenderer cần được sửa để xử lý logic này nếu muốn hiển thị bóng mờ tự do)
+        // Hiện tại chúng ta vẫn dùng tile-based cho cây trồng/rào, nhưng động vật sẽ đặt ở mouseWorldX/Y
+        // Tạm thời logic hiển thị ghost placement vẫn dựa trên TileX/Y trong WorldRenderer
+        // Nếu bạn muốn ghost động vật đi theo chuột, cần sửa WorldRenderer.updateGhostPlacement
         mainGameView.updateGhostPlacement(
                 this.currentMouseTileX,
                 this.currentMouseTileY,
@@ -208,6 +245,10 @@ public class GameManager {
                 range = GameLogicConfig.FERTILIZER_INTERACTION_RANGE;
             } else if (type.name().startsWith("SEEDS_")) {
                 range = GameLogicConfig.PLANT_INTERACTION_RANGE; // Áp dụng cho tất cả loại hạt
+            } else if (type == ItemType.ITEM_COW || type == ItemType.ITEM_CHICKEN || 
+                       type == ItemType.ITEM_PIG || type == ItemType.ITEM_SHEEP || 
+                       type == ItemType.EGG) {
+                range = AnimalConfig.PLACEMENT_RANGE * WorldConfig.TILE_SIZE;
             } else {
                 // Các item khác dùng mặc định HAND range
                 range = GameLogicConfig.HAND_INTERACTION_RANGE;
@@ -276,6 +317,41 @@ public class GameManager {
         // Quay người chơi về hướng ô target
         updatePlayerDirectionTowards(col, row);
 
+        // [SỬA] Sử dụng biến currentMouseWorldX/Y đã được cập nhật chính xác trong updateMouseSelector
+        // Thay vì tính lại từ đầu, ta dùng giá trị đã được đồng bộ với camera mới nhất
+        double mouseWorldX = this.currentMouseWorldX;
+        double mouseWorldY = this.currentMouseWorldY;
+        
+        // Lưu lại state trước khi hành động
+        PlayerView.PlayerState oldState = mainPlayer.getState();
+
+        // Bước 1: Ưu tiên xử lý tương tác động vật (nếu đang cầm item động vật hoặc EGG)
+        // Gọi processAnimalInteraction TRƯỚC với tọa độ chuột thực tế (để đặt tự do)
+        String animalErrorMsg = interactionManager.processAnimalInteraction(mainPlayer, playerView, mouseWorldX, mouseWorldY);
+        
+        // Nếu processAnimalInteraction đã xử lý (trả về lỗi hoặc thành công), hiển thị thông báo và return
+        if (animalErrorMsg != null) {
+            double playerScreenX = playerView.getSpriteContainer().getLayoutX();
+            double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
+            mainGameView.showTemporaryText(animalErrorMsg, playerScreenX, playerScreenY);
+            return; // Đã xử lý xong, không cần gọi processInteraction
+        }
+        
+        // [QUAN TRỌNG - SỬA LỖI FALL-THROUGH]
+        // Kiểm tra xem hành động với động vật có THÀNH CÔNG hay không (state thay đổi sang BUSY, AXE...)
+        // Nếu thành công thì không chạy tiếp xuống logic đào đất/trồng cây
+        if (mainPlayer.getState() != oldState) {
+             mainGameView.updateHotbar();
+             return; // Dừng lại ở đây
+        }
+        
+        // [MỚI] Nếu đặt động vật thành công (trả về null và không lỗi), cần cập nhật Hotbar
+        // Kiểm tra xem có phải vừa đặt động vật không?
+        // Nếu InteractionManager.processAnimalInteraction trả về null, nó có thể là "không làm gì" HOẶC "thành công".
+        // Để chắc chắn, ta gọi updateHotbar() ở đây để đồng bộ Item
+        mainGameView.updateHotbar();
+        
+        // Bước 2: Nếu không phải tương tác động vật, xử lý tương tác với tile (cây trồng/đất)
         // Nhận thông báo lỗi trực tiếp từ hàm processInteraction
         String errorMsg = interactionManager.processInteraction(mainPlayer, playerView, worldMap, col, row);
 

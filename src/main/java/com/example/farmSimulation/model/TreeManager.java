@@ -18,8 +18,8 @@ public class TreeManager {
     
     private final long worldSeed;
     private long lastUpdateTimeMs = 0;
-    private double lastPlayerX = 0;
-    private double lastPlayerY = 0;
+    private double lastPlayerX = -9999; // Set giá trị ảo để lần đầu luôn update
+    private double lastPlayerY = -9999;
     
     private final Set<Long> generatedTiles;
 
@@ -102,6 +102,7 @@ public class TreeManager {
         }
 
         // --- PHẦN 2: SINH CÂY MỚI (PROCEDURAL GENERATION) ---
+        // [SỬA] Kiểm tra nếu player di chuyển quá 1 ô Tile (64px) so với lần trước
         if (Math.abs(playerX - lastPlayerX) > WorldConfig.TILE_SIZE || Math.abs(playerY - lastPlayerY) > WorldConfig.TILE_SIZE) {
             boolean spawned = generateTreesAroundPlayer(playerX, playerY);
             if (spawned) mapNeedsRedraw = true;
