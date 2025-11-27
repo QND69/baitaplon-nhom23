@@ -96,7 +96,7 @@ public class PlayerView {
         // Đọc dữ liệu từ file player.png
         initializeAnimationMap();
 
-        // Cấu hình kích thước
+        // Cấu hình kích thước (Đã nhân với Scale 0.7)
         this.baseWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
         this.baseHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
 
@@ -105,7 +105,7 @@ public class PlayerView {
 
         // Setting cho sprite player
         sprite.setSmooth(false); // Khử răng cưa
-        sprite.setPreserveRatio(false); // Giữ tỉ lệ
+        sprite.setPreserveRatio(true); // [FIX] Giữ tỉ lệ khi resize
 
         this.lastFrameTime = System.nanoTime(); // Dùng nanoTime cho chính xác
 
@@ -122,17 +122,17 @@ public class PlayerView {
             this.debugCenterDot.setFill(PlayerSpriteConfig.DEBUG_CENTER_DOT_COLOR);
             this.debugCenterDot.setMouseTransparent(true); // Không cản click
 
-            // Khởi tạo vòng tròn range
-            this.debugRangeCircle = new Circle(GameLogicConfig.HAND_INTERACTION_RANGE);
+            // Khởi tạo vòng tròn range (đã scale theo BASE_PLAYER_FRAME_SCALE)
+            this.debugRangeCircle = new Circle(GameLogicConfig.HAND_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE);
             this.debugRangeCircle.setFill(null); // Không tô nền
             this.debugRangeCircle.setStroke(PlayerSpriteConfig.DEBUG_RANGE_COLOR);
             this.debugRangeCircle.setStrokeWidth(1.0);
             this.debugRangeCircle.setMouseTransparent(true);
 
-            // Khởi tạo collision hitbox
+            // Khởi tạo collision hitbox (sử dụng giá trị đã scale)
             this.debugCollisionHitbox = new Rectangle(
-                PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH,
-                PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT
+                PlayerSpriteConfig.COLLISION_BOX_WIDTH,
+                PlayerSpriteConfig.COLLISION_BOX_HEIGHT
             );
             this.debugCollisionHitbox.setFill(null);
             this.debugCollisionHitbox.setStroke(PlayerSpriteConfig.DEBUG_COLLISION_HITBOX_COLOR);
@@ -404,6 +404,13 @@ public class PlayerView {
 
             sprite.setScaleY(1.0); // Reset scale
         }
+
+        // [FIX QUAN TRỌNG] Ép kích thước hiển thị của ảnh (FitWidth/Height)
+        // theo đúng tỷ lệ Scale đã định nghĩa.
+        // Nếu không làm bước này, ảnh sẽ hiển thị full size (128px hoặc 192px)
+        // và bị lệch khỏi Container đã scale (134.4px).
+        sprite.setFitWidth(frameWidth * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE);
+        sprite.setFitHeight(frameHeight * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE);
 
         // Xác định lật ảnh (flip)
         int flipFactor = (currentDirection == Direction.LEFT) ? -1 : 1;

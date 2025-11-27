@@ -114,16 +114,20 @@ public class PlayerMovementHandler {
             
             // Kiểm tra collision trước khi di chuyển
             if (collisionManager != null) {
+                // Tất cả giá trị đã được scale trong PlayerSpriteConfig
                 double hitboxWidth = com.example.farmSimulation.config.PlayerSpriteConfig.COLLISION_BOX_WIDTH;
                 double hitboxHeight = com.example.farmSimulation.config.PlayerSpriteConfig.COLLISION_BOX_HEIGHT;
                 
                 // Tâm kiểm tra va chạm phải là TÂM CỦA HITBOX Ở CHÂN
-                // [SỬA] Nhân width với Scale để lấy đúng tâm visual
-                double feetCenterX = newX + (com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE / 2.0);
+                // Tất cả giá trị đã được scale, chỉ cần tính toán trực tiếp
+                double scaledPlayerWidth = com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+                double scaledPlayerHeight = com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
                 
-                // [SỬA] Tính toán Y dựa trên HEIGHT đã SCALE.
-                // Công thức: Vị trí Y + (Chiều cao gốc * Tỷ lệ) - (Nửa chiều cao hitbox) - Padding
-                double feetCenterY = newY + (com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * com.example.farmSimulation.config.PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE)
+                double feetCenterX = newX + (scaledPlayerWidth / 2.0);
+                
+                // Tính toán Y dựa trên HEIGHT đã SCALE
+                // Công thức: Vị trí Y + (Chiều cao đã scale) - (Nửa chiều cao hitbox) - Padding (đã scale)
+                double feetCenterY = newY + scaledPlayerHeight
                                      - (hitboxHeight / 2.0) 
                                      - com.example.farmSimulation.config.PlayerSpriteConfig.COLLISION_BOX_BOTTOM_PADDING; 
 

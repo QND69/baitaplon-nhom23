@@ -117,11 +117,19 @@ public class InteractionManager {
     }
 
     private boolean isPlayerBlocking(int col, int row, Player mainPlayer, WorldMap worldMap) {
-        // 1. Tính Hitbox Người chơi (World Coords)
+        // 1. Tính Hitbox Người chơi (World Coords) - Tất cả giá trị đã được scale trong PlayerSpriteConfig
         double pX = mainPlayer.getTileX();
         double pY = mainPlayer.getTileY();
-        double pCenterX = pX + PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2.0;
-        double pCenterY = pY + PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT
+        
+        // Tính kích thước player đã scale
+        double scaledPlayerWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+        double scaledPlayerHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+        
+        // Tâm X: giữa chiều rộng đã scale
+        double pCenterX = pX + (scaledPlayerWidth / 2.0);
+        
+        // Tâm Y: từ đáy player đã scale, trừ đi nửa chiều cao hitbox và padding (tất cả đã scale)
+        double pCenterY = pY + scaledPlayerHeight
                 - (PlayerSpriteConfig.COLLISION_BOX_HEIGHT / 2.0)
                 - PlayerSpriteConfig.COLLISION_BOX_BOTTOM_PADDING;
 

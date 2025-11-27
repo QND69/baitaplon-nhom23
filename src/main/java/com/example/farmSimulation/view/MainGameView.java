@@ -99,7 +99,9 @@ public class MainGameView {
 
             // Ghim tâm chấm vào "Tâm Logic" (đã scale)
             double logicCenterX = scaledWidth / 2;
-            double logicCenterY = scaledHeight / 2;
+            
+            // [SỬA] Cộng thêm INTERACTION_CENTER_Y_OFFSET để hiển thị tâm debug đúng vị trí mới
+            double logicCenterY = (scaledHeight / 2) + PlayerSpriteConfig.INTERACTION_CENTER_Y_OFFSET;
 
             debugDot.layoutXProperty().bind(playerSpriteContainer.layoutXProperty().add(logicCenterX));
             debugDot.layoutYProperty().bind(playerSpriteContainer.layoutYProperty().add(logicCenterY));

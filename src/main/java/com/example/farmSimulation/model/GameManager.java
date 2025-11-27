@@ -213,9 +213,13 @@ public class GameManager {
      * Kiểm tra xem người chơi có trong tầm tương tác không
      */
     private boolean isPlayerInRange(int col, int row, ItemStack currentStack) {
-        // Tọa độ pixel logic của Tâm người chơi, lấy nửa dưới để tính khoảng cách
-        double playerX = mainPlayer.getTileX() + PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2;
-        double playerY = mainPlayer.getTileY() + PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT / 2 + PlayerSpriteConfig.PLAYER_FRAME_WIDTH / 8;
+        // Tọa độ pixel logic của Tâm người chơi (sử dụng giá trị đã scale)
+        double scaledPlayerWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+        double scaledPlayerHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+        double playerX = mainPlayer.getTileX() + scaledPlayerWidth / 2;
+        
+        // [SỬA] Cộng thêm INTERACTION_CENTER_Y_OFFSET để tâm tính toán hạ thấp xuống (ngang hông/chân)
+        double playerY = mainPlayer.getTileY() + scaledPlayerHeight / 2 + PlayerSpriteConfig.INTERACTION_CENTER_Y_OFFSET;
 
         // Tọa độ pixel logic của TÂM ô target
         double targetX = (col * WorldConfig.TILE_SIZE) + (WorldConfig.TILE_SIZE / 2.0);
@@ -226,32 +230,32 @@ public class GameManager {
                 Math.pow(playerX - targetX, 2) + Math.pow(playerY - targetY, 2)
         );
 
-        // Mặc định là HAND range
-        double range = GameLogicConfig.HAND_INTERACTION_RANGE;
+        // Mặc định là HAND range (đã scale theo BASE_PLAYER_FRAME_SCALE)
+        double range = GameLogicConfig.HAND_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
 
-        // Lấy tầm tương tác dựa trên công cụ
+        // Lấy tầm tương tác dựa trên công cụ (tất cả đều scale theo BASE_PLAYER_FRAME_SCALE)
         if (currentStack != null) {
             ItemType type = currentStack.getItemType();
 
             if (type == ItemType.HOE) {
-                range = GameLogicConfig.HOE_INTERACTION_RANGE;
+                range = GameLogicConfig.HOE_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             } else if (type == ItemType.WATERING_CAN) {
-                range = GameLogicConfig.WATERING_CAN_INTERACTION_RANGE;
+                range = GameLogicConfig.WATERING_CAN_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             } else if (type == ItemType.PICKAXE) {
-                range = GameLogicConfig.PICKAXE_INTERACTION_RANGE;
+                range = GameLogicConfig.PICKAXE_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             } else if (type == ItemType.SHOVEL) {
-                range = GameLogicConfig.SHOVEL_INTERACTION_RANGE;
+                range = GameLogicConfig.SHOVEL_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             } else if (type == ItemType.FERTILIZER) {
-                range = GameLogicConfig.FERTILIZER_INTERACTION_RANGE;
+                range = GameLogicConfig.FERTILIZER_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             } else if (type.name().startsWith("SEEDS_")) {
-                range = GameLogicConfig.PLANT_INTERACTION_RANGE; // Áp dụng cho tất cả loại hạt
+                range = GameLogicConfig.PLANT_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE; // Áp dụng cho tất cả loại hạt
             } else if (type == ItemType.ITEM_COW || type == ItemType.ITEM_CHICKEN || 
                        type == ItemType.ITEM_PIG || type == ItemType.ITEM_SHEEP || 
                        type == ItemType.EGG) {
-                range = AnimalConfig.PLACEMENT_RANGE * WorldConfig.TILE_SIZE;
+                range = AnimalConfig.PLACEMENT_RANGE * WorldConfig.TILE_SIZE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             } else {
-                // Các item khác dùng mặc định HAND range
-                range = GameLogicConfig.HAND_INTERACTION_RANGE;
+                // Các item khác dùng mặc định HAND range (đã scale)
+                range = GameLogicConfig.HAND_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             }
         }
 
@@ -262,9 +266,13 @@ public class GameManager {
      * Quay hướng người chơi về phía ô (col, row)
      */
     private void updatePlayerDirectionTowards(int col, int row) {
-        // Tọa độ pixel logic của Tâm người chơi, lấy nửa dưới để tính hướng
-        double playerX = mainPlayer.getTileX() + PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH / 2;
-        double playerY = mainPlayer.getTileY() + PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT / 2 + PlayerSpriteConfig.PLAYER_FRAME_WIDTH / 8;
+        // Tọa độ pixel logic của Tâm người chơi (sử dụng giá trị đã scale)
+        double scaledPlayerWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+        double scaledPlayerHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
+        double playerX = mainPlayer.getTileX() + scaledPlayerWidth / 2;
+        
+        // [SỬA] Cộng thêm INTERACTION_CENTER_Y_OFFSET để tâm quay hướng cũng chính xác
+        double playerY = mainPlayer.getTileY() + scaledPlayerHeight / 2 + PlayerSpriteConfig.INTERACTION_CENTER_Y_OFFSET;
 
         // Tọa độ pixel logic của TÂM ô target
         double targetX = (col * WorldConfig.TILE_SIZE) + (WorldConfig.TILE_SIZE / 2.0);
