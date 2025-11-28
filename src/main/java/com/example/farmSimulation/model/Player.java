@@ -12,9 +12,11 @@ import lombok.Setter;
 public class Player {
     private String name;
     private double money;
-    private int experience;
+    private double currentXP; // XP hiện tại
+    private double xpToNextLevel; // XP cần để lên level tiếp theo
     private int level;
-    private double stamina;
+    private double currentStamina; // Stamina hiện tại
+    private double maxStamina; // Stamina tối đa
 
     // Tọa độ logic của người chơi trong thế giới
     private double tileX;
@@ -28,6 +30,9 @@ public class Player {
     // --- Hotbar (Thanh công cụ) ---
     private ItemStack[] hotbarItems;
     private int selectedHotbarSlot;
+    
+    // Tham chiếu đến MainGameView để hiển thị thông báo level up
+    private com.example.farmSimulation.view.MainGameView mainGameView;
 
     // Constructor
     public Player() {
@@ -35,6 +40,14 @@ public class Player {
         this.tileY = GameLogicConfig.PLAYER_START_Y;
         this.state = PlayerView.PlayerState.IDLE; // Trạng thái ban đầu
         this.direction = PlayerView.Direction.DOWN; // Hướng ban đầu
+        this.money = GameLogicConfig.PLAYER_START_MONEY; // Khởi tạo tiền ban đầu
+        
+        // Khởi tạo Stamina & XP
+        this.maxStamina = GameLogicConfig.PLAYER_MAX_STAMINA;
+        this.currentStamina = GameLogicConfig.PLAYER_START_STAMINA;
+        this.level = GameLogicConfig.PLAYER_START_LEVEL;
+        this.currentXP = GameLogicConfig.PLAYER_START_XP;
+        this.xpToNextLevel = GameLogicConfig.PLAYER_START_XP_TO_NEXT_LEVEL;
 
         // Khởi tạo hotbar
         this.hotbarItems = new ItemStack[HotbarConfig.HOTBAR_SLOT_COUNT];
@@ -85,6 +98,51 @@ public class Player {
 
         return addedAny; // Trả về false nếu không thêm được gì (Inventory Full)
     }
+    
+    /**
+     * Thêm item vào inventory với độ bền cụ thể (overload method)
+     * @param type Loại item
+     * @param amount Số lượng
+     * @param durability Độ bền của item (nếu có). Nếu <= 0, sẽ dùng max durability
+     * @return true nếu thêm thành công, false nếu không
+     */
+    public boolean addItem(ItemType type, int amount, int durability) {
+        boolean addedAny = false;
+
+        // Stack vào ô có sẵn (chỉ stack được nếu cùng loại và không có độ bền, hoặc cùng độ bền)
+        for (ItemStack stack : hotbarItems) {
+            if (stack != null && stack.getItemType() == type) {
+                // Chỉ stack được nếu cả hai đều không có độ bền, hoặc cùng độ bền
+                boolean canStack = !type.hasDurability() || 
+                                  (stack.getCurrentDurability() == (durability > 0 ? durability : type.getMaxDurability()));
+                
+                if (canStack) {
+                    int remaining = stack.add(amount);
+                    if (remaining < amount) addedAny = true;
+                    if (remaining == 0) return true;
+                    amount = remaining;
+                }
+            }
+        }
+
+        // Tìm ô trống
+        for (int i = 0; i < hotbarItems.length; i++) {
+            if (hotbarItems[i] == null) {
+                ItemStack newStack = new ItemStack(type, amount);
+                // Set độ bền nếu item có độ bền
+                if (type.hasDurability()) {
+                    // Nếu durability > 0, dùng nó; nếu <= 0, dùng max durability (initial spawn case)
+                    int finalDurability = (durability > 0) ? durability : type.getMaxDurability();
+                    newStack.setCurrentDurability(finalDurability);
+                }
+                // Nếu item không có độ bền, ItemStack constructor đã set đúng rồi (max durability = 0)
+                hotbarItems[i] = newStack;
+                return true;
+            }
+        }
+
+        return addedAny; // Trả về false nếu không thêm được gì (Inventory Full)
+    }
 
     /**
      * Tiêu thụ item hoặc giảm độ bền tại slot chỉ định
@@ -106,7 +164,7 @@ public class Player {
                 }
             } else {
                 // Item thường -> Giảm số lượng
-                boolean stillHasItem = stack.remove(amount);
+                stack.remove(amount);
                 if (stack.isEmpty()) {
                     hotbarItems[slotIndex] = null;
                 }
@@ -128,5 +186,141 @@ public class Player {
         // Nếu slot đang chọn bị đổi đi, cần update lại logic chọn (nếu cần thiết)
         // Ở đây logic chọn dựa trên index (selectedHotbarSlot) nên không cần đổi index,
         // người chơi vẫn trỏ vào ô số đó, nhưng item bên trong đã khác.
+    }
+    
+    /**
+     * Thêm tiền cho người chơi
+     * @param amount Số tiền cần thêm
+     * @return true nếu thành công, false nếu amount < 0
+     */
+    public boolean addMoney(double amount) {
+        if (amount < 0) {
+            return false; // Không cho phép thêm số âm
+        }
+        this.money += amount;
+        return true;
+    }
+    
+    /**
+     * Trừ tiền của người chơi (mua hàng)
+     * @param amount Số tiền cần trừ
+     * @return true nếu có đủ tiền và trừ thành công, false nếu không đủ tiền
+     */
+    public boolean spendMoney(double amount) {
+        if (amount < 0) {
+            return false; // Không cho phép trừ số âm
+        }
+        if (this.money < amount) {
+            return false; // Không đủ tiền
+        }
+        this.money -= amount;
+        return true;
+    }
+    
+    // --- Stamina Methods ---
+    
+    /**
+     * Giảm stamina
+     * @param amount Lượng stamina cần giảm
+     */
+    public void reduceStamina(double amount) {
+        this.currentStamina = Math.max(0, this.currentStamina - amount);
+        
+        // Kiểm tra Game Over nếu stamina <= 0
+        if (this.currentStamina <= 0) {
+            this.state = PlayerView.PlayerState.DEAD;
+            // Hiển thị thông báo "You passed out!"
+            if (mainGameView != null) {
+                mainGameView.showTemporaryText("You passed out!", tileX, tileY);
+            }
+        }
+    }
+    
+    /**
+     * Hồi phục stamina
+     * @param amount Lượng stamina cần hồi phục
+     */
+    public void recoverStamina(double amount) {
+        this.currentStamina = Math.min(maxStamina, this.currentStamina + amount);
+    }
+    
+    /**
+     * Kiểm tra xem có đang bị penalty do stamina thấp không
+     * @return true nếu stamina < threshold
+     */
+    public boolean hasStaminaPenalty() {
+        return currentStamina < GameLogicConfig.STAMINA_PENALTY_THRESHOLD;
+    }
+    
+    /**
+     * Getter cho stamina hiện tại (tương thích với code cũ)
+     */
+    public double getStamina() {
+        return currentStamina;
+    }
+    
+    /**
+     * Setter cho stamina hiện tại (tương thích với code cũ)
+     */
+    public void setStamina(double stamina) {
+        this.currentStamina = Math.min(maxStamina, Math.max(0, stamina));
+    }
+    
+    /**
+     * Getter cho experience (tương thích với code cũ)
+     */
+    public int getExperience() {
+        return (int) currentXP;
+    }
+    
+    /**
+     * Setter cho experience (tương thích với code cũ)
+     */
+    public void setExperience(int experience) {
+        this.currentXP = experience;
+    }
+    
+    // --- XP & Leveling Methods ---
+    
+    /**
+     * Tăng XP cho người chơi
+     * @param amount Lượng XP cần tăng
+     */
+    public void gainXP(double amount) {
+        this.currentXP += amount;
+        
+        // Kiểm tra level up
+        while (currentXP >= xpToNextLevel) {
+            levelUp();
+        }
+    }
+    
+    /**
+     * Lên level
+     */
+    private void levelUp() {
+        this.level++;
+        this.currentXP -= xpToNextLevel;
+        
+        // Tăng max stamina
+        this.maxStamina += GameLogicConfig.STAMINA_INCREASE_PER_LEVEL;
+        
+        // Refill stamina
+        this.currentStamina = maxStamina;
+        
+        // Tăng XP cần thiết cho level tiếp theo
+        this.xpToNextLevel *= GameLogicConfig.XP_MULTIPLIER_PER_LEVEL;
+        
+        // Hiển thị thông báo "LEVEL UP!"
+        if (mainGameView != null) {
+            mainGameView.showTemporaryText("LEVEL UP! Level " + level, tileX, tileY);
+        }
+    }
+    
+    /**
+     * Set MainGameView reference (để hiển thị thông báo)
+     */
+    public void setMainGameView(com.example.farmSimulation.view.MainGameView mainGameView) {
+        this.mainGameView = mainGameView;
     }
 }

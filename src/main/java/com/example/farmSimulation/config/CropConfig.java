@@ -9,6 +9,16 @@ public class CropConfig {
 
     /** Thời gian (ms) cho mỗi giai đoạn phát triển (khi được tưới nước) */
     public static final long TIME_PER_GROWTH_STAGE_MS = 20_000; // 60 giây / giai đoạn
+    
+    // --- Cấu hình Tốc độ phát triển theo thời tiết/thời gian ---
+    /** Tốc độ phát triển cơ bản */
+    public static final double BASE_GROWTH_SPEED = 1.0;
+    /** Tốc độ phát triển vào ban đêm (nhân với BASE_GROWTH_SPEED) */
+    public static final double NIGHT_GROWTH_SPEED_MULTIPLIER = 0.8;
+    /** Tốc độ phát triển khi mưa (nhân với BASE_GROWTH_SPEED) */
+    public static final double RAIN_GROWTH_SPEED_MULTIPLIER = 1.2;
+    /** Ngưỡng ánh sáng để coi là ban đêm (dưới ngưỡng này = đêm) */
+    public static final double NIGHT_LIGHT_THRESHOLD = 0.4;
 
     /** Thời gian (ms) để đất ướt (SOIL_WET) trở lại thành đất khô (SOIL) */
     public static final long SOIL_DRY_TIME_MS = 30_000; // 40s

@@ -45,6 +45,28 @@ public class GameController {
                     gameManager.toggleSettingsMenu(); // Gọi hàm hiển thị/ẩn menu
                 }
             }
+            // Xử lý phím Q để ném item từ slot mà chuột đang trỏ vào
+            if (event.getCode() == KeyCode.Q) {
+                if (gameManager != null) {
+                    // Kiểm tra xem chuột có đang ở trên hotbar không
+                    int slotIndex = gameManager.getHotbarSlotFromMouse(mouseX, mouseY);
+                    if (slotIndex >= 0) {
+                        gameManager.dropItemFromHotbar(slotIndex);
+                    }
+                }
+            }
+            // [MỚI] Xử lý phím B để bật/tắt Shop
+            if (event.getCode() == KeyCode.B) {
+                if (gameManager != null && mainGameView != null) {
+                    mainGameView.toggleShop();
+                }
+            }
+            // [MỚI] Xử lý phím M để test đổi thời tiết
+            if (event.getCode() == KeyCode.M) {
+                if (gameManager != null) {
+                    gameManager.toggleWeather(); // Test đổi thời tiết
+                }
+            }
             // Xử lý phím số (1-9, 0) để đổi hotbar
             if (event.getCode().isDigitKey()) {
                 int slot = -1;

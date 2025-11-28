@@ -6,6 +6,8 @@ import com.example.farmSimulation.config.GameLogicConfig;
 // Class quản lý hệ thống ngầm của cây
 public class CropManager {
     private final WorldMap worldMap;
+    private WeatherManager weatherManager; // Quản lý thời tiết
+    private TimeManager timeManager; // Quản lý thời gian (để kiểm tra ban đêm)
 
     // Biến để theo dõi thời gian frame trước
     private long lastUpdateTime = 0;
@@ -18,6 +20,20 @@ public class CropManager {
 
     public CropManager(WorldMap worldMap) {
         this.worldMap = worldMap;
+    }
+    
+    /**
+     * Set WeatherManager (được gọi từ GameManager)
+     */
+    public void setWeatherManager(WeatherManager weatherManager) {
+        this.weatherManager = weatherManager;
+    }
+    
+    /**
+     * Set TimeManager (được gọi từ GameManager)
+     */
+    public void setTimeManager(TimeManager timeManager) {
+        this.timeManager = timeManager;
     }
 
     /**
@@ -79,13 +95,27 @@ public class CropManager {
             processedCount++;
 
             // --- LOGIC TƯỚI NƯỚC & ĐẤT ---
+            // [MỚI] Nếu đang mưa, tự động tưới ướt tất cả đất có cây
+            if (weatherManager != null && weatherManager.isRaining() && 
+                data.getBaseTileType() == Tile.SOIL && data.getCropData() != null && !data.isWatered()) {
+                // Mưa tự động tưới ướt đất có cây
+                data.setWatered(true);
+                data.setBaseTileType(Tile.SOIL_WET);
+                data.setLastWateredTime(currentTime);
+                data.setDryStartTime(0); // Xóa thời gian khô
+                changed = true;
+            }
+            
             if (data.isWatered()) {
-                // Đất ướt -> Tự khô
-                if (currentTimeMs - data.getLastWateredTime() / 1_000_000 > CropConfig.SOIL_DRY_TIME_MS) {
-                    data.setWatered(false);
-                    data.setBaseTileType(Tile.SOIL);
-                    data.setDryStartTime(currentTime); // Bắt đầu đếm giờ khô
-                    changed = true;
+                // Đất ướt -> Tự khô (trừ khi đang mưa)
+                if (weatherManager == null || !weatherManager.isRaining()) {
+                    // Chỉ khô khi không mưa
+                    if (currentTimeMs - data.getLastWateredTime() / 1_000_000 > CropConfig.SOIL_DRY_TIME_MS) {
+                        data.setWatered(false);
+                        data.setBaseTileType(Tile.SOIL);
+                        data.setDryStartTime(currentTime); // Bắt đầu đếm giờ khô
+                        changed = true;
+                    }
                 }
             } else if (data.getBaseTileType() == Tile.SOIL) { // Đất khô
                 if (data.getCropData() == null) { // Đất hoang -> Mọc cỏ
@@ -153,6 +183,29 @@ public class CropManager {
                     }
 
                     double timePerStage = hasBuff ? (CropConfig.TIME_PER_GROWTH_STAGE_MS / CropConfig.FERTILIZER_BUFF) : CropConfig.TIME_PER_GROWTH_STAGE_MS;
+                    
+                    // Áp dụng weather/time multipliers
+                    double growthSpeedMultiplier = CropConfig.BASE_GROWTH_SPEED;
+                    
+                    // Kiểm tra ban đêm (light intensity thấp)
+                    boolean isNight = false;
+                    if (timeManager != null) {
+                        double lightIntensity = timeManager.getCurrentLightIntensity();
+                        isNight = (lightIntensity < CropConfig.NIGHT_LIGHT_THRESHOLD);
+                    }
+                    
+                    // Áp dụng multiplier cho ban đêm
+                    if (isNight) {
+                        growthSpeedMultiplier *= CropConfig.NIGHT_GROWTH_SPEED_MULTIPLIER;
+                    }
+                    
+                    // Áp dụng multiplier cho mưa
+                    if (weatherManager != null && weatherManager.isRaining()) {
+                        growthSpeedMultiplier *= CropConfig.RAIN_GROWTH_SPEED_MULTIPLIER;
+                    }
+                    
+                    // Điều chỉnh timePerStage dựa trên growth speed multiplier
+                    timePerStage = timePerStage / growthSpeedMultiplier;
 
                     long timeElapsedMs = (currentTime - crop.getPlantTime()) / 1_000_000;
                     int targetStage = (int) (timeElapsedMs / timePerStage);

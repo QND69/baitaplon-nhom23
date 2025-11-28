@@ -1,5 +1,6 @@
 package com.example.farmSimulation.model;
 
+import com.example.farmSimulation.view.PlayerView;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,7 @@ public class TimedTileAction {
     // Item thu hoạch (nếu có) để kích hoạt animation
     private ItemType harvestedItem;
     private int harvestedAmount; // Số lượng item thu hoạch được
+    private int harvestedDurability; // Độ bền của item thu hoạch (0 nếu không áp dụng hoặc default)
     
     // Thông tin động vật cần xóa sau khi action hoàn thành (cho nhặt trứng)
     private double animalWorldX; // Tọa độ X của động vật cần xóa
@@ -31,6 +33,9 @@ public class TimedTileAction {
     private int meatAmount; // Số lượng thịt
     private int meatTileCol; // Cột tile để đặt thịt
     private int meatTileRow; // Hàng tile để đặt thịt
+    
+    // PlayerState khi action được tạo (để biết loại action cho XP gain)
+    private PlayerView.PlayerState actionState;
 
     // Constructor (dành cho các hành động không tốn item như Cuốc)
     public TimedTileAction(int col, int row, TileData newTileData, int framesRemaining) {
@@ -47,6 +52,8 @@ public class TimedTileAction {
         this.itemSlotIndex = itemSlotIndex;
         this.harvestedItem = null; // Mặc định không có item thu hoạch
         this.harvestedAmount = 0; // Mặc định số lượng = 0
+        this.harvestedDurability = 0; // Mặc định độ bền = 0 (sẽ dùng max durability nếu cần)
+        this.actionState = null; // Mặc định không có state
     }
 
     public boolean tick() {

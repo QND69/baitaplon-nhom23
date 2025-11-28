@@ -28,6 +28,7 @@ public final class AssetPaths {
 
     // GUI
     public static final String LOGO = "/assets/images/GUI/logo.png";
+    public static final String GUI_ICONS = "/assets/images/GUI/GUI_icon_32x32.png"; // GUI icons sheet
 
     public static final String ITEMS_SHEET = "/assets/images/items/tools/items_32x32.png";
 

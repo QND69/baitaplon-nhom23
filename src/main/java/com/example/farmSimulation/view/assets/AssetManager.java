@@ -3,6 +3,7 @@ package com.example.farmSimulation.view.assets;
 import com.example.farmSimulation.config.AnimalConfig;
 import com.example.farmSimulation.config.AssetPaths;
 import com.example.farmSimulation.config.CropConfig;
+import com.example.farmSimulation.config.HudConfig;
 import com.example.farmSimulation.config.ItemSpriteConfig;
 import com.example.farmSimulation.config.TreeConfig;
 import com.example.farmSimulation.model.*;
@@ -33,6 +34,9 @@ public class AssetManager {
 
     // Cache riêng cho Icon trạng thái (Status)
     private final Map<CropStatusIndicator, Image> statusIconCache = new EnumMap<>(CropStatusIndicator.class);
+    
+    // Cache cho GUI icons (Settings, Shop, Money, Weather, etc.)
+    private final Map<String, Image> guiIconCache = new HashMap<>();
 
     /**
      * Tải TOÀN BỘ tài nguyên game vào bộ nhớ.
@@ -75,6 +79,9 @@ public class AssetManager {
 
         // Cắt và cache các icon trạng thái từ Items Sheet
         loadStatusIcons(itemsSheet);
+        
+        // Tải và cache GUI icons
+        loadGuiIcons();
     }
 
     /**
@@ -107,6 +114,75 @@ public class AssetManager {
                 (int)(ItemSpriteConfig.ITEM_SCYTHE_COL * ItemSpriteConfig.ITEM_SPRITE_WIDTH), 0,
                 (int)ItemSpriteConfig.ITEM_SPRITE_WIDTH, (int)ItemSpriteConfig.ITEM_SPRITE_HEIGHT);
         statusIconCache.put(CropStatusIndicator.READY_TO_HARVEST, harvestIcon);
+    }
+    
+    /**
+     * Cắt và cache các GUI icons từ GUI_icon_32x32.png
+     */
+    private void loadGuiIcons() {
+        Image guiIconSheet = getTexture(AssetPaths.GUI_ICONS);
+        if (guiIconSheet == null) return;
+        
+        PixelReader reader = guiIconSheet.getPixelReader();
+        double iconSize = HudConfig.GUI_ICON_SIZE;
+        int row = 0; // All icons are in row 0
+        
+        // Cắt Settings (Gear) icon
+        WritableImage settingsIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_SETTINGS_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("SETTINGS", settingsIcon);
+        
+        // Cắt Shop icon
+        WritableImage shopIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_SHOP_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("SHOP", shopIcon);
+        
+        // Cắt Money ($) icon
+        WritableImage moneyIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_MONEY_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("MONEY", moneyIcon);
+        
+        // Cắt Sunny weather icon
+        WritableImage sunnyIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_SUNNY_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("SUNNY", sunnyIcon);
+        
+        // Cắt Rain weather icon
+        WritableImage rainIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_RAIN_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("RAIN", rainIcon);
+        
+        // Cắt Energy Bar Empty (Lightning) icon
+        WritableImage energyEmptyIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_ENERGY_EMPTY_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("ENERGY_EMPTY", energyEmptyIcon);
+        
+        // Cắt Energy Bar Full (Lightning) icon
+        WritableImage energyFullIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_ENERGY_FULL_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("ENERGY_FULL", energyFullIcon);
+        
+        // Cắt Trash Can icon
+        WritableImage trashIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_TRASH_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("TRASH", trashIcon);
+    }
+    
+    /**
+     * Lấy GUI icon đã cache
+     * @param iconName Tên icon: "SETTINGS", "SHOP", "MONEY", "SUNNY", "RAIN", "ENERGY_EMPTY", "ENERGY_FULL", "TRASH"
+     * @return Image của icon, null nếu không tìm thấy
+     */
+    public Image getGuiIcon(String iconName) {
+        return guiIconCache.get(iconName);
     }
 
     /**

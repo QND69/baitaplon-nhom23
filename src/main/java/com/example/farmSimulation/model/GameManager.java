@@ -29,6 +29,8 @@ public class GameManager {
     private final FenceManager fenceManager; // Quản lý hàng rào
     private final CollisionManager collisionManager; // Quản lý collision
     private final AnimalManager animalManager; // Quản lý động vật
+    private final ShopManager shopManager; // Quản lý shop
+    private final WeatherManager weatherManager; // Quản lý thời tiết
 
     // --- Trạng thái Game ---
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
@@ -63,6 +65,11 @@ public class GameManager {
         this.fenceManager = new FenceManager(this.worldMap);
         this.collisionManager = new CollisionManager(this.worldMap);
         this.animalManager = new AnimalManager(this.worldMap, this.collisionManager);
+        this.shopManager = new ShopManager(player); // Khởi tạo ShopManager
+        this.weatherManager = new WeatherManager(); // Khởi tạo WeatherManager
+        
+        // Liên kết Player với MainGameView để hiển thị thông báo
+        player.setMainGameView(mainGameView);
         
         // Liên kết các Manager với nhau
         this.actionManager.setFenceManager(this.fenceManager);
@@ -71,6 +78,8 @@ public class GameManager {
         this.interactionManager.setAnimalManager(this.animalManager); // Liên kết AnimalManager với InteractionManager
         this.interactionManager.setCollisionManager(this.collisionManager); // Liên kết CollisionManager với InteractionManager
         this.interactionManager.setWorldMap(this.worldMap); // Liên kết WorldMap với InteractionManager
+        this.cropManager.setWeatherManager(this.weatherManager); // Liên kết WeatherManager với CropManager
+        this.cropManager.setTimeManager(this.timeManager); // Liên kết TimeManager với CropManager
     }
 
     public void startGame() {
@@ -113,7 +122,16 @@ public class GameManager {
         lastUpdateTime = now;
 
         // Cập nhật thời gian & chu kỳ ngày đêm
-        //timeManager.update();
+        timeManager.update();
+        
+        // Check if new day started and refresh shop stock
+        if (timeManager.hasNewDayStarted()) {
+            shopManager.generateDailyStock(true); // Allow discounts on natural day refresh
+            System.out.println("New day started! Shop stock refreshed.");
+        }
+        
+        // Tự động hồi phục stamina (khi không hoạt động)
+        updateStaminaRecovery(deltaTime);
 
         // Cập nhật di chuyển & trạng thái Player (truyền deltaTime)
         movementHandler.update(deltaTime);
@@ -144,6 +162,16 @@ public class GameManager {
         
         // Cập nhật vẽ động vật
         mainGameView.updateAnimals(animalManager.getAnimals(), camera.getWorldOffsetX(), camera.getWorldOffsetY());
+        
+        // [MỚI] Cập nhật thời tiết
+        weatherManager.updateWeather(now);
+        mainGameView.updateWeather(weatherManager.isRaining());
+        
+        // Cập nhật HUD (Player Stats, Weather Icon)
+        if (mainGameView.getHudView() != null) {
+            mainGameView.getHudView().updatePlayerStats();
+            mainGameView.getHudView().updateWeather(weatherManager.isRaining());
+        }
 
         // Cập nhật chuột
         updateMouseSelector();
@@ -153,8 +181,26 @@ public class GameManager {
         
         // Cập nhật collision hitbox (debug mode)
         updateCollisionHitbox();
+        
+        // [MỚI] Cập nhật hiển thị tiền
+        mainGameView.updateMoneyDisplay(mainPlayer.getMoney());
     }
 
+    /**
+     * Tự động hồi phục stamina theo thời gian
+     */
+    private void updateStaminaRecovery(double deltaTime) {
+        // Chỉ hồi phục khi không hoạt động (IDLE hoặc WALK)
+        PlayerView.PlayerState currentState = mainPlayer.getState();
+        if (currentState == PlayerView.PlayerState.IDLE || currentState == PlayerView.PlayerState.WALK) {
+            // Chỉ hồi phục nếu chưa đầy
+            if (mainPlayer.getCurrentStamina() < mainPlayer.getMaxStamina()) {
+                double recoveryAmount = GameLogicConfig.STAMINA_RECOVERY_RATE * deltaTime;
+                mainPlayer.recoverStamina(recoveryAmount);
+            }
+        }
+    }
+    
     /**
      * Cập nhật vị trí ô vuông chọn
      */
@@ -413,6 +459,11 @@ public class GameManager {
     public void toggleSettingsMenu() {
         this.isPaused = !this.isPaused; // Sử dụng this.isPaused
         if (this.isPaused) {
+            // Đóng Shop nếu đang mở để tránh overlap
+            if (mainGameView != null && mainGameView.getShopView() != null && mainGameView.getShopView().isShopVisible()) {
+                mainGameView.getShopView().toggle();
+            }
+            
             if (gameLoop != null) {
                 gameLoop.stop(); // ⬅️ Dừng game loop
                 //System.out.println("Game Loop đã dừng.");
@@ -425,5 +476,188 @@ public class GameManager {
             }
             mainGameView.hideSettingsMenu();
         }
+    }
+    
+    /**
+     * [MỚI] Toggle thời tiết (dùng cho test)
+     */
+    public void toggleWeather() {
+        if (weatherManager != null) {
+            if (weatherManager.isRaining()) {
+                weatherManager.setWeather(com.example.farmSimulation.config.WeatherConfig.WeatherType.SUNNY);
+            } else {
+                weatherManager.setWeather(com.example.farmSimulation.config.WeatherConfig.WeatherType.RAIN);
+            }
+        }
+    }
+    
+    /**
+     * [MỚI] Getter cho ShopManager
+     */
+    public ShopManager getShopManager() {
+        return shopManager;
+    }
+    
+    /**
+     * [MỚI] Getter cho WeatherManager
+     */
+    public WeatherManager getWeatherManager() {
+        return weatherManager;
+    }
+    
+    /**
+     * Tính slot index từ tọa độ chuột (trong scene coordinates)
+     */
+    public int getHotbarSlotFromMouse(double mouseX, double mouseY) {
+        if (mainGameView == null || mainGameView.getHotbarView() == null) {
+            return -1;
+        }
+        
+        // Chuyển tọa độ scene sang tọa độ local của HotbarView
+        javafx.geometry.Point2D scenePoint = new javafx.geometry.Point2D(mouseX, mouseY);
+        javafx.geometry.Point2D localPoint = mainGameView.getHotbarView().sceneToLocal(scenePoint);
+        
+        // Gọi hàm trong HotbarView để tính slot index
+        return mainGameView.getHotbarView().getSlotIndexFromMouse(localPoint.getX(), localPoint.getY());
+    }
+    
+    /**
+     * Ném item từ hotbar slot chỉ định xuống dưới chân player
+     * @param slotIndex Slot index cần ném item
+     */
+    public void dropItemFromHotbar(int slotIndex) {
+        // Kiểm tra xem player có đang bận không
+        PlayerView.PlayerState currentState = mainPlayer.getState();
+        if (currentState != PlayerView.PlayerState.IDLE && currentState != PlayerView.PlayerState.WALK) {
+            return; // Player đang bận, không cho ném item
+        }
+        
+        // Kiểm tra slot index hợp lệ
+        if (slotIndex < 0 || slotIndex >= mainPlayer.getHotbarItems().length) {
+            return;
+        }
+        
+        // Lấy item từ slot chỉ định
+        ItemStack stackToDrop = mainPlayer.getHotbarItems()[slotIndex];
+        if (stackToDrop == null) {
+            return; // Không có item để ném
+        }
+        
+        // Tính toán vị trí player (vị trí để ném item)
+        // Item ném ra từ vị trí player (tileX, tileY), giống như thịt rơi từ động vật
+        // Vị trí player là góc trên-trái của sprite, item ném từ đó
+        double playerX = mainPlayer.getTileX() + (PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE) / 2.0; // Tâm ngang
+        double playerY = mainPlayer.getTileY() + (PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE) - ItemSpriteConfig.ITEM_SPRITE_HEIGHT / 2.0; // Gần chân player
+        
+        // Ném item xuống dưới chân player (không theo hướng chuột)
+        // Vị trí đích: ngay dưới chân player, với scatter ngẫu nhiên nhỏ
+        double targetX = playerX;
+        double targetY = playerY + WorldConfig.TILE_SIZE * 0.3; // Ném xuống dưới một chút
+        
+        // Tính tile và offset
+        int targetTileCol = (int) Math.floor(targetX / WorldConfig.TILE_SIZE);
+        int targetTileRow = (int) Math.floor(targetY / WorldConfig.TILE_SIZE);
+        
+        // Tính offset trong tile (để item không dính ở giữa ô)
+        double offsetX = targetX - (targetTileCol * WorldConfig.TILE_SIZE);
+        double offsetY = targetY - (targetTileRow * WorldConfig.TILE_SIZE);
+        
+        // Trừ đi một nửa kích thước item để item nằm giữa điểm đó
+        offsetX -= ItemSpriteConfig.ITEM_SPRITE_WIDTH / 2.0;
+        offsetY -= ItemSpriteConfig.ITEM_SPRITE_HEIGHT / 2.0;
+        
+        // Thêm scatter ngẫu nhiên nhỏ để item không bị dính chặt
+        double scatter = GameLogicConfig.ITEM_DROP_SCATTER_RANGE * 0.5; // Scatter nhỏ hơn một chút
+        offsetX += (Math.random() - 0.5) * scatter;
+        offsetY += (Math.random() - 0.5) * scatter;
+        
+        // Lấy item type và số lượng
+        ItemType itemType = stackToDrop.getItemType();
+        int amount = stackToDrop.getQuantity();
+        
+        // Tìm ô trống xung quanh để đặt item (giống như thịt)
+        int searchRadius = GameLogicConfig.ITEM_DROP_SEARCH_RADIUS;
+        int finalCol = -1;
+        int finalRow = -1;
+        boolean foundSpot = false;
+        
+        // 1. Kiểm tra ô lý tưởng trước
+        TileData idealTile = worldMap.getTileData(targetTileCol, targetTileRow);
+        if (idealTile.getGroundItem() == null) {
+            finalCol = targetTileCol;
+            finalRow = targetTileRow;
+            foundSpot = true;
+        } else if (idealTile.getGroundItem() == itemType) {
+            // Trùng loại -> Cộng dồn
+            finalCol = targetTileCol;
+            finalRow = targetTileRow;
+            foundSpot = true;
+        } else {
+            // Ô lý tưởng đã có item khác -> Tìm xung quanh
+            for (int r = targetTileRow - searchRadius; r <= targetTileRow + searchRadius; r++) {
+                for (int c = targetTileCol - searchRadius; c <= targetTileCol + searchRadius; c++) {
+                    if (r == targetTileRow && c == targetTileCol) continue; // Đã check rồi
+                    
+                    TileData checkTile = worldMap.getTileData(c, r);
+                    if (checkTile.getGroundItem() == null) {
+                        finalCol = c;
+                        finalRow = r;
+                        foundSpot = true;
+                        break;
+                    }
+                }
+                if (foundSpot) break;
+            }
+        }
+        
+        // Nếu vẫn không tìm thấy chỗ -> Bắt buộc phải đè lên ô lý tưởng
+        if (!foundSpot) {
+            finalCol = targetTileCol;
+            finalRow = targetTileRow;
+        }
+        
+        // Đặt item vào ô đã chọn
+        TileData finalTile = worldMap.getTileData(finalCol, finalRow);
+        
+        // Lấy độ bền hiện tại của item (nếu có)
+        int itemDurability = stackToDrop.getCurrentDurability();
+        
+        // Nếu cộng dồn
+        if (finalTile.getGroundItem() == itemType) {
+            finalTile.setGroundItemAmount(finalTile.getGroundItemAmount() + amount);
+            // Giữ nguyên offset cũ của item đang có
+            // Lưu ý: Với stackable items, độ bền không quan trọng, nhưng vẫn cần lưu cho tools
+            if (itemType.hasDurability()) {
+                finalTile.setGroundItemDurability(itemDurability); // Cập nhật độ bền khi cộng dồn
+            }
+        } else {
+            // Đặt mới hoặc đè
+            finalTile.setGroundItem(itemType);
+            finalTile.setGroundItemAmount(amount);
+            // Lưu độ bền của item (0 nếu không có độ bền hoặc không áp dụng)
+            finalTile.setGroundItemDurability(itemType.hasDurability() ? itemDurability : 0);
+            
+            // Nếu đặt đúng ô lý tưởng -> Dùng offset đã tính
+            if (finalCol == targetTileCol && finalRow == targetTileRow) {
+                finalTile.setGroundItemOffsetX(offsetX);
+                finalTile.setGroundItemOffsetY(offsetY);
+            } else {
+                // Nếu phải đặt sang ô bên cạnh -> Dùng offset mặc định cộng thêm scatter
+                finalTile.setDefaultItemOffset();
+                double jitterX = (Math.random() - 0.5) * GameLogicConfig.ITEM_DROP_SCATTER_RANGE;
+                double jitterY = (Math.random() - 0.5) * GameLogicConfig.ITEM_DROP_SCATTER_RANGE;
+                finalTile.setGroundItemOffsetX(finalTile.getGroundItemOffsetX() + jitterX);
+                finalTile.setGroundItemOffsetY(finalTile.getGroundItemOffsetY() + jitterY);
+            }
+        }
+        
+        worldMap.setTileData(finalCol, finalRow, finalTile);
+        actionManager.setMapNeedsUpdate(true);
+        
+        // Xóa item khỏi hotbar slot chỉ định
+        mainPlayer.getHotbarItems()[slotIndex] = null;
+        
+        // Cập nhật hotbar view
+        mainGameView.updateHotbar();
     }
 }

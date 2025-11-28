@@ -34,9 +34,13 @@ public class MainGameView {
     private HudView hudView;
     private SettingsMenuView settingsMenu;
     private HotbarView hotbarView;
+    private ShopView shopView; // Giao diện shop
     
     // Pane tĩnh chứa các thực thể động (Animals)
     private Pane entityPane;
+    
+    // Pane hiệu ứng thời tiết (mưa)
+    private WeatherEffectView weatherEffectView;
 
     // [MỚI] Manager quản lý hiệu ứng
     private final VisualEffectManager visualEffectManager;
@@ -66,10 +70,14 @@ public class MainGameView {
         // Khởi tạo các View con
         this.worldRenderer = new WorldRenderer(assetManager, worldMap, entityPane);
         this.hudView = new HudView();
+        // HudView sẽ được set gameManager và mainGameView sau (trong setGameManager)
         // ⚠️ Phải khởi tạo SettingsMenu SAU KHI gameManager đã được set
         // Hoặc truyền gameManager vào sau
         // Chúng ta sẽ truyền gameManager vào đây:
         this.settingsMenu = new SettingsMenuView(this.gameManager);
+        
+        // [MỚI] Khởi tạo weatherEffectView (hiệu ứng mưa)
+        this.weatherEffectView = new WeatherEffectView();
 
 
         // Thêm các thành phần vào rootPane theo đúng thứ tự (lớp)
@@ -79,10 +87,13 @@ public class MainGameView {
                 worldRenderer.getGhostPlacement(), // Bóng mờ nằm ở đây (Layer tĩnh)
                 entityPane,                     // Lớp 3: Động vật (Animals)
                 playerSpriteContainer,          // Lớp 4: "Khung" Player
+                weatherEffectView,              // Lớp 4.5: Hiệu ứng thời tiết (mưa)
                 hudView,                        // Lớp 5: HUD (Timer, Text, Darkness)
                 hotbarView,                     // Lớp 6: Hotbar
                 settingsMenu                    // Lớp 7: Menu (hiện đang ẩn)
         );
+        
+        // [MỚI] ShopView sẽ được thêm sau khi gameManager được set (trong setGameManager)
 
         // Đặt nhân vật (nhận từ bên ngoài) vào giữa màn hình
         // [SỬA] Tính toán vị trí dựa trên kích thước SAU KHI SCALE để căn giữa chuẩn hơn
@@ -194,8 +205,8 @@ public class MainGameView {
     }
 
     // Hàm cập nhật thời gian
-    public void updateTimer(String timeString) {
-        hudView.updateTimer(timeString);
+    public void updateTimer(int day, String timeString) {
+        hudView.updateTimer(day, timeString);
     }
 
     // Hàm cập nhật ánh sáng
@@ -283,5 +294,128 @@ public class MainGameView {
         // (Code trên đã bao phủ trường hợp này vì addItem đã chạy xong rồi)
 
         return selectedSlot; // Fallback về slot đang chọn
+    }
+    
+    /**
+     * Set GameManager (được gọi từ Game.java sau khi khởi tạo)
+     * Dùng để khởi tạo ShopView (cần ShopManager từ GameManager)
+     */
+    public void setGameManager(GameManager gameManager) {
+        this.gameManager = gameManager;
+        
+        // Set references cho HudView
+        if (hudView != null) {
+            hudView.setGameManager(gameManager);
+            hudView.setMainGameView(this);
+            hudView.setAssetManager(assetManager); // Set AssetManager để load GUI icons
+        }
+        
+        // Set callback cho HotbarView item drop (for trash can deletion)
+        if (hotbarView != null) {
+            hotbarView.setOnItemDropListener((slotIndex, scenePoint) -> {
+                // Check if dropped on trash can
+                if (hudView != null && hudView.isMouseOverTrash(scenePoint.getX(), scenePoint.getY())) {
+                    // Delete item at slot
+                    if (gameManager != null && gameManager.getMainPlayer() != null) {
+                        ItemStack stack = gameManager.getMainPlayer().getHotbarItems()[slotIndex];
+                        if (stack != null) {
+                            gameManager.getMainPlayer().consumeItemAtSlot(slotIndex, stack.getQuantity());
+                            updateHotbar(); // Refresh hotbar display
+                            return true; // Indicate item was deleted
+                        }
+                    }
+                }
+                return false; // Not dropped on trash
+            });
+        }
+        
+        // Set GameManager cho SettingsMenuView (để Resume và Brightness hoạt động đúng)
+        if (settingsMenu != null) {
+            settingsMenu.setGameManager(gameManager);
+        }
+        
+        // [MỚI] Khởi tạo ShopView sau khi có gameManager
+        if (gameManager != null && gameManager.getShopManager() != null) {
+            this.shopView = new ShopView(gameManager.getShopManager(), assetManager);
+            // Đặt kích thước cố định để đảm bảo shop không bị shrink
+            shopView.setPrefSize(com.example.farmSimulation.config.ShopConfig.SHOP_WIDTH, com.example.farmSimulation.config.ShopConfig.SHOP_HEIGHT);
+            shopView.setMaxSize(com.example.farmSimulation.config.ShopConfig.SHOP_WIDTH, com.example.farmSimulation.config.ShopConfig.SHOP_HEIGHT);
+            // Căn giữa shop trên màn hình: x = (SCREEN_WIDTH - SHOP_WIDTH) / 2, y = (SCREEN_HEIGHT - SHOP_HEIGHT) / 2
+            shopView.setLayoutX((WindowConfig.SCREEN_WIDTH - com.example.farmSimulation.config.ShopConfig.SHOP_WIDTH) / 2);
+            shopView.setLayoutY((WindowConfig.SCREEN_HEIGHT - com.example.farmSimulation.config.ShopConfig.SHOP_HEIGHT) / 2);
+            // Thêm shopView vào rootPane (lớp trên cùng)
+            rootPane.getChildren().add(shopView);
+            // Đảm bảo shopView ở trên cùng (z-index cao nhất) khi được thêm vào
+            shopView.toFront();
+        }
+    }
+    
+    /**
+     * Cập nhật hiển thị số tiền
+     */
+    public void updateMoneyDisplay(double amount) {
+        if (hudView != null) {
+            hudView.updateMoney(amount);
+        }
+    }
+    
+    /**
+     * Cập nhật hiệu ứng thời tiết
+     */
+    public void updateWeather(boolean isRaining) {
+        if (weatherEffectView != null) {
+            // Chỉ setRaining khi trạng thái thay đổi (trong setRaining đã có check)
+            weatherEffectView.setRaining(isRaining);
+            
+            // Luôn cập nhật animation mưa mỗi frame nếu đang mưa
+            if (isRaining) {
+                weatherEffectView.updateRain();
+            }
+        }
+        
+        // [MỚI] Làm tối màn hình một chút khi mưa
+        if (hudView != null) {
+            double currentIntensity = 1.0 - hudView.getDarknessOverlay().getOpacity();
+            double rainDarkness = isRaining ? com.example.farmSimulation.config.WeatherConfig.RAIN_DARKNESS_OPACITY : 0.0;
+            double newOpacity = Math.min(1.0 - currentIntensity + rainDarkness, 
+                com.example.farmSimulation.config.GameLogicConfig.MAX_DARKNESS_OPACITY);
+            hudView.getDarknessOverlay().setOpacity(newOpacity);
+        }
+    }
+    
+    /**
+     * Toggle shop (bật/tắt shop)
+     * Tự động đóng Settings Menu nếu đang mở để tránh overlap
+     */
+    public void toggleShop() {
+        if (shopView != null) {
+            boolean wasVisible = shopView.isShopVisible();
+            shopView.toggle();
+            
+            // Nếu shop được mở, đóng Settings Menu nếu đang mở
+            if (!wasVisible && shopView.isShopVisible()) {
+                // Đóng Settings Menu nếu đang mở để tránh overlap
+                if (settingsMenu != null && settingsMenu.isVisible()) {
+                    hideSettingsMenu();
+                    // Resume game loop nếu đang pause (Settings menu đang pause game)
+                    if (gameManager != null && gameManager.isPaused()) {
+                        gameManager.setPaused(false);
+                        if (gameManager.getGameLoop() != null) {
+                            gameManager.getGameLoop().start();
+                        }
+                    }
+                }
+            }
+            
+            // Đảm bảo shop hiển thị ở lớp trên cùng khi mở
+            // (toFront() được gọi trong ShopView.toggle() khi mở)
+        }
+    }
+    
+    /**
+     * Kiểm tra shop có đang hiển thị không
+     */
+    public boolean isShopVisible() {
+        return shopView != null && shopView.isShopVisible();
     }
 }

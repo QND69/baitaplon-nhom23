@@ -98,12 +98,26 @@ public class ActionManager {
 
                 // KÍCH HOẠT ANIMATION THU HOẠCH VÀ THÊM ITEM VÀO INVENTORY
                 if (action.getHarvestedItem() != null && action.getHarvestedAmount() > 0) {
-                    // Thêm item vào inventory với số lượng đúng
-                    mainPlayer.addItem(action.getHarvestedItem(), action.getHarvestedAmount());
+                    // Xác định độ bền để sử dụng
+                    ItemType harvestedItem = action.getHarvestedItem();
+                    int durabilityToUse = action.getHarvestedDurability();
+                    
+                    // Nếu độ bền <= 0, kiểm tra xem có cần dùng max durability không
+                    if (durabilityToUse <= 0 && harvestedItem.hasDurability()) {
+                        // Item có độ bền nhưng không được lưu (initial spawn) -> dùng max durability
+                        durabilityToUse = harvestedItem.getMaxDurability();
+                    }
+                    
+                    // Thêm item vào inventory với số lượng và độ bền đúng
+                    // Nếu item không có độ bền hoặc durabilityToUse == 0, sẽ được xử lý trong addItem
+                    mainPlayer.addItem(harvestedItem, action.getHarvestedAmount(), durabilityToUse);
                     
                     // Truyền offset để View tính toán đúng vị trí trên màn hình
                     mainGameView.playHarvestAnimation(action.getHarvestedItem(), action.getCol(), action.getRow(), worldOffsetX, worldOffsetY);
                     mainGameView.updateHotbar(); // Update lại số lượng
+                    
+                    // Grant XP for successful harvest
+                    mainPlayer.gainXP(com.example.farmSimulation.config.GameLogicConfig.XP_GAIN_HARVEST);
                 }
 
                 // [ĐÃ SỬA LOGIC LẶP] Reset trạng thái Player về IDLE sau khi hành động xong
@@ -113,6 +127,15 @@ public class ActionManager {
                 if (currentState != PlayerView.PlayerState.IDLE &&
                         currentState != PlayerView.PlayerState.WALK &&
                         currentState != PlayerView.PlayerState.DEAD) {
+                    
+                    // Grant XP based on action type before resetting state
+                    if (currentState == PlayerView.PlayerState.PLANT) {
+                        mainPlayer.gainXP(com.example.farmSimulation.config.GameLogicConfig.XP_GAIN_PLANT);
+                    } else if (currentState == PlayerView.PlayerState.WATER) {
+                        mainPlayer.gainXP(com.example.farmSimulation.config.GameLogicConfig.XP_GAIN_WATER);
+                    } else if (currentState == PlayerView.PlayerState.HOE) {
+                        mainPlayer.gainXP(com.example.farmSimulation.config.GameLogicConfig.XP_GAIN_HOE);
+                    }
 
                     mainPlayer.setState(PlayerView.PlayerState.IDLE);
                     playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());

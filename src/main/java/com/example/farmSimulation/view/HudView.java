@@ -3,67 +3,436 @@ package com.example.farmSimulation.view;
 import com.example.farmSimulation.config.GameLogicConfig;
 import com.example.farmSimulation.config.HudConfig;
 import com.example.farmSimulation.config.WindowConfig;
+import com.example.farmSimulation.model.GameManager;
+import com.example.farmSimulation.view.assets.AssetManager;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
+import javafx.geometry.Pos;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
 public class HudView extends Pane {
-    private final Label timerLabel; // bộ đếm thời gian
+    // Reference để lấy thông tin player và weather
+    private GameManager gameManager;
+    private MainGameView mainGameView;
+    private AssetManager assetManager; // Reference to AssetManager for GUI icons
+    
+    // Brightness setting (0.0 - 1.0)
+    private double brightness = GameLogicConfig.DEFAULT_BRIGHTNESS;
+    
+    // --- Top-Left: Player Stats ---
+    private final Rectangle levelRectangle; // Rounded Rectangle hiển thị Level (badge style)
+    private final Label levelLabel; // Text Level (hiển thị "LEVEL: X")
+    private final Rectangle xpBarBg; // Nền XP Bar
+    private final Rectangle xpBarFill; // Thanh XP
+    private final Rectangle staminaBarBg; // Nền Stamina Bar
+    private final Rectangle staminaBarFill; // Thanh Stamina
+    private final Label staminaLabel; // Label "Stamina" cho Stamina Bar
+    private final Label xpLabel; // Label "Exp" cho XP Bar
+    private final Label moneyLabel; // Label hiển thị số tiền
+    private final StackPane moneyIconPane; // Container for money icon (ImageView)
+    private ImageView moneyIcon; // Icon money (from GUI icons)
+    
+    // --- Top-Right: Info & Controls ---
+    private final Label dayLabel; // Label hiển thị Day (ngày)
+    private final Label timerLabel; // Label hiển thị Time (giờ trong ngày)
+    private final StackPane weatherIconPane; // Container for weather icon (ImageView)
+    private ImageView weatherIcon; // Icon thời tiết (Sunny/Rain from GUI icons)
+    private final StackPane shopIconButtonPane; // Container for shop icon button (clickable)
+    private ImageView shopIconButton; // Icon Shop (from GUI icons, clickable)
+    private final StackPane settingsIconButtonPane; // Container for settings icon button (clickable)
+    private ImageView settingsIconButton; // Icon Settings (from GUI icons, clickable)
+    private final StackPane trashIconButtonPane; // Container for trash icon (for drag-and-drop deletion)
+    private ImageView trashIconButton; // Icon Trash Can (from GUI icons)
+    
+    // --- Overlays ---
     private final Rectangle darknessOverlay; // Lớp phủ màu đen để tạo hiệu ứng tối
-
-    // --- Các thành phần cho UI tạm thời ---
-    private final Text temporaryText;       // Đối tượng Text để hiển thị thông báo tạm thời
+    
+    // --- Temporary Text ---
+    private final Text temporaryText; // Đối tượng Text để hiển thị thông báo tạm thời
     private SequentialTransition temporaryTextAnimation; // Animation cho text
 
     public HudView() {
-        this.timerLabel = new Label(HudConfig.TIMER_DEFAULT_TEXT);
-        this.timerLabel.setStyle(HudConfig.TIMER_STYLE_CSS);
-        // Đặt Timer Label ở góc trên bên trái
-        this.timerLabel.setLayoutX(HudConfig.TIMER_X_POSITION);
-        this.timerLabel.setLayoutY(HudConfig.TIMER_Y_POSITION);
-
+        double currentY = HudConfig.HUD_TOP_LEFT_Y;
+        
+        // --- Khởi tạo Top-Left Elements ---
+        // Level Rounded Rectangle (Badge style)
+        levelRectangle = new Rectangle(HudConfig.HUD_TOP_LEFT_X, currentY, 
+                                      HudConfig.LEVEL_RECTANGLE_WIDTH, HudConfig.LEVEL_RECTANGLE_HEIGHT);
+        levelRectangle.setFill(HudConfig.LEVEL_BG_COLOR);
+        levelRectangle.setStroke(Color.WHITE);
+        levelRectangle.setStrokeWidth(2);
+        levelRectangle.setArcWidth(HudConfig.LEVEL_RECTANGLE_CORNER_RADIUS * 2);
+        levelRectangle.setArcHeight(HudConfig.LEVEL_RECTANGLE_CORNER_RADIUS * 2);
+        levelRectangle.setMouseTransparent(true);
+        
+        levelLabel = new Label("LEVEL: 1");
+        levelLabel.setLayoutX(HudConfig.HUD_TOP_LEFT_X);
+        levelLabel.setLayoutY(currentY);
+        levelLabel.setPrefSize(HudConfig.LEVEL_RECTANGLE_WIDTH, HudConfig.LEVEL_RECTANGLE_HEIGHT);
+        levelLabel.setStyle("-fx-font-size: " + HudConfig.LEVEL_FONT_SIZE + "px; -fx-text-fill: white; -fx-alignment: center; -fx-font-weight: bold;");
+        levelLabel.setTextAlignment(TextAlignment.CENTER);
+        levelLabel.setAlignment(Pos.CENTER);
+        levelLabel.setMouseTransparent(true);
+        
+        currentY += HudConfig.LEVEL_RECTANGLE_HEIGHT + HudConfig.HUD_ELEMENT_SPACING;
+        
+        // XP Label
+        xpLabel = new Label("Exp");
+        xpLabel.setLayoutX(HudConfig.HUD_TOP_LEFT_X);
+        xpLabel.setLayoutY(currentY);
+        xpLabel.setStyle("-fx-font-size: " + HudConfig.BAR_LABEL_FONT_SIZE + "px; -fx-text-fill: " + 
+                        ((Color)HudConfig.BAR_LABEL_COLOR).toString().replace("0x", "#") + ";");
+        xpLabel.setMouseTransparent(true);
+        currentY += 15.0; // Spacing cho label
+        
+        // XP Bar
+        xpBarBg = new Rectangle(HudConfig.HUD_TOP_LEFT_X, currentY, HudConfig.XP_BAR_WIDTH, HudConfig.XP_BAR_HEIGHT);
+        xpBarBg.setFill(HudConfig.XP_BAR_BG_COLOR);
+        xpBarBg.setStroke(Color.BLACK);
+        xpBarBg.setStrokeWidth(1);
+        xpBarBg.setMouseTransparent(true);
+        
+        xpBarFill = new Rectangle(HudConfig.HUD_TOP_LEFT_X, currentY, 0, HudConfig.XP_BAR_HEIGHT);
+        xpBarFill.setFill(HudConfig.XP_BAR_FILL_COLOR);
+        xpBarFill.setMouseTransparent(true);
+        
+        currentY += HudConfig.XP_BAR_HEIGHT + HudConfig.HUD_ELEMENT_SPACING;
+        
+        // Stamina Label
+        staminaLabel = new Label("Stamina");
+        staminaLabel.setLayoutX(HudConfig.HUD_TOP_LEFT_X);
+        staminaLabel.setLayoutY(currentY);
+        staminaLabel.setStyle("-fx-font-size: " + HudConfig.BAR_LABEL_FONT_SIZE + "px; -fx-text-fill: " + 
+                             ((Color)HudConfig.BAR_LABEL_COLOR).toString().replace("0x", "#") + ";");
+        staminaLabel.setMouseTransparent(true);
+        currentY += 15.0; // Spacing cho label
+        
+        // Stamina Bar
+        staminaBarBg = new Rectangle(HudConfig.HUD_TOP_LEFT_X, currentY, HudConfig.STAMINA_BAR_WIDTH, HudConfig.STAMINA_BAR_HEIGHT);
+        staminaBarBg.setFill(HudConfig.STAMINA_BAR_BG_COLOR);
+        staminaBarBg.setStroke(Color.BLACK);
+        staminaBarBg.setStrokeWidth(1);
+        staminaBarBg.setMouseTransparent(true);
+        
+        staminaBarFill = new Rectangle(HudConfig.HUD_TOP_LEFT_X, currentY, 0, HudConfig.STAMINA_BAR_HEIGHT);
+        staminaBarFill.setFill(HudConfig.STAMINA_BAR_FULL_COLOR);
+        staminaBarFill.setMouseTransparent(true);
+        
+        currentY += HudConfig.STAMINA_BAR_HEIGHT + HudConfig.HUD_ELEMENT_SPACING;
+        
+        // Money Display - Use ImageView from GUI icons
+        moneyIconPane = new StackPane();
+        moneyIconPane.setLayoutX(HudConfig.HUD_TOP_LEFT_X);
+        moneyIconPane.setLayoutY(currentY);
+        moneyIconPane.setPrefSize(HudConfig.MONEY_ICON_SIZE, HudConfig.MONEY_ICON_SIZE);
+        moneyIconPane.setMouseTransparent(true);
+        
+        moneyIcon = new ImageView();
+        moneyIcon.setFitWidth(HudConfig.MONEY_ICON_SIZE);
+        moneyIcon.setFitHeight(HudConfig.MONEY_ICON_SIZE);
+        moneyIcon.setPreserveRatio(true);
+        moneyIconPane.getChildren().add(moneyIcon);
+        
+        moneyLabel = new Label("$0");
+        moneyLabel.setLayoutX(HudConfig.HUD_TOP_LEFT_X + HudConfig.MONEY_ICON_SIZE + HudConfig.MONEY_ICON_SPACING);
+        moneyLabel.setLayoutY(currentY);
+        moneyLabel.setStyle(HudConfig.MONEY_STYLE_CSS);
+        moneyLabel.setMouseTransparent(true);
+        
+        // --- Khởi tạo Top-Right Elements (từ trên xuống: Settings, Timer, Weather) ---
+        // Tính toán vị trí X để dính sát cạnh phải: Icons centered at SCREEN_WIDTH - MARGIN - RADIUS
+        double iconRadius = HudConfig.ICON_BUTTON_SIZE / 2;
+        double settingsIconCenterX = WindowConfig.SCREEN_WIDTH - HudConfig.HUD_TOP_RIGHT_MARGIN - iconRadius;
+        currentY = HudConfig.HUD_TOP_RIGHT_Y;
+        
+        // Settings Icon Button (trên cùng ở Top-Right) - Use ImageView from GUI icons
+        settingsIconButtonPane = new StackPane();
+        settingsIconButtonPane.setLayoutX(settingsIconCenterX - iconRadius);
+        settingsIconButtonPane.setLayoutY(currentY);
+        settingsIconButtonPane.setPrefSize(HudConfig.ICON_BUTTON_SIZE, HudConfig.ICON_BUTTON_SIZE);
+        // No background - transparent
+        
+        settingsIconButton = new ImageView();
+        settingsIconButton.setFitWidth(HudConfig.ICON_BUTTON_SIZE);
+        settingsIconButton.setFitHeight(HudConfig.ICON_BUTTON_SIZE);
+        settingsIconButton.setPreserveRatio(true);
+        settingsIconButtonPane.getChildren().add(settingsIconButton);
+        
+        settingsIconButtonPane.setOnMouseClicked(this::onSettingsIconClicked);
+        // No hover effect background - clean look
+        
+        currentY += HudConfig.ICON_BUTTON_SIZE + HudConfig.HUD_TOP_RIGHT_ELEMENT_SPACING;
+        
+        // Day Label (dòng 1) - dưới Settings ở Right side
+        dayLabel = new Label(HudConfig.DAY_DEFAULT_TEXT);
+        dayLabel.setStyle(HudConfig.DAY_STYLE_CSS);
+        dayLabel.setPrefWidth(HudConfig.TIMER_LABEL_WIDTH);
+        dayLabel.setAlignment(Pos.CENTER_RIGHT); // Căn text sang phải
+        dayLabel.setLayoutX(WindowConfig.SCREEN_WIDTH - HudConfig.HUD_TOP_RIGHT_MARGIN - HudConfig.TIMER_LABEL_WIDTH);
+        dayLabel.setLayoutY(currentY);
+        dayLabel.setMouseTransparent(true);
+        
+        currentY += 20.0; // Khoảng cách giữa Day và Time labels
+        
+        // Time Label (dòng 2) - dưới Day ở Right side
+        timerLabel = new Label(HudConfig.TIME_DEFAULT_TEXT);
+        timerLabel.setStyle(HudConfig.TIME_STYLE_CSS);
+        timerLabel.setPrefWidth(HudConfig.TIMER_LABEL_WIDTH);
+        timerLabel.setAlignment(Pos.CENTER_RIGHT); // Căn text sang phải
+        timerLabel.setLayoutX(WindowConfig.SCREEN_WIDTH - HudConfig.HUD_TOP_RIGHT_MARGIN - HudConfig.TIMER_LABEL_WIDTH);
+        timerLabel.setLayoutY(currentY);
+        timerLabel.setMouseTransparent(true);
+        
+        currentY += 25.0; // Chiều cao của time label + spacing
+        
+        // Weather Icon (dưới Timer ở Right side) - Use ImageView from GUI icons
+        double weatherIconRadius = HudConfig.WEATHER_ICON_SIZE / 2;
+        double weatherIconCenterX = WindowConfig.SCREEN_WIDTH - HudConfig.HUD_TOP_RIGHT_MARGIN - weatherIconRadius;
+        weatherIconPane = new StackPane();
+        weatherIconPane.setLayoutX(weatherIconCenterX - weatherIconRadius);
+        weatherIconPane.setLayoutY(currentY);
+        weatherIconPane.setPrefSize(HudConfig.WEATHER_ICON_SIZE, HudConfig.WEATHER_ICON_SIZE);
+        weatherIconPane.setMouseTransparent(true);
+        
+        weatherIcon = new ImageView();
+        weatherIcon.setFitWidth(HudConfig.WEATHER_ICON_SIZE);
+        weatherIcon.setFitHeight(HudConfig.WEATHER_ICON_SIZE);
+        weatherIcon.setPreserveRatio(true);
+        weatherIconPane.getChildren().add(weatherIcon);
+        
+        // --- Khởi tạo Bottom-Right Elements (Shop Icon) ---
+        // Tính toán vị trí để dính sát cạnh phải và dưới: Icon centered at SCREEN_WIDTH - MARGIN - RADIUS
+        double shopIconRadius = HudConfig.ICON_BUTTON_SIZE / 2;
+        double shopIconCenterX = WindowConfig.SCREEN_WIDTH - HudConfig.HUD_BOTTOM_RIGHT_MARGIN - shopIconRadius;
+        double shopIconCenterY = WindowConfig.SCREEN_HEIGHT - HudConfig.HUD_BOTTOM_RIGHT_MARGIN - shopIconRadius;
+        
+        // Shop Icon Button (góc dưới-phải) - Use ImageView from GUI icons
+        shopIconButtonPane = new StackPane();
+        shopIconButtonPane.setLayoutX(shopIconCenterX - shopIconRadius);
+        shopIconButtonPane.setLayoutY(shopIconCenterY - shopIconRadius);
+        shopIconButtonPane.setPrefSize(HudConfig.ICON_BUTTON_SIZE, HudConfig.ICON_BUTTON_SIZE);
+        // No background - transparent
+        
+        shopIconButton = new ImageView();
+        shopIconButton.setFitWidth(HudConfig.ICON_BUTTON_SIZE);
+        shopIconButton.setFitHeight(HudConfig.ICON_BUTTON_SIZE);
+        shopIconButton.setPreserveRatio(true);
+        shopIconButtonPane.getChildren().add(shopIconButton);
+        
+        shopIconButtonPane.setOnMouseClicked(this::onShopIconClicked);
+        // No hover effect background - clean look
+        
+        // Trash Can Icon (góc dưới-trái) - Use ImageView from GUI icons
+        double trashIconRadius = HudConfig.ICON_BUTTON_SIZE / 2;
+        // Position at bottom-left: align with left margin, near bottom
+        double trashIconCenterX = HudConfig.HUD_TOP_LEFT_X + trashIconRadius;
+        double trashIconCenterY = WindowConfig.SCREEN_HEIGHT - HudConfig.HUD_BOTTOM_RIGHT_MARGIN - trashIconRadius;
+        
+        trashIconButtonPane = new StackPane();
+        trashIconButtonPane.setLayoutX(trashIconCenterX - trashIconRadius);
+        trashIconButtonPane.setLayoutY(trashIconCenterY - trashIconRadius);
+        trashIconButtonPane.setPrefSize(HudConfig.ICON_BUTTON_SIZE, HudConfig.ICON_BUTTON_SIZE);
+        // No background - transparent
+        
+        trashIconButton = new ImageView();
+        trashIconButton.setFitWidth(HudConfig.ICON_BUTTON_SIZE);
+        trashIconButton.setFitHeight(HudConfig.ICON_BUTTON_SIZE);
+        trashIconButton.setPreserveRatio(true);
+        trashIconButtonPane.getChildren().add(trashIconButton);
+        // Trash icon is not clickable, only for drag-and-drop detection
+        
         // --- Khởi tạo Temporary Text ---
         temporaryText = new Text();
         temporaryText.setFont(HudConfig.TEMP_TEXT_FONT);
         temporaryText.setFill(HudConfig.TEMP_TEXT_COLOR);
-        temporaryText.setFont(HudConfig.TEMP_TEXT_FONT);
         temporaryText.setStroke(HudConfig.TEMP_TEXT_STROKE_COLOR);
         temporaryText.setStrokeWidth(HudConfig.TEMP_TEXT_STROKE_WIDTH);
-        temporaryText.setOpacity(0); // Ban đầu ẩn
-        temporaryText.setManaged(false); // Không ảnh hưởng layout
+        temporaryText.setOpacity(0);
+        temporaryText.setManaged(false);
 
         // Khởi tạo Lớp phủ Tối
         this.darknessOverlay = new Rectangle(WindowConfig.SCREEN_WIDTH, WindowConfig.SCREEN_HEIGHT);
         this.darknessOverlay.setFill(Color.BLACK);
-        this.darknessOverlay.setOpacity(0.0); // Ban đầu không tối (sáng)
-        this.darknessOverlay.setMouseTransparent(true); // Không nhận click chuột
+        this.darknessOverlay.setOpacity(0.0);
+        this.darknessOverlay.setMouseTransparent(true);
 
-        this.getChildren().addAll(timerLabel, temporaryText, darknessOverlay);
-        this.setMouseTransparent(true); // Toàn bộ HUD không nhận click
+        // Thêm tất cả vào pane theo đúng thứ tự z-index:
+        // 1. Darkness Overlay (phủ lên world, nhưng dưới HUD icons)
+        this.getChildren().add(darknessOverlay);
+        
+        // 2. HUD Icons/Text (ở trên darkness overlay để luôn visible và clickable)
+        this.getChildren().addAll(
+            levelRectangle, levelLabel,
+            xpLabel, xpBarBg, xpBarFill,
+            staminaLabel, staminaBarBg, staminaBarFill,
+            moneyLabel, moneyIconPane, // Money Icon (ImageView)
+            dayLabel, timerLabel, weatherIconPane, // Day, Time, Weather Icon (ImageView)
+            shopIconButtonPane, // Shop Icon (ImageView) ở Bottom-Right
+            trashIconButtonPane, // Trash Can Icon (ImageView) ở Bottom-Right, bên trái Shop
+            settingsIconButtonPane, // Settings Icon (ImageView) ở Top-Right
+            temporaryText
+        );
+        
+        this.setMouseTransparent(false); // Cần nhận click cho icon buttons
+    }
+    /**
+     * Set GameManager và MainGameView references
+     */
+    public void setGameManager(GameManager gameManager) {
+        this.gameManager = gameManager;
+    }
+    
+    public void setMainGameView(MainGameView mainGameView) {
+        this.mainGameView = mainGameView;
+    }
+    
+    /**
+     * Set AssetManager reference and load GUI icons
+     */
+    public void setAssetManager(AssetManager assetManager) {
+        this.assetManager = assetManager;
+        updateGuiIcons(); // Load icons when AssetManager is available
+    }
+    
+    /**
+     * Load and update GUI icons from AssetManager
+     */
+    private void updateGuiIcons() {
+        if (assetManager == null) return;
+        
+        // Load Money icon
+        Image moneyIconImage = assetManager.getGuiIcon("MONEY");
+        if (moneyIconImage != null && moneyIcon != null) {
+            moneyIcon.setImage(moneyIconImage);
+        }
+        
+        // Load Settings icon
+        Image settingsIconImage = assetManager.getGuiIcon("SETTINGS");
+        if (settingsIconImage != null && settingsIconButton != null) {
+            settingsIconButton.setImage(settingsIconImage);
+        }
+        
+        // Load Shop icon
+        Image shopIconImage = assetManager.getGuiIcon("SHOP");
+        if (shopIconImage != null && shopIconButton != null) {
+            shopIconButton.setImage(shopIconImage);
+        }
+        
+        // Load Trash Can icon
+        Image trashIconImage = assetManager.getGuiIcon("TRASH");
+        if (trashIconImage != null && trashIconButton != null) {
+            trashIconButton.setImage(trashIconImage);
+        }
+        
+        // Weather icon will be updated in updateWeather() method
+    }
+    
+    /**
+     * Event handler cho Shop Icon click
+     */
+    private void onShopIconClicked(MouseEvent e) {
+        if (mainGameView != null) {
+            mainGameView.toggleShop();
+        }
+    }
+    
+    /**
+     * Event handler cho Settings Icon click
+     */
+    private void onSettingsIconClicked(MouseEvent e) {
+        if (gameManager != null) {
+            gameManager.toggleSettingsMenu();
+        }
+    }
+    
+    /**
+     * Cập nhật hiển thị player stats (Level, XP, Stamina)
+     */
+    public void updatePlayerStats() {
+        if (gameManager == null || gameManager.getMainPlayer() == null) return;
+        
+        var player = gameManager.getMainPlayer();
+        
+        // Update Level
+        levelLabel.setText("LEVEL: " + player.getLevel());
+        
+        // Update XP Bar - Sử dụng getter từ Lombok (@Getter annotation)
+        double xpProgress = 0.0;
+        if (player.getXpToNextLevel() > 0) {
+            xpProgress = Math.min(1.0, player.getCurrentXP() / player.getXpToNextLevel());
+        }
+        xpBarFill.setWidth(HudConfig.XP_BAR_WIDTH * xpProgress);
+        
+        // Update Stamina Bar - Sử dụng getter từ Lombok
+        double staminaProgress = 0.0;
+        if (player.getMaxStamina() > 0) {
+            staminaProgress = Math.min(1.0, player.getCurrentStamina() / player.getMaxStamina());
+        }
+        staminaBarFill.setWidth(HudConfig.STAMINA_BAR_WIDTH * staminaProgress);
+        
+        // Đổi màu stamina bar dựa trên giá trị (xanh khi đầy, đỏ khi thấp)
+        double ratio = staminaProgress;
+        Color staminaColor;
+        if (ratio > 0.5) {
+            // Từ xanh đến vàng
+            staminaColor = Color.rgb(
+                (int)(50 + (200 - 50) * (1 - ratio) * 2),
+                (int)(200 - (200 - 50) * (1 - ratio) * 2),
+                50
+            );
+        } else {
+            // Từ vàng đến đỏ
+            staminaColor = Color.rgb(
+                (int)(200 - (200 - 50) * ratio * 2),
+                (int)(50 + (200 - 50) * ratio * 2),
+                50
+            );
+        }
+        staminaBarFill.setFill(staminaColor);
+    }
+    
+    /**
+     * Cập nhật hiển thị thời tiết
+     */
+    public void updateWeather(boolean isRaining) {
+        if (assetManager == null || weatherIcon == null) return;
+        
+        // Load weather icon from GUI icons
+        Image weatherIconImage;
+        if (isRaining) {
+            weatherIconImage = assetManager.getGuiIcon("RAIN");
+        } else {
+            weatherIconImage = assetManager.getGuiIcon("SUNNY");
+        }
+        
+        if (weatherIconImage != null) {
+            weatherIcon.setImage(weatherIconImage);
+        }
     }
 
     /**
-     * Hiển thị một đoạn text tạm thời trên đầu người chơi, sau đó mờ dần và biến mất.
-     *
-     * @param message       Nội dung text cần hiển thị.
-     * @param playerScreenX Tọa độ X của người chơi trên màn hình.
-     * @param playerScreenY Tọa độ Y của người chơi trên màn hình.
+     * Hiển thị một đoạn text tạm thời trên đầu người chơi
      */
     public void showTemporaryText(String message, double playerScreenX, double playerScreenY) {
         if (temporaryTextAnimation != null && temporaryTextAnimation.getStatus().equals(javafx.animation.Animation.Status.RUNNING)) {
-            temporaryTextAnimation.stop(); // Dừng animation cũ nếu đang chạy
+            temporaryTextAnimation.stop();
         }
 
         temporaryText.setText(message);
-        temporaryText.setLayoutX(playerScreenX - temporaryText.getLayoutBounds().getWidth() / 2); // Căn giữa
-        temporaryText.setLayoutY(playerScreenY + HudConfig.TEMP_TEXT_OFFSET_Y); // Trên đầu player
-        temporaryText.setOpacity(1); // Hiển thị ngay lập tức
+        temporaryText.setLayoutX(playerScreenX - temporaryText.getLayoutBounds().getWidth() / 2);
+        temporaryText.setLayoutY(playerScreenY + HudConfig.TEMP_TEXT_OFFSET_Y);
+        temporaryText.setOpacity(1);
 
         FadeTransition fadeOut = new FadeTransition(Duration.millis(HudConfig.TEMP_TEXT_FADE_DURATION), temporaryText);
         fadeOut.setFromValue(1.0);
@@ -75,27 +444,80 @@ public class HudView extends Pane {
         temporaryTextAnimation.play();
     }
 
-    public void updateTimer(String timeString) {
+    public void updateTimer(int day, String timeString) {
+        this.dayLabel.setText("Day " + day);
         this.timerLabel.setText(timeString);
+        // Vị trí X đã được set cố định trong constructor, không cần tính lại
+        // Day và Time labels đã có fixed width và alignment CENTER_RIGHT
     }
 
     /**
-     * Cập nhật độ tối của màn hình dựa trên cường độ ánh sáng từ Model.
-     * @param intensity Cường độ ánh sáng (1.0 là sáng nhất, 0.0 là tối nhất)
+     * Cập nhật độ tối của màn hình dựa trên cường độ ánh sáng từ Model
+     * Áp dụng brightness setting vào minimum opacity
      */
     public void updateLighting(double intensity) {
-        // Cường độ ánh sáng 1.0 => Opacity của lớp phủ tối là 0.0
-        // Cường độ ánh sáng 0.0 => Opacity của lớp phủ tối là 1.0 (hoặc tối đa 0.8)
-
-        // Đảo ngược cường độ để có độ mờ (opacity)
-        // Giới hạn độ mờ tối đa (Ví dụ: 80% tối)
         final double MAX_DARKNESS = GameLogicConfig.MAX_DARKNESS_OPACITY;
-
-        double opacity = 1.0 - intensity;
-
-        // Áp dụng giới hạn tối đa
-        opacity = Math.min(opacity, MAX_DARKNESS);
-
-        this.darknessOverlay.setOpacity(opacity);
+        // Tính opacity tự nhiên dựa trên intensity (0.0 = sáng, 1.0 = tối)
+        double naturalDarkness = 1.0 - intensity;
+        
+        // Áp dụng brightness modifier: brightness càng cao thì làm tối ít hơn
+        // Formula: darknessOpacity = naturalDarkness * (1.0 - brightness)
+        // Nếu brightness = 1.0 (Max): darknessOpacity = naturalDarkness * 0 = 0 (không tối)
+        // Nếu brightness = 0.0 (Min): darknessOpacity = naturalDarkness * 1.0 = naturalDarkness (tối tự nhiên)
+        double darknessOpacity = naturalDarkness * (1.0 - brightness);
+        
+        // Clamp opacity giữa 0.0 và MAX_DARKNESS
+        darknessOpacity = Math.max(0.0, Math.min(darknessOpacity, MAX_DARKNESS));
+        
+        this.darknessOverlay.setOpacity(darknessOpacity);
+    }
+    
+    /**
+     * Set brightness (0.0 - 1.0)
+     */
+    public void setBrightness(double brightness) {
+        this.brightness = Math.max(GameLogicConfig.MIN_BRIGHTNESS, Math.min(GameLogicConfig.MAX_BRIGHTNESS, brightness));
+    }
+    
+    /**
+     * Get brightness
+     */
+    public double getBrightness() {
+        return brightness;
+    }
+    
+    /**
+     * Check if mouse is over Trash Can icon (for drag-and-drop deletion)
+     * @param screenX Screen X coordinate
+     * @param screenY Screen Y coordinate
+     * @return true if mouse is over Trash Can bounds
+     */
+    public boolean isMouseOverTrash(double screenX, double screenY) {
+        if (trashIconButtonPane == null) return false;
+        
+        // Convert screen coordinates to local coordinates
+        javafx.geometry.Point2D localPoint = this.sceneToLocal(screenX, screenY);
+        
+        double x = trashIconButtonPane.getLayoutX();
+        double y = trashIconButtonPane.getLayoutY();
+        double width = trashIconButtonPane.getPrefWidth();
+        double height = trashIconButtonPane.getPrefHeight();
+        
+        return localPoint.getX() >= x && localPoint.getX() <= x + width &&
+               localPoint.getY() >= y && localPoint.getY() <= y + height;
+    }
+    
+    /**
+     * Cập nhật hiển thị số tiền
+     */
+    public void updateMoney(double amount) {
+        this.moneyLabel.setText("$" + (int)amount);
+    }
+    
+    /**
+     * Lấy darknessOverlay để điều chỉnh độ tối khi mưa
+     */
+    public Rectangle getDarknessOverlay() {
+        return darknessOverlay;
     }
 }

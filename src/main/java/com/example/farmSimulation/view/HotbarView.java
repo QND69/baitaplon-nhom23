@@ -41,7 +41,8 @@ public class HotbarView extends Pane {
     private double currentScale = HotbarConfig.DEFAULT_HOTBAR_SCALE;
 
     // Biến cho Drag & Drop
-    private BiConsumer<Integer, Integer> onSwapListener; // Callback gọi về GameManager
+    private BiConsumer<Integer, Integer> onSwapListener; // Callback gọi về GameManager (slotA, slotB)
+    private java.util.function.BiFunction<Integer, javafx.geometry.Point2D, Boolean> onItemDropListener; // Callback cho drop item (slotIndex, scenePoint) -> isTrash
     private ImageView ghostIcon; // Icon bay theo chuột
     private int dragSourceIndex = -1; // Vị trí bắt đầu kéo
     private double mouseAnchorX, mouseAnchorY; // Điểm neo khi bắt đầu kéo để tính offset
@@ -136,6 +137,14 @@ public class HotbarView extends Pane {
     public void setOnSwapListener(BiConsumer<Integer, Integer> listener) {
         this.onSwapListener = listener;
     }
+    
+    /**
+     * Set callback cho item drop (including trash can deletion)
+     * Callback receives: (slotIndex, scenePoint) and returns true if dropped on trash
+     */
+    public void setOnItemDropListener(java.util.function.BiFunction<Integer, javafx.geometry.Point2D, Boolean> listener) {
+        this.onItemDropListener = listener;
+    }
 
     /**
      * Thiết lập sự kiện kéo thả cho ImageView
@@ -214,8 +223,17 @@ public class HotbarView extends Pane {
                     }
                 }
 
-                // Nếu tìm thấy slot đích và khác slot nguồn -> SWAP
-                if (targetIndex != -1 && targetIndex != dragSourceIndex) {
+                // Check if dropped on Trash Can (if not dropped on any hotbar slot)
+                if (targetIndex == -1 && onItemDropListener != null) {
+                    // Not dropped on hotbar slot - check if it's trash via callback
+                    // Pass scene coordinates to callback for accurate trash detection (reuse scenePoint)
+                    Boolean isTrash = onItemDropListener.apply(dragSourceIndex, scenePoint);
+                    if (isTrash != null && isTrash) {
+                        // Dropped on trash - item will be deleted by callback handler
+                        // Don't do anything here, callback will handle deletion
+                    }
+                } else if (targetIndex != -1 && targetIndex != dragSourceIndex) {
+                    // Normal swap - dropped on different hotbar slot
                     if (onSwapListener != null) {
                         onSwapListener.accept(dragSourceIndex, targetIndex);
                     }
@@ -368,6 +386,8 @@ public class HotbarView extends Pane {
         cacheItemSprite(itemsSheet, ItemType.MEAT_SHEEP, ItemSpriteConfig.ITEM_MEAT_SHEEP_COL);
         cacheItemSprite(itemsSheet, ItemType.EGG, ItemSpriteConfig.ITEM_EGG_COL);
         cacheItemSprite(itemsSheet, ItemType.WOOL, ItemSpriteConfig.ITEM_WOOL_COL);
+        cacheItemSprite(itemsSheet, ItemType.ENERGY_DRINK, ItemSpriteConfig.ITEM_ENERGY_DRINK_COL);
+        cacheItemSprite(itemsSheet, ItemType.SUPER_FEED, ItemSpriteConfig.ITEM_SUPER_FEED_COL);
         
         // Cache các item vật nuôi sống (sử dụng getAnimalItemIcon để lấy icon đã resize)
         cacheItemSprite(ItemType.ITEM_COW, assetManager.getAnimalItemIcon(ItemType.ITEM_COW));
@@ -487,6 +507,32 @@ public class HotbarView extends Pane {
      * Tính toán tọa độ TÂM của một slot trên màn hình.
      * Dùng để làm đích đến cho animation thu hoạch.
      */
+    /**
+     * Tính slot index từ tọa độ chuột (trong HotbarView local coordinates)
+     * @param mouseX Tọa độ X của chuột (trong HotbarView)
+     * @param mouseY Tọa độ Y của chuột (trong HotbarView)
+     * @return Slot index nếu chuột đang ở trên hotbar, -1 nếu không
+     */
+    public int getSlotIndexFromMouse(double mouseX, double mouseY) {
+        double slotSize = HotbarConfig.BASE_SLOT_SIZE * currentScale;
+        double spacing = HotbarConfig.BASE_SLOT_SPACING * currentScale;
+        
+        // Kiểm tra xem chuột có nằm trong vùng hotbar không (theo chiều cao)
+        if (mouseY < 0 || mouseY > slotSize) {
+            return -1; // Chuột không nằm trong hotbar
+        }
+        
+        // Tính slot index từ tọa độ X
+        for (int i = 0; i < HotbarConfig.HOTBAR_SLOT_COUNT; i++) {
+            double slotX = i * (slotSize + spacing);
+            if (mouseX >= slotX && mouseX < slotX + slotSize) {
+                return i; // Tìm thấy slot
+            }
+        }
+        
+        return -1; // Không tìm thấy slot
+    }
+    
     public Point2D getSlotCenter(int slotIndex) {
         if (slotIndex < 0 || slotIndex >= HotbarConfig.HOTBAR_SLOT_COUNT) return null;
 

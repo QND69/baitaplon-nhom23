@@ -4,16 +4,53 @@ package com.example.farmSimulation.config;
 public class GameLogicConfig {
 
     // --- Cấu hình Game Time & Day Cycle ---
-    public static final double PLAYER_START_TIME_SECONDS = 720.0; // 12:00 PM (ví dụ)
-    public static final double SECONDS_PER_FRAME = 1.0 / 60.0;
+    // Thời gian bắt đầu game: 12:00 PM (Noon) - đỉnh điểm sáng nhất trong ngày
+    // Công thức: DAY_CYCLE_DURATION_SECONDS / 2 để game bắt đầu ở giữa chu kỳ ngày (sáng nhất)
     public static final double DAY_CYCLE_DURATION_SECONDS = 1440.0; // 24 phút
+    public static final double PLAYER_START_TIME_SECONDS = DAY_CYCLE_DURATION_SECONDS / 2; // 12:00 PM (Noon)
+    public static final double SECONDS_PER_FRAME = 1.0 / 60.0;
     public static final double MIN_LIGHT_INTENSITY = 0.1; // Độ sáng tối thiểu (10%)
     public static final double MAX_DARKNESS_OPACITY = 0.8; // Độ tối tối đa (80%)
+    
+    // --- Cấu hình Brightness (Độ sáng) ---
+    public static final double DEFAULT_BRIGHTNESS = 1.0; // 100% độ sáng mặc định
+    public static final double MIN_BRIGHTNESS = 0.0; // Độ sáng tối thiểu (0%)
+    public static final double MAX_BRIGHTNESS = 1.0; // Độ sáng tối đa (100%)
 
     // --- Cấu hình vật lý & Logic ---
     public static final double PLAYER_SPEED = 300.0; // Tốc độ di chuyển (pixel/giây) - đã chuyển từ pixel/frame sang pixel/giây
     public static final double PLAYER_START_X = 0.0; // Tọa độ X spawn
     public static final double PLAYER_START_Y = 0.0; // Tọa độ Y spawn
+    public static final double PLAYER_START_MONEY = 500.0; // Số tiền ban đầu của người chơi
+    
+    // --- Cấu hình Stamina & XP ---
+    public static final double PLAYER_MAX_STAMINA = 100.0; // Stamina tối đa
+    public static final double PLAYER_START_STAMINA = 100.0; // Stamina ban đầu
+    public static final double STAMINA_PENALTY_THRESHOLD = 20.0; // Ngưỡng stamina thấp để áp dụng penalty
+    public static final double STAMINA_SPEED_PENALTY_MULTIPLIER = 0.5; // Giảm tốc độ khi stamina thấp (50%)
+    public static final double STAMINA_RECOVERY_RATE = 0.5; // Tốc độ hồi phục stamina mỗi giây (khi không hoạt động) - giảm xuống để game khó hơn
+    
+    // XP & Leveling
+    public static final int PLAYER_START_LEVEL = 1; // Level ban đầu
+    public static final double PLAYER_START_XP = 0.0; // XP ban đầu
+    public static final double PLAYER_START_XP_TO_NEXT_LEVEL = 100.0; // XP cần để lên level tiếp theo
+    public static final double XP_MULTIPLIER_PER_LEVEL = 1.2; // Nhân XP cần thiết mỗi level (1.2x)
+    public static final double STAMINA_INCREASE_PER_LEVEL = 10.0; // Tăng stamina tối đa mỗi level
+    
+    // XP Gain from Actions
+    public static final double XP_GAIN_HARVEST = 10.0; // XP nhận được khi thu hoạch thành công
+    public static final double XP_GAIN_PLANT = 2.0; // XP nhận được khi trồng cây
+    public static final double XP_GAIN_WATER = 1.0; // XP nhận được khi tưới nước
+    public static final double XP_GAIN_HOE = 1.0; // XP nhận được khi cuốc đất
+    
+    // --- Cấu hình Chi phí Stamina cho hành động ---
+    public static final double STAMINA_COST_HOE = 2.0; // Chi phí stamina mỗi lần cuốc
+    public static final double STAMINA_COST_WATERING_CAN = 2.0; // Chi phí stamina mỗi lần tưới
+    public static final double STAMINA_COST_AXE = 3.0; // Chi phí stamina mỗi lần chặt
+    public static final double STAMINA_COST_PICKAXE = 3.0; // Chi phí stamina mỗi lần đào
+    public static final double STAMINA_COST_SHOVEL = 2.0; // Chi phí stamina mỗi lần xẻng
+    public static final double STAMINA_COST_PLANT = 1.0; // Chi phí stamina mỗi lần trồng
+    public static final double STAMINA_COST_FERTILIZER = 1.0; // Chi phí stamina mỗi lần bón phân
 
     // --- CẤU HÌNH CHO TỪNG ITEM ---
     // (Bao gồm Tầm tương tác và Thời gian hành động)
@@ -78,6 +115,12 @@ public class GameLogicConfig {
     
     // Số lượng tiles tối đa được update mỗi frame trong CropManager (để tránh lag spike)
     public static final int MAX_CROPS_UPDATE_PER_FRAME = 100;
+
+    // [MỚI] Bán kính tìm kiếm ô trống để rơi item (1 = tìm trong 3x3 xung quanh)
+    public static final int ITEM_DROP_SEARCH_RADIUS = 1;
+    
+    // [MỚI] Độ phân tán ngẫu nhiên khi rơi item (pixel) - để item không bị dính chặt vào giữa ô
+    public static final double ITEM_DROP_SCATTER_RANGE = 24.0;
 
     private GameLogicConfig() {}
 }

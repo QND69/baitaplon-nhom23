@@ -39,6 +39,7 @@ public class TileData {
     // Item trên đất (thịt rơi ra khi giết động vật)
     private ItemType groundItem; // Item trên đất (null nếu không có)
     private int groundItemAmount; // Số lượng item trên đất
+    private int groundItemDurability; // Độ bền của item trên đất (0 nếu không có hoặc không áp dụng)
     
     // [MỚI] Lưu độ lệch của item so với góc trên trái của ô (để item không bị dính vào giữa ô)
     private double groundItemOffsetX;
@@ -74,6 +75,7 @@ public class TileData {
         this.statusIndicator = other.statusIndicator;
         this.groundItem = other.groundItem;
         this.groundItemAmount = other.groundItemAmount;
+        this.groundItemDurability = other.groundItemDurability; // Copy độ bền của item trên đất
         
         // [MỚI] Copy offset
         this.groundItemOffsetX = other.groundItemOffsetX;

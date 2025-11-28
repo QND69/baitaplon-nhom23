@@ -110,10 +110,8 @@ public class Animal {
             return 0;
         }
         
-        // Chỉ động vật trưởng thành mới có thịt
-        if (age < com.example.farmSimulation.config.AnimalConfig.MIN_AGE_FOR_MEAT) {
-            return 0;
-        }
+        // [SỬA] Đã bỏ điều kiện (age < MIN_AGE) để đảm bảo giết là có thịt
+        // Chỉ cần là con trưởng thành (not baby) thì luôn rơi ít nhất 1
         int meat = (int) Math.min(age * com.example.farmSimulation.config.AnimalConfig.MEAT_RATE, 
                                   com.example.farmSimulation.config.AnimalConfig.MAX_MEAT_DROP);
         return Math.max(meat, 1); // Ít nhất 1 miếng thịt
@@ -154,5 +152,3 @@ public class Animal {
         }
     }
 }
-
-

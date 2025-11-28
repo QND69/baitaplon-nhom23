@@ -1,6 +1,7 @@
 package com.example.farmSimulation.model;
 
 import com.example.farmSimulation.config.AnimalConfig;
+import com.example.farmSimulation.config.GameLogicConfig; // [MỚI]
 import com.example.farmSimulation.config.ItemSpriteConfig; // [MỚI]
 import com.example.farmSimulation.config.WorldConfig;
 
@@ -121,25 +122,81 @@ public class AnimalManager {
                         // Tính tile dựa trên visual center (giữa thân) thay vì chân
                         double visualCenterY = animal.getY() - (animal.getType().getSpriteSize() / 2.0);
                         
-                        int tileCol = (int) Math.floor(animal.getX() / WorldConfig.TILE_SIZE);
-                        int tileRow = (int) Math.floor(visualCenterY / WorldConfig.TILE_SIZE);
+                        int idealTileCol = (int) Math.floor(animal.getX() / WorldConfig.TILE_SIZE);
+                        int idealTileRow = (int) Math.floor(visualCenterY / WorldConfig.TILE_SIZE);
                         
-                        // Tính toán offset
+                        // Tính toán offset gốc
                         double targetItemX = animal.getX() - (ItemSpriteConfig.ITEM_SPRITE_WIDTH / 2.0);
                         double targetItemY = visualCenterY - (ItemSpriteConfig.ITEM_SPRITE_HEIGHT / 2.0);
                         
-                        double offsetX = targetItemX - (tileCol * WorldConfig.TILE_SIZE);
-                        double offsetY = targetItemY - (tileRow * WorldConfig.TILE_SIZE);
+                        double originalOffsetX = targetItemX - (idealTileCol * WorldConfig.TILE_SIZE);
+                        double originalOffsetY = targetItemY - (idealTileRow * WorldConfig.TILE_SIZE);
+
+                        // [SỬA LỖI OVERWRITE] Tìm ô trống xung quanh để đặt thịt
+                        int searchRadius = GameLogicConfig.ITEM_DROP_SEARCH_RADIUS;
+                        int finalCol = -1;
+                        int finalRow = -1;
+                        boolean foundSpot = false;
+
+                        // 1. Kiểm tra ô lý tưởng trước
+                        TileData idealTile = worldMap.getTileData(idealTileCol, idealTileRow);
+                        if (idealTile.getGroundItem() == null) {
+                            finalCol = idealTileCol;
+                            finalRow = idealTileRow;
+                            foundSpot = true;
+                        } else if (idealTile.getGroundItem() == meatType) {
+                            // Trùng loại -> Cộng dồn
+                            finalCol = idealTileCol;
+                            finalRow = idealTileRow;
+                            foundSpot = true;
+                        } else {
+                            // Ô lý tưởng đã có item khác -> Tìm xung quanh
+                            for (int r = idealTileRow - searchRadius; r <= idealTileRow + searchRadius; r++) {
+                                for (int c = idealTileCol - searchRadius; c <= idealTileCol + searchRadius; c++) {
+                                    if (r == idealTileRow && c == idealTileCol) continue; // Đã check rồi
+
+                                    TileData checkTile = worldMap.getTileData(c, r);
+                                    if (checkTile.getGroundItem() == null) {
+                                        finalCol = c;
+                                        finalRow = r;
+                                        foundSpot = true;
+                                        break;
+                                    }
+                                }
+                                if (foundSpot) break;
+                            }
+                        }
+
+                        // Nếu vẫn không tìm thấy chỗ -> Fallback về ô lý tưởng
+                        if (!foundSpot) {
+                            finalCol = idealTileCol;
+                            finalRow = idealTileRow;
+                        }
                         
                         // Đặt thịt xuống đất
-                        TileData tileData = worldMap.getTileData(tileCol, tileRow);
-                        tileData.setGroundItem(meatType);
-                        tileData.setGroundItemAmount(meatAmount);
-                        // [MỚI] Set offset
-                        tileData.setGroundItemOffsetX(offsetX);
-                        tileData.setGroundItemOffsetY(offsetY);
+                        TileData finalTile = worldMap.getTileData(finalCol, finalRow);
                         
-                        worldMap.setTileData(tileCol, tileRow, tileData);
+                        if (finalTile.getGroundItem() == meatType) {
+                             finalTile.setGroundItemAmount(finalTile.getGroundItemAmount() + meatAmount);
+                        } else {
+                            finalTile.setGroundItem(meatType);
+                            finalTile.setGroundItemAmount(meatAmount);
+                            
+                            if (finalCol == idealTileCol && finalRow == idealTileRow) {
+                                finalTile.setGroundItemOffsetX(originalOffsetX);
+                                finalTile.setGroundItemOffsetY(originalOffsetY);
+                            } else {
+                                // [SỬA] Nếu phải đặt sang ô bên cạnh -> Dùng offset mặc định cộng thêm ngẫu nhiên (scatter)
+                                finalTile.setDefaultItemOffset();
+                                double scatter = GameLogicConfig.ITEM_DROP_SCATTER_RANGE;
+                                double jitterX = (random.nextDouble() - 0.5) * scatter;
+                                double jitterY = (random.nextDouble() - 0.5) * scatter;
+                                finalTile.setGroundItemOffsetX(finalTile.getGroundItemOffsetX() + jitterX);
+                                finalTile.setGroundItemOffsetY(finalTile.getGroundItemOffsetY() + jitterY);
+                            }
+                        }
+                        
+                        worldMap.setTileData(finalCol, finalRow, finalTile);
                     }
                 }
 

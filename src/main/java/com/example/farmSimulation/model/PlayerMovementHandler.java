@@ -54,6 +54,12 @@ public class PlayerMovementHandler {
 
             // Tính tốc độ di chuyển dựa trên deltaTime (pixel/giây * giây = pixel)
             double movementSpeed = GameLogicConfig.PLAYER_SPEED * deltaTime;
+            
+            // Áp dụng stamina penalty nếu stamina thấp
+            if (mainPlayer.hasStaminaPenalty()) {
+                movementSpeed *= GameLogicConfig.STAMINA_SPEED_PENALTY_MULTIPLIER;
+                // Tốc độ animation cũng giảm (xử lý trong PlayerView nếu cần)
+            }
 
             if (gameController.isKeyPressed(KeyCode.W)) { // Di chuyển PLAYER đi LÊN
                 dy += movementSpeed; // Di chuyển WORLD đi XUỐNG

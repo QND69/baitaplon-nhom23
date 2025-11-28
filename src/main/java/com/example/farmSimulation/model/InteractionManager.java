@@ -88,7 +88,9 @@ public class InteractionManager {
 
     private int getDelayInFrames(long durationMs) {
         int delay = (int) (durationMs / (GameLogicConfig.SECONDS_PER_FRAME * 1000));
-        return Math.max(1, delay); // Đảm bảo ít nhất 1 frame
+        // CRITICAL: Enforce minimum 10 frames for tree chopping and other timed actions to prevent instant execution
+        // This prevents glitches when deltaTime spikes or game pauses/resumes
+        return Math.max(10, delay); // Đảm bảo ít nhất 10 frames để tránh bug tree biến mất ngay
     }
 
     private TileData createResetTileData(TileData currentData) {
@@ -225,6 +227,34 @@ public class InteractionManager {
         return false;
     }
 
+    /**
+     * Trừ stamina dựa trên loại tool/item được sử dụng
+     */
+    private void consumeStaminaForAction(ItemType itemType, Player player) {
+        if (player == null || itemType == null) return;
+        
+        double staminaCost = 0.0;
+        if (itemType == ItemType.HOE) {
+            staminaCost = GameLogicConfig.STAMINA_COST_HOE;
+        } else if (itemType == ItemType.WATERING_CAN) {
+            staminaCost = GameLogicConfig.STAMINA_COST_WATERING_CAN;
+        } else if (itemType == ItemType.AXE) {
+            staminaCost = GameLogicConfig.STAMINA_COST_AXE;
+        } else if (itemType == ItemType.PICKAXE) {
+            staminaCost = GameLogicConfig.STAMINA_COST_PICKAXE;
+        } else if (itemType == ItemType.SHOVEL) {
+            staminaCost = GameLogicConfig.STAMINA_COST_SHOVEL;
+        } else if (itemType.name().startsWith("SEEDS_")) {
+            staminaCost = GameLogicConfig.STAMINA_COST_PLANT;
+        } else if (itemType == ItemType.FERTILIZER) {
+            staminaCost = GameLogicConfig.STAMINA_COST_FERTILIZER;
+        }
+        
+        if (staminaCost > 0) {
+            player.reduceStamina(staminaCost);
+        }
+    }
+    
     private InteractionResult calculateInteractionResult(ItemStack currentStack, TileData currentData, Player mainPlayer, WorldMap worldMap, int col, int row) {
         if (currentStack == null) return null; // Tay không
 
@@ -372,7 +402,10 @@ public class InteractionManager {
         Random random = new Random();
         if (crop != null && crop.getGrowthStage() >= crop.getType().getMaxStages() - 1) {
             int yield = random.nextInt(crop.getType().getMaxYield() - crop.getType().getMinYield() + 1) + crop.getType().getMinYield();
-            boolean success = mainPlayer.addItem(crop.getType().getHarvestItem(), yield);
+            
+            // [FIX] Thay vì dùng mainPlayer.addItem (thêm ngay), chỉ dùng canAddItem để kiểm tra
+            // ActionManager sẽ xử lý việc thêm item sau khi animation kết thúc để tránh lỗi x2 item
+            boolean success = canAddItem(mainPlayer, crop.getType().getHarvestItem(), yield);
 
             if (!success) {
                 return null;
@@ -388,20 +421,54 @@ public class InteractionManager {
         ItemStack currentStack = mainPlayer.getCurrentItem();
         TileData currentData = worldMap.getTileData(col, row);
         InteractionResult result = null;
+        
+        // --- XỬ LÝ ENERGY_DRINK (Nước tăng lực) ---
+        if (currentStack != null && currentStack.getItemType() == ItemType.ENERGY_DRINK) {
+            // Hồi phục 50 stamina
+            mainPlayer.recoverStamina(50.0);
+            
+            // Trừ item
+            currentStack.remove(1);
+            if (currentStack.getQuantity() <= 0) {
+                mainPlayer.getHotbarItems()[mainPlayer.getSelectedHotbarSlot()] = null;
+            }
+            
+            // Hiển thị animation
+            mainPlayer.setState(PlayerView.PlayerState.BUSY);
+            playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
+            
+            TimedTileAction action = new TimedTileAction(
+                -1, -1,
+                null,
+                getDelayInFrames(GameLogicConfig.GENERIC_ACTION_DURATION_MS),
+                false,
+                mainPlayer.getSelectedHotbarSlot()
+            );
+            actionManager.addPendingAction(action);
+            
+            return null; // Thành công
+        }
 
         // Kiểm tra item trên đất (ưu tiên nhặt item trước)
         if (currentData.getGroundItem() != null && currentData.getGroundItemAmount() > 0) {
             ItemType groundItemType = currentData.getGroundItem();
             int groundItemAmount = currentData.getGroundItemAmount();
             
-            // Thử thêm vào inventory
-            boolean success = mainPlayer.addItem(groundItemType, groundItemAmount);
+            // Lấy độ bền từ tile (nếu có, nếu không thì dùng max durability)
+            int groundItemDurability = currentData.getGroundItemDurability();
+            // Nếu độ bền <= 0 hoặc item không có độ bền, sẽ dùng max durability khi tạo ItemStack
+            // Nếu có độ bền > 0, dùng độ bền đó
+            
+            // [FIX] Thay vì dùng mainPlayer.addItem (thêm ngay), chỉ dùng canAddItem để kiểm tra
+            // ActionManager sẽ xử lý việc thêm item sau khi animation kết thúc để tránh lỗi x2 item
+            boolean success = canAddItem(mainPlayer, groundItemType, groundItemAmount);
             
             if (success) {
                 // Xóa item trên đất
                 TileData newData = new TileData(currentData);
                 newData.setGroundItem(null);
                 newData.setGroundItemAmount(0);
+                newData.setGroundItemDurability(0); // Reset độ bền khi xóa item
                 // Reset offset về mặc định (tùy chọn, nhưng tốt cho lần sau)
                 newData.setDefaultItemOffset(); 
                 
@@ -415,6 +482,8 @@ public class InteractionManager {
                 );
                 action.setHarvestedItem(groundItemType);
                 action.setHarvestedAmount(groundItemAmount);
+                // Lưu độ bền để truyền cho ActionManager
+                action.setHarvestedDurability(groundItemDurability);
                 
                 mainPlayer.setState(PlayerView.PlayerState.BUSY);
                 playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
@@ -462,6 +531,11 @@ public class InteractionManager {
         }
 
         if (result != null) {
+            // Trừ stamina khi bắt đầu hành động
+            if (currentStack != null) {
+                consumeStaminaForAction(currentStack.getItemType(), mainPlayer);
+            }
+            
             mainPlayer.setState(result.playerState());
             playerView.setState(mainPlayer.getState(), mainPlayer.getDirection());
 
@@ -661,6 +735,7 @@ public class InteractionManager {
         
         // --- CHO ĂN ---
         if (animal.getType().acceptsFood(itemType)) {
+            // SUPER_FEED có thể cho mọi động vật (đã có trong acceptsFood của từng loại)
             animalManager.feedAnimal(animal);
             
             // [SỬA] Thay decreaseQuantity thành remove
@@ -788,7 +863,7 @@ public class InteractionManager {
             action.setAnimalWorldY(animalWorldY);
             actionManager.addPendingAction(action);
             
-            return null;
+            return null; // Thành công
         }
         
         // --- TẤN CÔNG (GIẾT) ---
@@ -810,27 +885,88 @@ public class InteractionManager {
                     // Động vật vẽ từ chân lên trên, nên tâm Y = chân - (chiều cao / 2)
                     double visualCenterY = animalY - (animal.getType().getSpriteSize() / 2.0);
                     
-                    // Tính toán ô chứa (Tile)
-                    int tileCol = (int) Math.floor(animalX / WorldConfig.TILE_SIZE);
-                    int tileRow = (int) Math.floor(visualCenterY / WorldConfig.TILE_SIZE);
+                    // Tính toán ô chứa (Tile) LÝ TƯỞNG
+                    int idealTileCol = (int) Math.floor(animalX / WorldConfig.TILE_SIZE);
+                    int idealTileRow = (int) Math.floor(visualCenterY / WorldConfig.TILE_SIZE);
                     
-                    // Tính toán OFFSET (độ lệch so với góc trên trái của ô)
-                    // Để item nằm chính xác tại animalX, visualCenterY
-                    // Trừ đi một nửa kích thước item (32/2 = 16) để item nằm giữa điểm đó
+                    // Tính toán OFFSET GỐC (độ lệch so với góc trên trái của ô lý tưởng)
                     double targetItemX = animalX - (ItemSpriteConfig.ITEM_SPRITE_WIDTH / 2.0);
                     double targetItemY = visualCenterY - (ItemSpriteConfig.ITEM_SPRITE_HEIGHT / 2.0);
                     
-                    double offsetX = targetItemX - (tileCol * WorldConfig.TILE_SIZE);
-                    double offsetY = targetItemY - (tileRow * WorldConfig.TILE_SIZE);
+                    double originalOffsetX = targetItemX - (idealTileCol * WorldConfig.TILE_SIZE);
+                    double originalOffsetY = targetItemY - (idealTileRow * WorldConfig.TILE_SIZE);
+
+                    // [SỬA LỖI OVERWRITE] Tìm ô trống xung quanh để đặt thịt
+                    // Thay vì đặt đè lên, ta tìm ô trống trong bán kính
+                    int searchRadius = GameLogicConfig.ITEM_DROP_SEARCH_RADIUS;
+                    int finalCol = -1;
+                    int finalRow = -1;
+                    boolean foundSpot = false;
+
+                    // 1. Kiểm tra ô lý tưởng trước
+                    TileData idealTile = worldMap.getTileData(idealTileCol, idealTileRow);
+                    if (idealTile.getGroundItem() == null) {
+                        finalCol = idealTileCol;
+                        finalRow = idealTileRow;
+                        foundSpot = true;
+                    } else if (idealTile.getGroundItem() == meatType) {
+                        // Trùng loại -> Cộng dồn
+                        finalCol = idealTileCol;
+                        finalRow = idealTileRow;
+                        foundSpot = true;
+                    } else {
+                        // Ô lý tưởng đã có item khác -> Tìm xung quanh
+                        for (int r = idealTileRow - searchRadius; r <= idealTileRow + searchRadius; r++) {
+                            for (int c = idealTileCol - searchRadius; c <= idealTileCol + searchRadius; c++) {
+                                if (r == idealTileRow && c == idealTileCol) continue; // Đã check rồi
+
+                                TileData checkTile = worldMap.getTileData(c, r);
+                                if (checkTile.getGroundItem() == null) {
+                                    finalCol = c;
+                                    finalRow = r;
+                                    foundSpot = true;
+                                    break;
+                                }
+                            }
+                            if (foundSpot) break;
+                        }
+                    }
+
+                    // Nếu vẫn không tìm thấy chỗ (foundSpot = false) -> Bắt buộc phải đè lên ô lý tưởng (Fallback)
+                    if (!foundSpot) {
+                        finalCol = idealTileCol;
+                        finalRow = idealTileRow;
+                    }
+
+                    // Đặt item vào ô đã chọn
+                    TileData finalTile = worldMap.getTileData(finalCol, finalRow);
                     
-                    TileData tileData = worldMap.getTileData(tileCol, tileRow);
-                    tileData.setGroundItem(meatType);
-                    tileData.setGroundItemAmount(meatAmount);
-                    // [MỚI] Set offset
-                    tileData.setGroundItemOffsetX(offsetX);
-                    tileData.setGroundItemOffsetY(offsetY);
+                    // Nếu cộng dồn
+                    if (finalTile.getGroundItem() == meatType) {
+                        finalTile.setGroundItemAmount(finalTile.getGroundItemAmount() + meatAmount);
+                        // Giữ nguyên offset cũ của item đang có
+                    } else {
+                        // Đặt mới hoặc đè
+                        finalTile.setGroundItem(meatType);
+                        finalTile.setGroundItemAmount(meatAmount);
+                        
+                        // Nếu đặt đúng ô lý tưởng -> Dùng offset gốc (để item nằm đúng chỗ động vật chết)
+                        if (finalCol == idealTileCol && finalRow == idealTileRow) {
+                            finalTile.setGroundItemOffsetX(originalOffsetX);
+                            finalTile.setGroundItemOffsetY(originalOffsetY);
+                        } else {
+                            // [SỬA] Nếu phải đặt sang ô bên cạnh -> Dùng offset mặc định cộng thêm ngẫu nhiên (scatter)
+                            // Để không bị "dính chặt" vào giữa ô
+                            finalTile.setDefaultItemOffset();
+                            double scatter = GameLogicConfig.ITEM_DROP_SCATTER_RANGE;
+                            double jitterX = (Math.random() - 0.5) * scatter;
+                            double jitterY = (Math.random() - 0.5) * scatter;
+                            finalTile.setGroundItemOffsetX(finalTile.getGroundItemOffsetX() + jitterX);
+                            finalTile.setGroundItemOffsetY(finalTile.getGroundItemOffsetY() + jitterY);
+                        }
+                    }
                     
-                    worldMap.setTileData(tileCol, tileRow, tileData);
+                    worldMap.setTileData(finalCol, finalRow, finalTile);
                 }
             }
             
