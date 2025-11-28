@@ -13,6 +13,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.geometry.Pos;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -40,7 +41,7 @@ public class HudView extends Pane {
     private final Label staminaLabel; // Label "Stamina" cho Stamina Bar
     private final Label xpLabel; // Label "Exp" cho XP Bar
     private final Label moneyLabel; // Label hiển thị số tiền
-    private final StackPane moneyIconPane; // Container for money icon (ImageView)
+    private final HBox moneyContainer; // Container for money icon and text (with shared background)
     private ImageView moneyIcon; // Icon money (from GUI icons)
     
     // --- Top-Right: Info & Controls ---
@@ -50,6 +51,8 @@ public class HudView extends Pane {
     private ImageView weatherIcon; // Icon thời tiết (Sunny/Rain from GUI icons)
     private final StackPane shopIconButtonPane; // Container for shop icon button (clickable)
     private ImageView shopIconButton; // Icon Shop (from GUI icons, clickable)
+    private final StackPane questIconButtonPane; // Container for quest icon button (clickable)
+    private ImageView questIconButton; // Quest Icon (from GUI icons, clickable)
     private final StackPane settingsIconButtonPane; // Container for settings icon button (clickable)
     private ImageView settingsIconButton; // Icon Settings (from GUI icons, clickable)
     private final StackPane trashIconButtonPane; // Container for trash icon (for drag-and-drop deletion)
@@ -131,24 +134,26 @@ public class HudView extends Pane {
         
         currentY += HudConfig.STAMINA_BAR_HEIGHT + HudConfig.HUD_ELEMENT_SPACING;
         
-        // Money Display - Use ImageView from GUI icons
-        moneyIconPane = new StackPane();
-        moneyIconPane.setLayoutX(HudConfig.HUD_TOP_LEFT_X);
-        moneyIconPane.setLayoutY(currentY);
-        moneyIconPane.setPrefSize(HudConfig.MONEY_ICON_SIZE, HudConfig.MONEY_ICON_SIZE);
-        moneyIconPane.setMouseTransparent(true);
+        // Money Display - Grouped Icon and Text in a single container with shared background
+        moneyContainer = new HBox(5); // Spacing 5 between icon and text
+        moneyContainer.setAlignment(Pos.CENTER_LEFT);
+        moneyContainer.setStyle(HudConfig.MONEY_CONTAINER_STYLE);
+        moneyContainer.setLayoutX(HudConfig.HUD_TOP_LEFT_X);
+        moneyContainer.setLayoutY(currentY);
+        moneyContainer.setMouseTransparent(true);
         
+        // Money Icon
         moneyIcon = new ImageView();
         moneyIcon.setFitWidth(HudConfig.MONEY_ICON_SIZE);
         moneyIcon.setFitHeight(HudConfig.MONEY_ICON_SIZE);
         moneyIcon.setPreserveRatio(true);
-        moneyIconPane.getChildren().add(moneyIcon);
+        moneyContainer.getChildren().add(moneyIcon);
         
+        // Money Label (Text only, no background - background is on container)
         moneyLabel = new Label("$0");
-        moneyLabel.setLayoutX(HudConfig.HUD_TOP_LEFT_X + HudConfig.MONEY_ICON_SIZE + HudConfig.MONEY_ICON_SPACING);
-        moneyLabel.setLayoutY(currentY);
-        moneyLabel.setStyle(HudConfig.MONEY_STYLE_CSS);
+        moneyLabel.setStyle(HudConfig.MONEY_TEXT_STYLE);
         moneyLabel.setMouseTransparent(true);
+        moneyContainer.getChildren().add(moneyLabel);
         
         // --- Khởi tạo Top-Right Elements (từ trên xuống: Settings, Timer, Weather) ---
         // Tính toán vị trí X để dính sát cạnh phải: Icons centered at SCREEN_WIDTH - MARGIN - RADIUS
@@ -211,6 +216,31 @@ public class HudView extends Pane {
         weatherIcon.setPreserveRatio(true);
         weatherIconPane.getChildren().add(weatherIcon);
         
+        currentY += HudConfig.WEATHER_ICON_SIZE + HudConfig.HUD_TOP_RIGHT_ELEMENT_SPACING;
+        
+        // Quest Icon Button (dưới Weather Icon ở Top-Right) - Use ImageView from GUI icons
+        double questIconRadius = HudConfig.ICON_BUTTON_SIZE / 2;
+        double questIconCenterX = WindowConfig.SCREEN_WIDTH - HudConfig.HUD_TOP_RIGHT_MARGIN - questIconRadius;
+        
+        questIconButtonPane = new StackPane();
+        questIconButtonPane.setLayoutX(questIconCenterX - questIconRadius);
+        questIconButtonPane.setLayoutY(currentY);
+        questIconButtonPane.setPrefSize(HudConfig.ICON_BUTTON_SIZE, HudConfig.ICON_BUTTON_SIZE);
+        // No background - transparent
+        
+        questIconButton = new ImageView();
+        questIconButton.setFitWidth(HudConfig.ICON_BUTTON_SIZE);
+        questIconButton.setFitHeight(HudConfig.ICON_BUTTON_SIZE);
+        questIconButton.setPreserveRatio(true);
+        questIconButtonPane.getChildren().add(questIconButton);
+        
+        questIconButtonPane.setOnMouseClicked(e -> {
+            if (mainGameView != null) {
+                mainGameView.toggleQuestBoard();
+            }
+        });
+        // No hover effect background - clean look
+        
         // --- Khởi tạo Bottom-Right Elements (Shop Icon) ---
         // Tính toán vị trí để dính sát cạnh phải và dưới: Icon centered at SCREEN_WIDTH - MARGIN - RADIUS
         double shopIconRadius = HudConfig.ICON_BUTTON_SIZE / 2;
@@ -234,14 +264,13 @@ public class HudView extends Pane {
         // No hover effect background - clean look
         
         // Trash Can Icon (góc dưới-trái) - Use ImageView from GUI icons
-        double trashIconRadius = HudConfig.ICON_BUTTON_SIZE / 2;
-        // Position at bottom-left: align with left margin, near bottom
-        double trashIconCenterX = HudConfig.HUD_TOP_LEFT_X + trashIconRadius;
-        double trashIconCenterY = WindowConfig.SCREEN_HEIGHT - HudConfig.HUD_BOTTOM_RIGHT_MARGIN - trashIconRadius;
+        // Position at bottom-left: strictly calculated
+        double trashIconX = HudConfig.HUD_TOP_LEFT_X;
+        double trashIconY = WindowConfig.SCREEN_HEIGHT - HudConfig.HUD_BOTTOM_RIGHT_MARGIN - HudConfig.ICON_BUTTON_SIZE;
         
         trashIconButtonPane = new StackPane();
-        trashIconButtonPane.setLayoutX(trashIconCenterX - trashIconRadius);
-        trashIconButtonPane.setLayoutY(trashIconCenterY - trashIconRadius);
+        trashIconButtonPane.setLayoutX(trashIconX);
+        trashIconButtonPane.setLayoutY(trashIconY);
         trashIconButtonPane.setPrefSize(HudConfig.ICON_BUTTON_SIZE, HudConfig.ICON_BUTTON_SIZE);
         // No background - transparent
         
@@ -276,10 +305,10 @@ public class HudView extends Pane {
             levelRectangle, levelLabel,
             xpLabel, xpBarBg, xpBarFill,
             staminaLabel, staminaBarBg, staminaBarFill,
-            moneyLabel, moneyIconPane, // Money Icon (ImageView)
-            dayLabel, timerLabel, weatherIconPane, // Day, Time, Weather Icon (ImageView)
+            moneyContainer, // Money Container (Icon + Text with shared background)
+            dayLabel, timerLabel, weatherIconPane, questIconButtonPane, // Day, Time, Weather Icon, Quest Icon (Top-Right)
             shopIconButtonPane, // Shop Icon (ImageView) ở Bottom-Right
-            trashIconButtonPane, // Trash Can Icon (ImageView) ở Bottom-Right, bên trái Shop
+            trashIconButtonPane, // Trash Can Icon (ImageView) ở Bottom-Left
             settingsIconButtonPane, // Settings Icon (ImageView) ở Top-Right
             temporaryText
         );
@@ -333,6 +362,12 @@ public class HudView extends Pane {
         Image trashIconImage = assetManager.getGuiIcon("TRASH");
         if (trashIconImage != null && trashIconButton != null) {
             trashIconButton.setImage(trashIconImage);
+        }
+        
+        // Load Quest icon
+        Image questIconImage = assetManager.getGuiIcon("QUEST");
+        if (questIconImage != null && questIconButton != null) {
+            questIconButton.setImage(questIconImage);
         }
         
         // Weather icon will be updated in updateWeather() method
@@ -453,23 +488,23 @@ public class HudView extends Pane {
 
     /**
      * Cập nhật độ tối của màn hình dựa trên cường độ ánh sáng từ Model
-     * Áp dụng brightness setting vào minimum opacity
+     * Áp dụng brightness setting sử dụng overlay method
      */
     public void updateLighting(double intensity) {
-        final double MAX_DARKNESS = GameLogicConfig.MAX_DARKNESS_OPACITY;
+        final double MAX_DARKNESS = 0.95; // Maximum opacity clamp
         // Tính opacity tự nhiên dựa trên intensity (0.0 = sáng, 1.0 = tối)
         double naturalDarkness = 1.0 - intensity;
         
-        // Áp dụng brightness modifier: brightness càng cao thì làm tối ít hơn
-        // Formula: darknessOpacity = naturalDarkness * (1.0 - brightness)
-        // Nếu brightness = 1.0 (Max): darknessOpacity = naturalDarkness * 0 = 0 (không tối)
-        // Nếu brightness = 0.0 (Min): darknessOpacity = naturalDarkness * 1.0 = naturalDarkness (tối tự nhiên)
-        double darknessOpacity = naturalDarkness * (1.0 - brightness);
+        // Áp dụng brightness modifier sử dụng overlay method
+        // Formula: finalOpacity = naturalDarkness + (1.0 - brightness) * 0.5
+        // Nếu brightness = 1.0 (Max): finalOpacity = naturalDarkness + 0 = naturalDarkness (không thêm tối)
+        // Nếu brightness = 0.0 (Min): finalOpacity = naturalDarkness + 0.5 (thêm tối đáng kể)
+        double finalOpacity = naturalDarkness + (1.0 - brightness) * 0.5;
         
-        // Clamp opacity giữa 0.0 và MAX_DARKNESS
-        darknessOpacity = Math.max(0.0, Math.min(darknessOpacity, MAX_DARKNESS));
+        // Clamp opacity giữa 0.0 và MAX_DARKNESS (0.95)
+        finalOpacity = Math.max(0.0, Math.min(finalOpacity, MAX_DARKNESS));
         
-        this.darknessOverlay.setOpacity(darknessOpacity);
+        this.darknessOverlay.setOpacity(finalOpacity);
     }
     
     /**

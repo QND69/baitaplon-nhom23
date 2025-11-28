@@ -14,6 +14,7 @@ public class ShopManager {
     private final Player player;
     private final Random random;
     private List<ShopSlot> currentDailyStock; // Danh sách items trong shop hôm nay
+    private QuestManager questManager; // Quản lý quest (sẽ được set từ bên ngoài)
     
     public ShopManager(Player player) {
         this.player = player;
@@ -22,6 +23,13 @@ public class ShopManager {
         
         // Khởi tạo shop stock khi bắt đầu game
         generateDailyStock(true); // Cho phép discount lần đầu
+    }
+    
+    /**
+     * Set QuestManager để track quest progress khi bán hàng
+     */
+    public void setQuestManager(QuestManager questManager) {
+        this.questManager = questManager;
     }
     
     /**
@@ -201,6 +209,11 @@ public class ShopManager {
         
         // Cộng tiền
         player.addMoney(totalPrice);
+        
+        // Quest tracking: Sell items
+        if (questManager != null) {
+            questManager.onEvent(QuestType.SELL, itemType, quantity);
+        }
         
         return null; // Thành công
     }

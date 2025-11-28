@@ -35,6 +35,7 @@ public class MainGameView {
     private SettingsMenuView settingsMenu;
     private HotbarView hotbarView;
     private ShopView shopView; // Giao diện shop
+    private QuestBoardView questBoardView; // Giao diện quest board
     
     // Pane tĩnh chứa các thực thể động (Animals)
     private Pane entityPane;
@@ -348,6 +349,18 @@ public class MainGameView {
             // Đảm bảo shopView ở trên cùng (z-index cao nhất) khi được thêm vào
             shopView.toFront();
         }
+        
+        // [MỚI] Khởi tạo QuestBoardView sau khi có gameManager
+        if (gameManager != null && gameManager.getQuestManager() != null && gameManager.getMainPlayer() != null) {
+            this.questBoardView = new QuestBoardView(gameManager.getQuestManager(), gameManager.getMainPlayer());
+            // Căn giữa quest board trên màn hình
+            questBoardView.setLayoutX((WindowConfig.SCREEN_WIDTH - com.example.farmSimulation.config.QuestConfig.QUEST_BOARD_WIDTH) / 2);
+            questBoardView.setLayoutY((WindowConfig.SCREEN_HEIGHT - com.example.farmSimulation.config.QuestConfig.QUEST_BOARD_HEIGHT) / 2);
+            // Thêm questBoardView vào rootPane (lớp trên cùng)
+            rootPane.getChildren().add(questBoardView);
+            // Đảm bảo questBoardView ở trên cùng khi được thêm vào
+            questBoardView.toFront();
+        }
     }
     
     /**
@@ -417,5 +430,35 @@ public class MainGameView {
      */
     public boolean isShopVisible() {
         return shopView != null && shopView.isShopVisible();
+    }
+    
+    /**
+     * Toggle Quest Board
+     */
+    public void toggleQuestBoard() {
+        if (questBoardView != null) {
+            boolean wasVisible = questBoardView.isQuestBoardVisible();
+            questBoardView.toggle();
+            
+            // Nếu quest board được mở, đóng Settings Menu và Shop nếu đang mở
+            if (!wasVisible && questBoardView.isQuestBoardVisible()) {
+                if (settingsMenu != null && settingsMenu.isVisible()) {
+                    hideSettingsMenu();
+                }
+                if (shopView != null && shopView.isShopVisible()) {
+                    shopView.toggle(); // Close shop by toggling
+                }
+                // Quest Board KHÔNG pause game - game tiếp tục chạy trong background
+            }
+            
+            questBoardView.toFront();
+        }
+    }
+    
+    /**
+     * Kiểm tra quest board có đang hiển thị không
+     */
+    public boolean isQuestBoardVisible() {
+        return questBoardView != null && questBoardView.isQuestBoardVisible();
     }
 }

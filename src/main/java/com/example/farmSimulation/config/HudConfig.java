@@ -90,7 +90,8 @@ public class HudConfig {
     public static final Paint MONEY_TEXT_COLOR = Color.WHITE; // Màu chữ số tiền
     public static final double MONEY_FONT_SIZE = 18.0; // Kích thước font số tiền
     public static final double MONEY_ICON_SPACING = 5.0; // Khoảng cách giữa icon và text
-    public static final String MONEY_STYLE_CSS = "-fx-font-size: " + MONEY_FONT_SIZE + "px; -fx-text-fill: white; -fx-background-color: rgba(0, 0, 0, 0.5); -fx-padding: 5px;";
+    public static final String MONEY_CONTAINER_STYLE = "-fx-background-color: rgba(0, 0, 0, 0.5); -fx-background-radius: 15; -fx-padding: 5 10 5 5;"; // Rounded box for money container
+    public static final String MONEY_TEXT_STYLE = "-fx-font-size: 18px; -fx-text-fill: white; -fx-font-weight: bold;"; // Text only, no background
     
     // --- Cấu hình GUI Icons (from GUI_icon_32x32.png) ---
     public static final double GUI_ICON_SIZE = 32.0; // Kích thước mỗi icon trong sheet
@@ -102,6 +103,7 @@ public class HudConfig {
     public static final int GUI_ICON_ENERGY_EMPTY_COL = 5; // Energy Bar Empty (Lightning) column
     public static final int GUI_ICON_ENERGY_FULL_COL = 6; // Energy Bar Full (Lightning) column
     public static final int GUI_ICON_TRASH_COL = 8; // Trash Can icon column
+    public static final int GUI_ICON_QUEST_COL = 9; // Quest (Scroll/Checklist) icon column
 
     /** Settings của icon thông báo*/
     // Nền mờ cho icon

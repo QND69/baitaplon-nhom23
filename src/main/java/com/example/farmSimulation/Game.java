@@ -5,10 +5,12 @@ import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.model.GameManager;
 import com.example.farmSimulation.model.Player;
 import com.example.farmSimulation.model.WorldMap;
+import com.example.farmSimulation.view.CharacterCreationView;
 import com.example.farmSimulation.view.HotbarView;
 import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
 import com.example.farmSimulation.view.assets.AssetManager;
+import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 /**
@@ -16,16 +18,46 @@ import javafx.stage.Stage;
  * các thành phần Model, View, Controller.
  */
 public class Game {
+    private Stage primaryStage;
+    private AssetManager assetManager;
+    private Player player;
+    private WorldMap worldMap;
 
     public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+        
         // Tải tài nguyên (Assets)
-        AssetManager assetManager = new AssetManager();
+        assetManager = new AssetManager();
         assetManager.loadAssets();
 
-        // Khởi tạo Model (Dữ liệu)
-        Player player = new Player();
-        WorldMap worldMap = new WorldMap();
+        // Khởi tạo Model (Dữ liệu) - sẽ được cập nhật với name và gender từ CharacterCreationView
+        player = new Player();
+        worldMap = new WorldMap();
 
+        // Tạo và hiển thị Character Creation Screen
+        CharacterCreationView characterCreationView = new CharacterCreationView();
+        
+        // Set callback khi người chơi click "Start Game"
+        characterCreationView.setOnStartGame((name, gender) -> {
+            // Cập nhật Player với thông tin từ Character Creation
+            player.setName(name);
+            player.setGender(gender);
+            
+            // Khởi tạo game và chuyển sang MainGameView
+            initializeAndStartGame();
+        });
+        
+        // Hiển thị Character Creation Scene
+        Scene characterCreationScene = characterCreationView.createScene();
+        primaryStage.setTitle("Farm Simulation - Character Creation");
+        primaryStage.setScene(characterCreationScene);
+        primaryStage.show();
+    }
+    
+    /**
+     * Khởi tạo và bắt đầu game sau khi character creation hoàn tất
+     */
+    private void initializeAndStartGame() {
         // Khởi tạo View (Hình ảnh)
         // PlayerView được tạo và nhận Image từ AssetManager
         PlayerView playerView = new PlayerView(
@@ -81,5 +113,11 @@ public class Game {
         // Bắt đầu Game Loop
         gameManager.startGame();
         mainGameView.setGameManager(gameManager);
+        
+        // Bắt đầu phát nhạc nền
+        gameManager.getAudioManager().playMusic(AssetPaths.BACKGROUND_MUSIC);
+        
+        // Cập nhật title
+        primaryStage.setTitle("Farm Simulation");
     }
 }

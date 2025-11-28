@@ -174,11 +174,17 @@ public class AssetManager {
                 (int)(HudConfig.GUI_ICON_TRASH_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("TRASH", trashIcon);
+        
+        // Cắt Quest (Scroll/Checklist) icon
+        WritableImage questIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_QUEST_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("QUEST", questIcon);
     }
     
     /**
      * Lấy GUI icon đã cache
-     * @param iconName Tên icon: "SETTINGS", "SHOP", "MONEY", "SUNNY", "RAIN", "ENERGY_EMPTY", "ENERGY_FULL", "TRASH"
+     * @param iconName Tên icon: "SETTINGS", "SHOP", "MONEY", "SUNNY", "RAIN", "ENERGY_EMPTY", "ENERGY_FULL", "TRASH", "QUEST"
      * @return Image của icon, null nếu không tìm thấy
      */
     public Image getGuiIcon(String iconName) {

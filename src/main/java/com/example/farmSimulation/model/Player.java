@@ -11,6 +11,7 @@ import lombok.Setter;
 
 public class Player {
     private String name;
+    private String gender; // Gender của người chơi (Male/Female)
     private double money;
     private double currentXP; // XP hiện tại
     private double xpToNextLevel; // XP cần để lên level tiếp theo
@@ -142,6 +143,43 @@ public class Player {
         }
 
         return addedAny; // Trả về false nếu không thêm được gì (Inventory Full)
+    }
+    
+    /**
+     * Tính số lượng item có thể thêm vào inventory
+     * @param type Loại item
+     * @param amount Số lượng muốn thêm
+     * @return Số lượng có thể thêm (0 đến amount)
+     */
+    public int calculateAddableAmount(ItemType type, int amount) {
+        if (amount <= 0) return 0;
+        
+        int remainingToAdd = amount;
+        int maxStackSize = type.getMaxStackSize();
+        
+        // Kiểm tra stack vào ô có sẵn
+        for (ItemStack stack : hotbarItems) {
+            if (stack != null && stack.getItemType() == type) {
+                int spaceAvailable = maxStackSize - stack.getQuantity();
+                int canAdd = Math.min(spaceAvailable, remainingToAdd);
+                remainingToAdd -= canAdd;
+                if (remainingToAdd <= 0) return amount; // Có thể thêm hết
+            }
+        }
+        
+        // Kiểm tra số ô trống
+        int emptySlots = 0;
+        for (ItemStack stack : hotbarItems) {
+            if (stack == null) {
+                emptySlots++;
+            }
+        }
+        
+        // Tính số lượng có thể thêm từ các ô trống
+        int canAddFromEmptySlots = emptySlots * maxStackSize;
+        int totalAddable = amount - remainingToAdd + Math.min(canAddFromEmptySlots, remainingToAdd);
+        
+        return Math.min(totalAddable, amount);
     }
 
     /**

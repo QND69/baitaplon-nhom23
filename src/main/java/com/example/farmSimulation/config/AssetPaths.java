@@ -37,6 +37,9 @@ public final class AssetPaths {
 
     public static final String ICON_BG = "/assets/images/GUI/icon_white_bg3.png";
 
+    // Audio
+    public static final String BACKGROUND_MUSIC = "/assets/sounds/bg_music.mp3";
+
     private AssetPaths() {
     }
 }

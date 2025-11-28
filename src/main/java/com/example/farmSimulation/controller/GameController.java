@@ -67,6 +67,12 @@ public class GameController {
                     gameManager.toggleWeather(); // Test đổi thời tiết
                 }
             }
+            // [MỚI] Xử lý phím J để bật/tắt Quest Board
+            if (event.getCode() == KeyCode.J) {
+                if (gameManager != null && mainGameView != null) {
+                    mainGameView.toggleQuestBoard();
+                }
+            }
             // Xử lý phím số (1-9, 0) để đổi hotbar
             if (event.getCode().isDigitKey()) {
                 int slot = -1;

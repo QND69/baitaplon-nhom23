@@ -481,10 +481,16 @@ public class ShopView extends StackPane {
         ItemType itemType = stack.getItemType();
         int quantity = stack.getQuantity();
         
-        VBox itemBox = new VBox(10);
+        // Main container - StackPane to match Buy Tab structure
+        StackPane containerPane = new StackPane();
+        containerPane.setPrefSize(ShopConfig.SHOP_ITEM_SLOT_SIZE, ShopConfig.SHOP_ITEM_SLOT_SIZE);
+        containerPane.setStyle("-fx-background-color: rgba(0, 0, 0, 0.4); -fx-border-color: gray; -fx-border-width: 2;"); // Same style as Buy Tab
+        
+        // Content VBox - uniform padding for all items (same as Buy Tab)
+        VBox itemBox = new VBox(8);
         itemBox.setAlignment(Pos.CENTER);
-        itemBox.setPrefSize(ShopConfig.SHOP_ITEM_SLOT_SIZE, ShopConfig.SHOP_ITEM_SLOT_SIZE);
-        itemBox.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5); -fx-border-color: gray; -fx-border-width: 2;");
+        itemBox.setPadding(new Insets(5)); // Uniform padding to prevent buttons from touching edges
+        itemBox.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE); // Prevent stretching to maintain uniform layout
         
         // Icon
         ImageView iconView = new ImageView();
@@ -496,12 +502,13 @@ public class ShopView extends StackPane {
         iconView.setFitHeight(ShopConfig.ITEM_ICON_SIZE);
         iconView.setPreserveRatio(true);
         
-        // Item name + quantity
+        // Item name + quantity (ensure text wrapping and centering)
         Label nameLabel = new Label(itemType.getName() + " x" + quantity);
-        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11)); // Match Buy Tab font size
         nameLabel.setTextFill(Color.WHITE);
         nameLabel.setWrapText(true);
         nameLabel.setMaxWidth(ShopConfig.SHOP_ITEM_SLOT_SIZE - 10);
+        nameLabel.setAlignment(Pos.CENTER);
         
         // Sell price with coin icon
         HBox priceBox = createPriceBox(itemType.getSellPrice());
@@ -549,14 +556,19 @@ public class ShopView extends StackPane {
             });
         }
         
-        // Add components to itemBox
+        // Add components to itemBox (with proper spacing from VBox)
         if (sellAllButton != null) {
             itemBox.getChildren().addAll(iconView, nameLabel, priceBox, sellButton, sellAllButton);
         } else {
             itemBox.getChildren().addAll(iconView, nameLabel, priceBox, sellButton);
         }
         
-        return itemBox;
+        // Add itemBox to containerPane - center it
+        StackPane.setAlignment(itemBox, Pos.CENTER);
+        containerPane.getChildren().add(itemBox);
+        
+        // Return VBox wrapping StackPane (to match Buy Tab return structure)
+        return new VBox(containerPane);
     }
     
     /**

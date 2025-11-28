@@ -31,6 +31,8 @@ public class GameManager {
     private final AnimalManager animalManager; // Quản lý động vật
     private final ShopManager shopManager; // Quản lý shop
     private final WeatherManager weatherManager; // Quản lý thời tiết
+    private final QuestManager questManager; // Quản lý quest (nhiệm vụ hàng ngày)
+    private final com.example.farmSimulation.view.audio.AudioManager audioManager; // Quản lý âm thanh nền
 
     // --- Trạng thái Game ---
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
@@ -67,6 +69,8 @@ public class GameManager {
         this.animalManager = new AnimalManager(this.worldMap, this.collisionManager);
         this.shopManager = new ShopManager(player); // Khởi tạo ShopManager
         this.weatherManager = new WeatherManager(); // Khởi tạo WeatherManager
+        this.questManager = new QuestManager(); // Khởi tạo QuestManager
+        this.audioManager = new com.example.farmSimulation.view.audio.AudioManager(); // Khởi tạo AudioManager
         
         // Liên kết Player với MainGameView để hiển thị thông báo
         player.setMainGameView(mainGameView);
@@ -74,12 +78,14 @@ public class GameManager {
         // Liên kết các Manager với nhau
         this.actionManager.setFenceManager(this.fenceManager);
         this.actionManager.setAnimalManager(this.animalManager); // Liên kết AnimalManager với ActionManager
+        this.actionManager.setQuestManager(this.questManager); // Liên kết QuestManager với ActionManager
         this.movementHandler.setCollisionManager(this.collisionManager);
         this.interactionManager.setAnimalManager(this.animalManager); // Liên kết AnimalManager với InteractionManager
         this.interactionManager.setCollisionManager(this.collisionManager); // Liên kết CollisionManager với InteractionManager
         this.interactionManager.setWorldMap(this.worldMap); // Liên kết WorldMap với InteractionManager
         this.cropManager.setWeatherManager(this.weatherManager); // Liên kết WeatherManager với CropManager
         this.cropManager.setTimeManager(this.timeManager); // Liên kết TimeManager với CropManager
+        this.shopManager.setQuestManager(this.questManager); // Liên kết QuestManager với ShopManager
     }
 
     public void startGame() {
@@ -97,6 +103,10 @@ public class GameManager {
             }
         };
         gameLoop.start();
+        
+        // Generate initial daily quests
+        questManager.generateDailyQuests();
+        
         System.out.println("Game Started!");
     }
 
@@ -127,7 +137,9 @@ public class GameManager {
         // Check if new day started and refresh shop stock
         if (timeManager.hasNewDayStarted()) {
             shopManager.generateDailyStock(true); // Allow discounts on natural day refresh
+            questManager.generateDailyQuests(); // Generate new daily quests
             System.out.println("New day started! Shop stock refreshed.");
+            System.out.println("New daily quests generated!");
         }
         
         // Tự động hồi phục stamina (khi không hoạt động)
@@ -468,12 +480,24 @@ public class GameManager {
                 gameLoop.stop(); // ⬅️ Dừng game loop
                 //System.out.println("Game Loop đã dừng.");
             }
+            
+            // Tạm dừng nhạc nền khi pause
+            if (audioManager != null) {
+                audioManager.pauseMusic();
+            }
+            
             mainGameView.showSettingsMenu(mainPlayer.getName(), mainPlayer.getLevel());
         } else {
             if (gameLoop != null) {
                 gameLoop.start(); // ⬅️ Tiếp tục game loop
                 //System.out.println("Game Loop đã tiếp tục.");
             }
+            
+            // Tiếp tục phát nhạc nền khi resume
+            if (audioManager != null) {
+                audioManager.resumeMusic();
+            }
+            
             mainGameView.hideSettingsMenu();
         }
     }
