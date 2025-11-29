@@ -34,6 +34,9 @@ public class Player {
     
     // Tham chiếu đến MainGameView để hiển thị thông báo level up
     private com.example.farmSimulation.view.MainGameView mainGameView;
+    
+    // Time of death for death animation timing
+    private long timeOfDeath = 0;
 
     // Constructor
     public Player() {
@@ -266,7 +269,9 @@ public class Player {
         
         // Kiểm tra Game Over nếu stamina <= 0
         if (this.currentStamina <= 0) {
+            this.currentStamina = 0;
             this.state = PlayerView.PlayerState.DEAD;
+            this.timeOfDeath = System.currentTimeMillis(); // Set time of death for animation timing
             // Hiển thị thông báo "You passed out!"
             if (mainGameView != null) {
                 mainGameView.showTemporaryText("You passed out!", tileX, tileY);
@@ -284,10 +289,13 @@ public class Player {
     
     /**
      * Kiểm tra xem có đang bị penalty do stamina thấp không
-     * @return true nếu stamina < threshold
+     * Áp dụng penalty khi stamina <= 15% (khi thanh chuyển đỏ)
+     * @return true nếu stamina <= threshold (15% của maxStamina)
      */
     public boolean hasStaminaPenalty() {
-        return currentStamina < GameLogicConfig.STAMINA_PENALTY_THRESHOLD;
+        // Tính phần trăm stamina và so sánh với 15%
+        double percentage = maxStamina > 0 ? (currentStamina / maxStamina) : 0.0;
+        return percentage <= 0.15; // Penalty khi stamina <= 15% (mức đỏ)
     }
     
     /**
@@ -360,5 +368,42 @@ public class Player {
      */
     public void setMainGameView(com.example.farmSimulation.view.MainGameView mainGameView) {
         this.mainGameView = mainGameView;
+    }
+    
+    /**
+     * Ăn item hiện tại đang cầm để hồi phục stamina
+     * @return true nếu ăn thành công, false nếu không thể ăn (item không có staminaRestore hoặc stamina đã đầy)
+     */
+    public boolean eatCurrentItem() {
+        ItemStack currentItem = getCurrentItem();
+        if (currentItem == null) return false;
+        
+        ItemType itemType = currentItem.getItemType();
+        
+        // Kiểm tra xem item có thể ăn không (có staminaRestore > 0)
+        if (itemType.getStaminaRestore() <= 0) {
+            return false;
+        }
+        
+        // Kiểm tra xem stamina có đầy không (không ăn nếu đã đầy)
+        if (currentStamina >= maxStamina) {
+            return false;
+        }
+        
+        // Hồi phục stamina
+        recoverStamina(itemType.getStaminaRestore());
+        
+        // Giảm số lượng item (tiêu thụ 1 item)
+        currentItem.remove(1);
+        
+        // Xóa item nếu đã hết
+        if (currentItem.isEmpty()) {
+            hotbarItems[selectedHotbarSlot] = null;
+        }
+        
+        // Set state thành BUSY (sẽ được xử lý bởi ActionManager)
+        this.state = PlayerView.PlayerState.BUSY;
+        
+        return true;
     }
 }

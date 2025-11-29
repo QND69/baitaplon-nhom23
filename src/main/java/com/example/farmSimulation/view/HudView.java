@@ -235,6 +235,9 @@ public class HudView extends Pane {
         questIconButtonPane.getChildren().add(questIconButton);
         
         questIconButtonPane.setOnMouseClicked(e -> {
+            // Block quest interaction when game is paused
+            if (gameManager != null && gameManager.isPaused()) return;
+            
             if (mainGameView != null) {
                 mainGameView.toggleQuestBoard();
             }
@@ -377,6 +380,9 @@ public class HudView extends Pane {
      * Event handler cho Shop Icon click
      */
     private void onShopIconClicked(MouseEvent e) {
+        // Block shop interaction when game is paused
+        if (gameManager != null && gameManager.isPaused()) return;
+        
         if (mainGameView != null) {
             mainGameView.toggleShop();
         }
@@ -416,23 +422,18 @@ public class HudView extends Pane {
         }
         staminaBarFill.setWidth(HudConfig.STAMINA_BAR_WIDTH * staminaProgress);
         
-        // Đổi màu stamina bar dựa trên giá trị (xanh khi đầy, đỏ khi thấp)
-        double ratio = staminaProgress;
+        // Dynamic Stamina Bar Color based on remaining percentage
+        double percentage = staminaProgress;
         Color staminaColor;
-        if (ratio > 0.5) {
-            // Từ xanh đến vàng
-            staminaColor = Color.rgb(
-                (int)(50 + (200 - 50) * (1 - ratio) * 2),
-                (int)(200 - (200 - 50) * (1 - ratio) * 2),
-                50
-            );
+        if (percentage > 0.6) {
+            // Green when above 60%
+            staminaColor = Color.web("#2ecc71");
+        } else if (percentage > 0.15) {
+            // Yellow when between 15% and 60%
+            staminaColor = Color.web("#f1c40f");
         } else {
-            // Từ vàng đến đỏ
-            staminaColor = Color.rgb(
-                (int)(200 - (200 - 50) * ratio * 2),
-                (int)(50 + (200 - 50) * ratio * 2),
-                50
-            );
+            // Red when 15% or below
+            staminaColor = Color.web("#e74c3c");
         }
         staminaBarFill.setFill(staminaColor);
     }

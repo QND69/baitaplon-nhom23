@@ -390,12 +390,11 @@ public class WorldRenderer {
         Image iconImage = null;
 
         if (animal.isHungry()) {
+            // Always use SUPER_FEED icon for hunger (universal visual cue)
             iconImage = assetManager.getItemIcon(com.example.farmSimulation.model.ItemType.SUPER_FEED);
-            if (iconImage == null && animal.getType().getAcceptedFood().size() > 0) {
-                iconImage = assetManager.getItemIcon(animal.getType().getAcceptedFood().get(0));
-            }
             needsIcon = iconImage != null;
         } else if (animal.isHasProduct() && animal.getType().canProduce()) {
+            // Display the specific product item icon (Egg, Milk, Wool)
             iconImage = assetManager.getItemIcon(animal.getType().getProduct());
             needsIcon = iconImage != null;
         }

@@ -39,5 +39,40 @@ public class SettingsMenuConfig {
     public static final double SETTINGS_MENU_WIDTH_NEW = 500.0; // Tăng width cho GridPane
     public static final double SETTINGS_MENU_HEIGHT_NEW = 600.0; // Tăng height cho GridPane
 
+    // --- [MỚI] Cấu hình TabPane Style (CSS) ---
+    // Style cho TabPane container: xóa nền mặc định của header area để đồng bộ màu nền
+    public static final String TAB_PANE_STYLE = 
+            "-fx-background-color: transparent; " +
+            "-fx-tab-min-width: 80px; " +
+            "-fx-tab-max-width: 80px; " +
+            "-fx-tab-min-height: 30px; " +
+            "-fx-padding: 0 50 0 50; " +
+            // Các thuộc tính dưới đây giúp xóa nền xám mặc định của JavaFX
+            "-fx-tab-header-background: transparent; " + 
+            "-fx-tab-header-area-background: transparent;"; 
+
+    // Style cho Tab đang chọn (Active): Chữ trắng, gạch chân trắng, nền trong suốt
+    public static final String ACTIVE_TAB_STYLE = 
+            "-fx-background-color: transparent; " +
+            "-fx-background-insets: 0; " +
+            "-fx-background-radius: 0; " +
+            "-fx-text-base-color: white; " +
+            "-fx-font-weight: bold; " +
+            "-fx-border-color: transparent transparent white transparent; " +
+            "-fx-border-width: 2; " +
+            "-fx-focus-color: transparent; " +
+            "-fx-faint-focus-color: transparent;";
+    
+    // Style cho Tab không chọn (Inactive): Chữ xám, nền trong suốt
+    public static final String INACTIVE_TAB_STYLE = 
+            "-fx-background-color: transparent; " +
+            "-fx-background-insets: 0; " +
+            "-fx-background-radius: 0; " +
+            "-fx-text-base-color: #aaaaaa; " +
+            "-fx-font-weight: normal; " +
+            "-fx-border-width: 0; " +
+            "-fx-focus-color: transparent; " +
+            "-fx-faint-focus-color: transparent;";
+
     private SettingsMenuConfig() {}
 }

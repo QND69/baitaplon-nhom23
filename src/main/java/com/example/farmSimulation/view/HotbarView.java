@@ -152,6 +152,12 @@ public class HotbarView extends Pane {
     private void setupDragHandlers(ImageView icon, int slotIndex) {
         // 1. Bắt đầu nhấn chuột (Pressed)
         icon.setOnMousePressed(e -> {
+            // Block drag when game is paused
+            if (player.getMainGameView() != null && player.getMainGameView().getGameManager() != null 
+                    && player.getMainGameView().getGameManager().isPaused()) {
+                return;
+            }
+            
             // Chỉ kéo được nếu có item và dùng chuột trái
             if (icon.getImage() != null && e.isPrimaryButtonDown()) {
                 dragSourceIndex = slotIndex;
@@ -188,6 +194,12 @@ public class HotbarView extends Pane {
 
         // 2. Kéo chuột (Dragged)
         icon.setOnMouseDragged(e -> {
+            // Block drag when game is paused
+            if (player.getMainGameView() != null && player.getMainGameView().getGameManager() != null 
+                    && player.getMainGameView().getGameManager().isPaused()) {
+                return;
+            }
+            
             if (dragSourceIndex != -1 && e.isPrimaryButtonDown()) {
                 // Cập nhật vị trí Ghost Icon theo chuột
                 Point2D scenePoint = new Point2D(e.getSceneX(), e.getSceneY());
@@ -201,6 +213,18 @@ public class HotbarView extends Pane {
 
         // 3. Thả chuột (Released)
         icon.setOnMouseReleased(e -> {
+            // Block drop when game is paused
+            if (player.getMainGameView() != null && player.getMainGameView().getGameManager() != null 
+                    && player.getMainGameView().getGameManager().isPaused()) {
+                // Reset drag state if paused
+                if (dragSourceIndex != -1) {
+                    icon.setOpacity(1.0);
+                    ghostIcon.setVisible(false);
+                    dragSourceIndex = -1;
+                }
+                return;
+            }
+            
             if (dragSourceIndex != -1) {
                 // Khôi phục icon gốc
                 icon.setOpacity(1.0);

@@ -9,6 +9,11 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.Node;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -25,7 +30,13 @@ public class SettingsMenuView extends GridPane {
     private double masterVolume = SettingsMenuConfig.DEFAULT_MASTER_VOLUME;
     private Slider masterVolumeSlider;
     
-    private final TabPane tabPane;
+    // Custom Navigation Bar
+    private final HBox navBar;
+    private final StackPane contentArea;
+    private Button generalButton;
+    private Button controlsButton;
+    private Button tutorialButton;
+    private String currentTab = "General"; // Track current active tab
 
     public SettingsMenuView(GameManager gameManager) {
         this.gameManager = gameManager; // Có thể null khi khởi tạo
@@ -46,8 +57,8 @@ public class SettingsMenuView extends GridPane {
 
         int currentRow = 0;
 
-        // Tiêu đề (span 2 cột)
-        Label title = new Label(SettingsMenuConfig.SETTINGS_MENU_TITLE);
+        // Tiêu đề (span 2 cột) - Remove gear emoji
+        Label title = new Label("Game Menu");
         title.setTextFill(SettingsMenuConfig.SETTINGS_MENU_FONT_COLOR);
         title.setFont(Font.font(SettingsMenuConfig.SETTINGS_MENU_FONT_FAMILY, SettingsMenuConfig.SETTINGS_MENU_TITLE_FONT_SIZE));
         title.setTextAlignment(TextAlignment.CENTER);
@@ -67,50 +78,39 @@ public class SettingsMenuView extends GridPane {
         this.add(playerInfo, 0, currentRow++, 2, 1);
         GridPane.setHalignment(playerInfo, HPos.CENTER);
 
-        // TabPane chứa các tabs
-        tabPane = new TabPane();
-        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE); // Không cho đóng tabs
+        // Custom Navigation Bar (replaces TabPane)
+        navBar = new HBox(20); // Spacing between buttons
+        navBar.setAlignment(Pos.CENTER);
+        navBar.setPadding(new Insets(10, 0, 10, 0));
         
-        // Style TabPane với minimal look - Text + Underline style
-        // Áp dụng aggressive transparency để loại bỏ tất cả default backgrounds
-        String tabPaneStyle = 
-            "-fx-background-color: transparent; " +
-            "-fx-tab-min-width: 80px; " +
-            "-fx-tab-max-width: 80px; " +
-            "-fx-tab-min-height: 30px; " +
-            "-fx-tab-header-background: transparent; " +
-            "-fx-tab-header-area-background: transparent; " +
-            "-fx-tab-header-area-background-color: transparent; " +
-            "-fx-tab-header-background-color: transparent; " +
-            "-fx-control-inner-background: transparent; " +
-            "-fx-focus-color: transparent; " +
-            "-fx-faint-focus-color: transparent; " +
-            "-fx-padding: 0 50 0 50;"; // Push tabs to center
-        tabPane.setStyle(tabPaneStyle);
+        // Create navigation buttons
+        generalButton = new Button("General");
+        controlsButton = new Button("Controls");
+        tutorialButton = new Button("Tutorial");
         
-        // Tab 1: General
-        Tab generalTab = createGeneralTab();
-        tabPane.getTabs().add(generalTab);
+        // Set button actions
+        generalButton.setOnAction(e -> switchTab("General"));
+        controlsButton.setOnAction(e -> switchTab("Controls"));
+        tutorialButton.setOnAction(e -> switchTab("Tutorial"));
         
-        // Tab 2: Controls
-        Tab controlsTab = createControlsTab();
-        tabPane.getTabs().add(controlsTab);
+        // Add buttons to navigation bar
+        navBar.getChildren().addAll(generalButton, controlsButton, tutorialButton);
         
-        // Tab 3: Tutorial
-        Tab tutorialTab = createTutorialTab();
-        tabPane.getTabs().add(tutorialTab);
+        // Add navigation bar to grid
+        this.add(navBar, 0, currentRow++, 2, 1);
+        GridPane.setHalignment(navBar, HPos.CENTER);
         
-        // Apply initial tab styles
-        updateTabStyles();
+        // Content Area to hold active view
+        contentArea = new StackPane();
+        contentArea.setPrefSize(SettingsMenuConfig.SETTINGS_MENU_WIDTH_NEW - 60, 400); // Leave padding space
         
-        // Update tab styles when selection changes
-        tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
-            updateTabStyles();
-        });
+        // Add content area to grid
+        this.add(contentArea, 0, currentRow++, 2, 1);
+        GridPane.setHgrow(contentArea, Priority.ALWAYS);
+        GridPane.setVgrow(contentArea, Priority.ALWAYS);
         
-        this.add(tabPane, 0, currentRow++, 2, 1);
-        GridPane.setHgrow(tabPane, javafx.scene.layout.Priority.ALWAYS);
-        GridPane.setVgrow(tabPane, javafx.scene.layout.Priority.ALWAYS);
+        // Initialize with General tab
+        switchTab("General");
 
         // Đặt menu giữa màn hình
         this.setLayoutX(WindowConfig.SCREEN_WIDTH / 2 - SettingsMenuConfig.SETTINGS_MENU_WIDTH_NEW / 2);
@@ -120,12 +120,68 @@ public class SettingsMenuView extends GridPane {
     }
     
     /**
-     * Tạo Tab "General" chứa Volume, Brightness, và các nút Resume/Save/Exit
+     * Switch to a different tab and update button styles
+     * @param tabName Name of the tab to switch to ("General", "Controls", or "Tutorial")
      */
-    private Tab createGeneralTab() {
-        Tab tab = new Tab("General");
-        tab.setClosable(false);
+    private void switchTab(String tabName) {
+        currentTab = tabName;
         
+        // Clear content area
+        contentArea.getChildren().clear();
+        
+        // Get and display new content
+        Node content = null;
+        switch (tabName) {
+            case "General":
+                content = createGeneralContent();
+                break;
+            case "Controls":
+                content = createControlsContent();
+                break;
+            case "Tutorial":
+                content = createTutorialContent();
+                break;
+        }
+        
+        if (content != null) {
+            contentArea.getChildren().add(content);
+        }
+        
+        // Update button styles
+        updateNavButtonStyles();
+    }
+    
+    /**
+     * Update navigation button styles based on active tab
+     */
+    private void updateNavButtonStyles() {
+        // Active Button Style: White text, Bold, Underline border (border-bottom: 2px solid white)
+        String activeButtonStyle = 
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-weight: bold;" +
+            "-fx-border-color: transparent transparent white transparent;" +
+            "-fx-border-width: 0 0 2 0;" +
+            "-fx-padding: 5px;";
+        
+        // Inactive Button Style: Gray text, No border
+        String inactiveButtonStyle = 
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: #aaaaaa;" +
+            "-fx-font-weight: normal;" +
+            "-fx-border-width: 0;" +
+            "-fx-padding: 5px;";
+        
+        // Apply styles based on current tab
+        generalButton.setStyle(currentTab.equals("General") ? activeButtonStyle : inactiveButtonStyle);
+        controlsButton.setStyle(currentTab.equals("Controls") ? activeButtonStyle : inactiveButtonStyle);
+        tutorialButton.setStyle(currentTab.equals("Tutorial") ? activeButtonStyle : inactiveButtonStyle);
+    }
+    
+    /**
+     * Tạo nội dung "General" chứa Volume, Brightness, và các nút Resume/Save/Exit
+     */
+    private Node createGeneralContent() {
         GridPane contentGrid = new GridPane();
         contentGrid.setHgap(20);
         contentGrid.setVgap(15);
@@ -220,17 +276,13 @@ public class SettingsMenuView extends GridPane {
         scrollPane.setFitToHeight(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         
-        tab.setContent(scrollPane);
-        return tab;
+        return scrollPane;
     }
     
     /**
-     * Tạo Tab "Controls" chứa Key Bindings list
+     * Tạo nội dung "Controls" chứa Key Bindings list
      */
-    private Tab createControlsTab() {
-        Tab tab = new Tab("Controls");
-        tab.setClosable(false);
-        
+    private Node createControlsContent() {
         VBox contentBox = new VBox(10);
         contentBox.setPadding(new Insets(20));
         contentBox.setAlignment(Pos.TOP_LEFT);
@@ -263,7 +315,7 @@ public class SettingsMenuView extends GridPane {
         Label keyB = new Label("B");
         Label actionB = new Label("Open / Close Shop");
         Label keyQ = new Label("Q");
-        Label actionQ = new Label("Drop Item (at mouse cursor)");
+        Label actionQ = new Label("Drop Item");
         Label keyJ = new Label("J");
         Label actionJ = new Label("Open / Close Quest Board");
         Label keyESC = new Label("ESC");
@@ -273,7 +325,7 @@ public class SettingsMenuView extends GridPane {
         Label keyMouseLeft = new Label("Mouse Left");
         Label actionMouseLeft = new Label("Use Tool / Interact");
         Label keyMouseRight = new Label("Mouse Right");
-        Label actionMouseRight = new Label("Toggle Fence Gate");
+        Label actionMouseRight = new Label("Toggle Fence / Eat Food");
         
         // Style all key labels (left column)
         Label[] keyLabels = {keyW, keyA, keyS, keyD, keyB, keyQ, keyJ, keyESC, keyNum, keyMouseLeft, keyMouseRight};
@@ -321,20 +373,17 @@ public class SettingsMenuView extends GridPane {
         scrollPane.setFitToHeight(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         
-        tab.setContent(scrollPane);
-        return tab;
+        return scrollPane;
     }
     
     /**
-     * Tạo Tab "Tutorial" chứa hướng dẫn chơi game
+     * Tạo nội dung "Tutorial" chứa hướng dẫn chơi game
      */
-    private Tab createTutorialTab() {
-        Tab tab = new Tab("Tutorial");
-        tab.setClosable(false);
-        
+    private Node createTutorialContent() {
         // Use Label instead of TextArea to fix white text on white background issue
         Label tutorialLabel = new Label();
         tutorialLabel.setWrapText(true);
+        tutorialLabel.setMinHeight(Region.USE_PREF_SIZE); // Force label to calculate full height based on wrapped text
         tutorialLabel.setFont(Font.font(SettingsMenuConfig.SETTINGS_MENU_FONT_FAMILY, 14));
         tutorialLabel.setTextFill(javafx.scene.paint.Color.WHITE);
         tutorialLabel.setText(
@@ -368,53 +417,9 @@ public class SettingsMenuView extends GridPane {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         
-        tab.setContent(scrollPane);
-        return tab;
+        return scrollPane;
     }
 
-    /**
-     * Cập nhật styles cho tất cả tabs theo minimal "Text + Underline" look
-     * Active tab: White text với underline (border-bottom), transparent background
-     * Inactive tabs: Light gray text (#aaaaaa), transparent background, no border
-     * Sử dụng aggressive CSS để loại bỏ tất cả default backgrounds
-     */
-    private void updateTabStyles() {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        
-        // Active Tab Style: White text với underline (border-bottom), transparent background
-        // Aggressive CSS để loại bỏ default backgrounds và borders
-        String activeTabStyle = 
-            "-fx-background-color: transparent; " +
-            "-fx-background-insets: 0; " +
-            "-fx-background-radius: 0; " +
-            "-fx-text-base-color: white; " +
-            "-fx-font-weight: bold; " +
-            "-fx-border-color: transparent transparent white transparent; " +
-            "-fx-border-width: 2; " +
-            "-fx-focus-color: transparent; " +
-            "-fx-faint-focus-color: transparent;";
-        
-        // Inactive Tab Style: Light gray text (#aaaaaa), transparent background, no border
-        // Aggressive CSS để loại bỏ default backgrounds
-        String inactiveTabStyle = 
-            "-fx-background-color: transparent; " +
-            "-fx-background-insets: 0; " +
-            "-fx-background-radius: 0; " +
-            "-fx-text-base-color: #aaaaaa; " +
-            "-fx-font-weight: normal; " +
-            "-fx-border-width: 0; " +
-            "-fx-focus-color: transparent; " +
-            "-fx-faint-focus-color: transparent;";
-        
-        // Áp dụng style cho từng tab
-        for (Tab tab : tabPane.getTabs()) {
-            if (tab == selectedTab) {
-                tab.setStyle(activeTabStyle);
-            } else {
-                tab.setStyle(inactiveTabStyle);
-            }
-        }
-    }
 
     public void updatePlayerInfo(String playerName, int playerLevel) {
         nameLabel.setText("Player: " + playerName);

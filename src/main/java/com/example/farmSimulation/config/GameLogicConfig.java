@@ -26,9 +26,10 @@ public class GameLogicConfig {
     // --- Cấu hình Stamina & XP ---
     public static final double PLAYER_MAX_STAMINA = 100.0; // Stamina tối đa
     public static final double PLAYER_START_STAMINA = 100.0; // Stamina ban đầu
-    public static final double STAMINA_PENALTY_THRESHOLD = 20.0; // Ngưỡng stamina thấp để áp dụng penalty
+    public static final double STAMINA_PENALTY_THRESHOLD = 15.0; // Ngưỡng stamina thấp để áp dụng penalty (15% của maxStamina = 100)
     public static final double STAMINA_SPEED_PENALTY_MULTIPLIER = 0.5; // Giảm tốc độ khi stamina thấp (50%)
-    public static final double STAMINA_RECOVERY_RATE = 0.5; // Tốc độ hồi phục stamina mỗi giây (khi không hoạt động) - giảm xuống để game khó hơn
+    public static final double STAMINA_RECOVERY_RATE = 1.0; // Tốc độ hồi phục stamina mỗi giây (khi đứng yên IDLE) - slow recovery
+    public static final double STAMINA_DRAIN_RUNNING = 2.0; // Stamina tiêu hao mỗi giây khi đang chạy (WALK state)
     
     // XP & Leveling
     public static final int PLAYER_START_LEVEL = 1; // Level ban đầu
@@ -121,6 +122,9 @@ public class GameLogicConfig {
     
     // [MỚI] Độ phân tán ngẫu nhiên khi rơi item (pixel) - để item không bị dính chặt vào giữa ô
     public static final double ITEM_DROP_SCATTER_RANGE = 24.0;
+    
+    // Game Over
+    public static final double GAME_OVER_DELAY_SECONDS = 3.0; // Delay before showing Game Over UI after death
 
     private GameLogicConfig() {}
 }

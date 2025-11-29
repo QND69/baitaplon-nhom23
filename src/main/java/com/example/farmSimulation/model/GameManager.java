@@ -38,6 +38,7 @@ public class GameManager {
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
     private boolean isPaused = false;
     private long lastUpdateTime = 0; // Thời gian update lần cuối (nanoTime) - để tính deltaTime
+    private boolean isGameOverSequenceTriggered = false; // Flag to ensure Game Over sequence runs only once
 
     // Tọa độ ô chuột đang trỏ tới
     private int currentMouseTileX = 0;
@@ -74,6 +75,9 @@ public class GameManager {
         
         // Liên kết Player với MainGameView để hiển thị thông báo
         player.setMainGameView(mainGameView);
+        
+        // Set Player reference in PlayerView for accessing timeOfDeath (for death animation)
+        playerView.setPlayer(player);
         
         // Liên kết các Manager với nhau
         this.actionManager.setFenceManager(this.fenceManager);
@@ -116,6 +120,23 @@ public class GameManager {
     private void updateGameLogic(long now) {
         // ⚠️ BỔ SUNG: Dừng ngay lập tức nếu game đang tạm dừng
         if (this.isPaused) {
+            return;
+        }
+        
+        // Check if player is DEAD - stop all game logic processing
+        if (mainPlayer.getState() == PlayerView.PlayerState.DEAD) {
+            // Sync PlayerView state to DEAD
+            playerView.setState(PlayerView.PlayerState.DEAD, mainPlayer.getDirection());
+            
+            // Trigger Game Over sequence only once
+            if (!isGameOverSequenceTriggered) {
+                isGameOverSequenceTriggered = true;
+                triggerGameOverSequence();
+            }
+            // Only update death animation, stop everything else
+            playerView.updateAnimation();
+            // Still update lastUpdateTime to avoid deltaTime spike when restarting
+            lastUpdateTime = now;
             return;
         }
 
@@ -199,18 +220,23 @@ public class GameManager {
     }
 
     /**
-     * Tự động hồi phục stamina theo thời gian
+     * Tự động hồi phục stamina theo thời gian dựa trên trạng thái player
      */
     private void updateStaminaRecovery(double deltaTime) {
-        // Chỉ hồi phục khi không hoạt động (IDLE hoặc WALK)
         PlayerView.PlayerState currentState = mainPlayer.getState();
-        if (currentState == PlayerView.PlayerState.IDLE || currentState == PlayerView.PlayerState.WALK) {
-            // Chỉ hồi phục nếu chưa đầy
+        
+        if (currentState == PlayerView.PlayerState.WALK) {
+            // Running costs stamina - drain stamina while walking
+            double drainAmount = GameLogicConfig.STAMINA_DRAIN_RUNNING * deltaTime;
+            mainPlayer.reduceStamina(drainAmount);
+        } else if (currentState == PlayerView.PlayerState.IDLE) {
+            // Idle regenerates stamina - only recover when standing still
             if (mainPlayer.getCurrentStamina() < mainPlayer.getMaxStamina()) {
                 double recoveryAmount = GameLogicConfig.STAMINA_RECOVERY_RATE * deltaTime;
                 mainPlayer.recoverStamina(recoveryAmount);
             }
         }
+        // Other states (Action/Busy): Do nothing - actions have their own instant stamina costs
     }
     
     /**
@@ -449,6 +475,14 @@ public class GameManager {
     /**
      * Mở/đóng hàng rào (được gọi từ Controller khi click chuột phải)
      */
+    /**
+     * Kiểm tra xem có fence tại vị trí chỉ định không
+     */
+    public boolean hasFenceAt(int col, int row) {
+        TileData data = worldMap.getTileData(col, row);
+        return data != null && data.getFenceData() != null;
+    }
+    
     public void toggleFence(int col, int row) {
         // [SỬA] Thêm kiểm tra tầm hoạt động bằng Tay (Hand)
         // Truyền null vào currentStack để sử dụng HAND_INTERACTION_RANGE mặc định
@@ -465,6 +499,49 @@ public class GameManager {
             fenceManager.toggleFence(col, row);
             actionManager.setMapNeedsUpdate(true);
             mainGameView.updateMap(camera.getWorldOffsetX(), camera.getWorldOffsetY(), true);
+        }
+    }
+    
+    /**
+     * Xử lý logic ăn đồ của player khi right-click (nếu không click vào fence)
+     */
+    public void handlePlayerEating() {
+        // Kiểm tra xem player có đang bận không
+        PlayerView.PlayerState currentState = mainPlayer.getState();
+        if (currentState != PlayerView.PlayerState.IDLE && currentState != PlayerView.PlayerState.WALK) {
+            return; // Player đang bận, không cho ăn
+        }
+        
+        // Thử ăn item hiện tại
+        if (mainPlayer.eatCurrentItem()) {
+            // Tạo TimedTileAction để giữ BUSY state trong thời gian ngắn (0.5 giây)
+            long eatDurationMs = 500; // 0.5 giây
+            int framesRemaining = (int) (eatDurationMs / (1000.0 / 60.0)); // Chuyển đổi sang frames (60 FPS)
+            
+            // Tạo action không thay đổi tile (newTileData = null)
+            TimedTileAction eatAction = new TimedTileAction(
+                (int) mainPlayer.getTileX(), // Không quan trọng vì không thay đổi tile
+                (int) mainPlayer.getTileY(),
+                null, // Không thay đổi tile
+                framesRemaining,
+                false, // Không tiêu thụ item (đã xử lý trong eatCurrentItem)
+                -1
+            );
+            eatAction.setActionState(PlayerView.PlayerState.BUSY);
+            
+            // Thêm action vào hàng đợi
+            actionManager.addPendingAction(eatAction);
+            
+            // Set PlayerView state to BUSY
+            playerView.setState(PlayerView.PlayerState.BUSY, mainPlayer.getDirection());
+            
+            // Cập nhật hotbar để hiển thị item đã giảm số lượng
+            mainGameView.updateHotbar();
+            
+            // Hiển thị thông báo
+            double playerScreenX = playerView.getSpriteContainer().getLayoutX();
+            double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
+            mainGameView.showTemporaryText("Yum!", playerScreenX, playerScreenY);
         }
     }
 
@@ -683,5 +760,57 @@ public class GameManager {
         
         // Cập nhật hotbar view
         mainGameView.updateHotbar();
+    }
+    
+    /**
+     * Trigger Game Over sequence with delay before showing UI
+     */
+    private void triggerGameOverSequence() {
+        javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
+            javafx.util.Duration.seconds(GameLogicConfig.GAME_OVER_DELAY_SECONDS)
+        );
+        pause.setOnFinished(e -> {
+            if (mainGameView != null) {
+                mainGameView.showGameOverUI();
+            }
+        });
+        pause.play();
+    }
+    
+    /**
+     * Restart the game - reset player and hide Game Over UI
+     */
+    public void restartGame() {
+        // Hide Game Over UI
+        if (mainGameView != null) {
+            mainGameView.hideGameOverUI();
+        }
+        
+        // Reset Player: Full Stamina, State IDLE, Position (0,0)
+        mainPlayer.setCurrentStamina(mainPlayer.getMaxStamina());
+        mainPlayer.setState(PlayerView.PlayerState.IDLE);
+        mainPlayer.setTileX(GameLogicConfig.PLAYER_START_X);
+        mainPlayer.setTileY(GameLogicConfig.PLAYER_START_Y);
+        mainPlayer.setTimeOfDeath(0); // Reset time of death
+        mainPlayer.setDirection(PlayerView.Direction.DOWN); // Reset direction
+        
+        // Reset Game Over sequence flag
+        isGameOverSequenceTriggered = false;
+        
+        // Reset player view state
+        if (playerView != null) {
+            playerView.setState(PlayerView.PlayerState.IDLE, PlayerView.Direction.DOWN);
+        }
+        
+        // Update camera position
+        camera.initializePosition(mainPlayer, playerView);
+        
+        // Update map
+        if (mainGameView != null) {
+            mainGameView.updateMap(camera.getWorldOffsetX(), camera.getWorldOffsetY(), true);
+        }
+        
+        // Resume game if paused
+        isPaused = false;
     }
 }

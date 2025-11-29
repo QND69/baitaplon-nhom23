@@ -29,6 +29,9 @@ public class Game {
         // Tải tài nguyên (Assets)
         assetManager = new AssetManager();
         assetManager.loadAssets();
+        
+        // Set application icon (moved here to show icon during Character Creation screen)
+        primaryStage.getIcons().add(assetManager.getTexture(AssetPaths.LOGO));
 
         // Khởi tạo Model (Dữ liệu) - sẽ được cập nhật với name và gender từ CharacterCreationView
         player = new Player();

@@ -61,7 +61,7 @@ public class PlayerSpriteConfig {
      * Bật/Tắt hiển thị khung viền (bounding box)
      * và tâm (center dot) của player.
      */
-    public static final boolean DEBUG_PLAYER_BOUNDS = true;
+    public static final boolean DEBUG_PLAYER_BOUNDS = false;
     public static final Color DEBUG_BOUNDING_BOX_COLOR = Color.RED;
     public static final Color DEBUG_CENTER_DOT_COLOR = Color.CYAN;
     public static final Color DEBUG_RANGE_COLOR = Color.GREENYELLOW;
@@ -133,6 +133,11 @@ public class PlayerSpriteConfig {
     public static final int AXE_RIGHT_ROW = 3; // Row 10 trong player_action_merged.png
     public static final int AXE_LEFT_ROW = 3; // Row 11 trong player_action_merged.png
     public static final long AXE_SPEED = 100; // Tốc độ chặt cây (ms/frame)
+
+    // DEAD (Ngất) - Dùng player_scaled_4x.png
+    public static final int DEAD_ROW = 9; // The last row, index 7
+    public static final int DEAD_FRAMES = 4; // Số frame của hành động death
+    public static final long DEAD_SPEED = 200; // Tốc độ animation death (ms/frame)
 
     private PlayerSpriteConfig() {}
 }

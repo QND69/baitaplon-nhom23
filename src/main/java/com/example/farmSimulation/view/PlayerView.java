@@ -79,6 +79,9 @@ public class PlayerView {
     private int currentFrame = 0;
     private long lastFrameTime = 0;
     private long frameAccumulator = 0; // Tổng thời gian tích lũy
+    
+    // Reference to Player for accessing timeOfDeath (for death animation)
+    private com.example.farmSimulation.model.Player player;
 
     // --- Hàm khởi tạo ---
     public PlayerView(Image playerSheet, Image playerActionsSheet) {
@@ -254,20 +257,52 @@ public class PlayerView {
         fertilizeMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.FERTILZED_LEFT_ROW, PlayerSpriteConfig.FERTILZED_FRAMES, GameLogicConfig.FERTILIZER_DURATION_MS, PlayerSpriteConfig.AnimationType.ACTION_LOOP));
         animationMap.put(PlayerState.FERTILIZE, fertilizeMap);
 
-//        // DEAD (Ngất)
-//        Map<Direction, AnimData> deadMap = new EnumMap<>(Direction.class);
-//        deadMap.put(Direction.DOWN, new AnimData(GameConfig.DEAD_DOWN_ROW, GameConfig.DEAD_FRAMES, GameConfig.DEAD_SPEED));
-//        deadMap.put(Direction.UP, new AnimData(GameConfig.DEAD_UP_ROW, GameConfig.DEAD_FRAMES, GameConfig.DEAD_SPEED));
-//        deadMap.put(Direction.RIGHT, new AnimData(GameConfig.DEAD_RIGHT_ROW, GameConfig.DEAD_FRAMES, GameConfig.DEAD_SPEED));
-//        deadMap.put(Direction.LEFT, new AnimData(GameConfig.DEAD_LEFT_ROW, GameConfig.DEAD_FRAMES, GameConfig.DEAD_SPEED));
-//        animationMap.put(PlayerState.DEAD, deadMap);
+        // DEAD (Ngất) - Play once animation, freeze on last frame
+        Map<Direction, AnimData> deadMap = new EnumMap<>(Direction.class);
+        // DEAD animation uses same row for all directions (row 7), plays once
+        deadMap.put(Direction.DOWN, new AnimData(PlayerSpriteConfig.DEAD_ROW, PlayerSpriteConfig.DEAD_FRAMES, PlayerSpriteConfig.DEAD_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
+        deadMap.put(Direction.UP, new AnimData(PlayerSpriteConfig.DEAD_ROW, PlayerSpriteConfig.DEAD_FRAMES, PlayerSpriteConfig.DEAD_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
+        deadMap.put(Direction.RIGHT, new AnimData(PlayerSpriteConfig.DEAD_ROW, PlayerSpriteConfig.DEAD_FRAMES, PlayerSpriteConfig.DEAD_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
+        deadMap.put(Direction.LEFT, new AnimData(PlayerSpriteConfig.DEAD_ROW, PlayerSpriteConfig.DEAD_FRAMES, PlayerSpriteConfig.DEAD_SPEED, PlayerSpriteConfig.AnimationType.ONE_SHOT));
+        animationMap.put(PlayerState.DEAD, deadMap);
     }
 
+    /**
+     * Set Player reference for accessing timeOfDeath (for death animation timing)
+     */
+    public void setPlayer(com.example.farmSimulation.model.Player player) {
+        this.player = player;
+    }
+    
     /**
      * Hàm được gọi 60 lần/giây từ GameManager
      * Nhiệm vụ: CHỈ tính toán frame tiếp theo
      */
     public void updateAnimation() {
+        // Special handling for DEAD state - play once animation based on timeOfDeath
+        if (currentState == PlayerState.DEAD && player != null && player.getTimeOfDeath() > 0) {
+            AnimData data = getAnimationData();
+            if (data == null) return;
+            
+            // Calculate elapsed time since death
+            long elapsedMs = System.currentTimeMillis() - player.getTimeOfDeath();
+            
+            // Calculate frame index based on elapsed time
+            long frameSpeed = data.speed(); // ms per frame
+            int calculatedFrame = (int) (elapsedMs / frameSpeed);
+            
+            // Force frame to stay at last frame if it exceeds DEAD_FRAMES - 1
+            if (calculatedFrame >= data.frameCount()) {
+                currentFrame = data.frameCount() - 1; // Freeze on last frame
+            } else {
+                currentFrame = calculatedFrame;
+            }
+            
+            // Update viewport and return (don't continue with normal animation logic)
+            updateViewport();
+            return;
+        }
+        
         // Lấy dữ liệu (row, frameCount, speed) từ "bộ não"
         AnimData data = getAnimationData();
         if (data == null) return;

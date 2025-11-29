@@ -86,6 +86,9 @@ public class ShopView extends StackPane {
         moneyLabel.setStyle("-fx-effect: dropshadow(one-pass-box, black, 3, 0, 0, 2);");
         updateMoneyDisplay(); // Update money initially
         
+        // [SỬA] Thêm margin cho moneyLabel để đẩy nó xuống thấp hơn (đừng dính sát mép trên)
+        HBox.setMargin(moneyLabel, new Insets(15, 0, 0, 0)); // Top margin 15px
+
         // Use Region to push money label to the right
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -132,7 +135,10 @@ public class ShopView extends StackPane {
         
         // Position Reroll button at bottom-right using StackPane alignment and margin
         StackPane.setAlignment(rerollButtonBox, Pos.BOTTOM_RIGHT);
-        StackPane.setMargin(rerollButtonBox, new Insets(0, 80, 80, 0)); // Margin to fit nicely within paper background
+        
+        // [SỬA] Tăng Bottom Margin lên 130px để đẩy Reroll Box lên cao hơn (giống padding item)
+        // Insets(Top, Right, Bottom, Left)
+        StackPane.setMargin(rerollButtonBox, new Insets(0, 80, 130, 0)); 
         
         // Add to StackPane (background at bottom, content in middle, reroll button on top)
         this.getChildren().addAll(bgView, contentBox, rerollButtonBox);
@@ -409,7 +415,7 @@ public class ShopView extends StackPane {
             Label saleTag = new Label("SALE -" + (int)(slot.getDiscountRate() * 100) + "%");
             saleTag.setFont(Font.font("Arial", FontWeight.BOLD, 11));
             saleTag.setTextFill(Color.WHITE); // White text
-            saleTag.setStyle("-fx-background-color: rgba(200, 0, 0, 0.9); -fx-padding: 4px 8px;"); // Red background
+            saleTag.setStyle("-fx-background-color: rgba(0, 200, 0, 0.9); -fx-padding: 4px 8px;"); // Green background
             saleTag.setAlignment(Pos.CENTER);
             saleTag.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE); // Prevent stretching
             // Position at top-right corner as an overlay (does not affect itemBox layout)

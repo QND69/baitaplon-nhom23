@@ -64,7 +64,7 @@ public class HudConfig {
     public static final double STAMINA_BAR_WIDTH = 150.0;
     public static final double STAMINA_BAR_HEIGHT = 12.0;
     public static final Paint STAMINA_BAR_BG_COLOR = Color.rgb(50, 50, 50);
-    public static final Paint STAMINA_BAR_FULL_COLOR = Color.rgb(50, 200, 50); // Green
+    public static final Paint STAMINA_BAR_FULL_COLOR = Color.rgb(32, 170, 32); // Green
     public static final Paint STAMINA_BAR_LOW_COLOR = Color.rgb(200, 50, 50); // Red
     
     // --- Cấu hình Timer (Top-Right) ---

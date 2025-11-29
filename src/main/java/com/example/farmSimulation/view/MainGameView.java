@@ -5,17 +5,26 @@ import com.example.farmSimulation.config.PlayerSpriteConfig;
 import com.example.farmSimulation.config.WindowConfig;
 import com.example.farmSimulation.config.WorldConfig;
 import com.example.farmSimulation.model.GameManager;
-import com.example.farmSimulation.config.AssetPaths;
 import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.model.ItemStack;
 import com.example.farmSimulation.model.ItemType;
 import com.example.farmSimulation.model.WorldMap;
 import com.example.farmSimulation.view.assets.AssetManager;
+import javafx.application.Platform;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,6 +54,9 @@ public class MainGameView {
 
     // [MỚI] Manager quản lý hiệu ứng
     private final VisualEffectManager visualEffectManager;
+    
+    // Game Over UI Overlay
+    private javafx.scene.layout.StackPane gameOverOverlay;
 
     /**
      * Constructor (Hàm khởi tạo) nhận các thành phần nó cần
@@ -79,7 +91,9 @@ public class MainGameView {
         
         // [MỚI] Khởi tạo weatherEffectView (hiệu ứng mưa)
         this.weatherEffectView = new WeatherEffectView();
-
+        
+        // Create Game Over UI Overlay
+        createGameOverOverlay();
 
         // Thêm các thành phần vào rootPane theo đúng thứ tự (lớp)
         rootPane.getChildren().addAll(
@@ -91,7 +105,8 @@ public class MainGameView {
                 weatherEffectView,              // Lớp 4.5: Hiệu ứng thời tiết (mưa)
                 hudView,                        // Lớp 5: HUD (Timer, Text, Darkness)
                 hotbarView,                     // Lớp 6: Hotbar
-                settingsMenu                    // Lớp 7: Menu (hiện đang ẩn)
+                settingsMenu,                   // Lớp 7: Menu (hiện đang ẩn)
+                gameOverOverlay                 // Lớp 8: Game Over Overlay (hiện đang ẩn)
         );
         
         // [MỚI] ShopView sẽ được thêm sau khi gameManager được set (trong setGameManager)
@@ -129,7 +144,6 @@ public class MainGameView {
         Scene scene = new Scene(rootPane, WindowConfig.SCREEN_WIDTH, WindowConfig.SCREEN_HEIGHT, WindowConfig.BACKGROUND_COLOR);
         gameController.setupInputListeners(scene);
 
-        primaryStage.getIcons().add(assetManager.getTexture(AssetPaths.LOGO)); // Lấy logo từ manager
         primaryStage.setTitle(WindowConfig.GAME_TITLE);
         primaryStage.setResizable(false);
         primaryStage.setScene(scene);
@@ -460,5 +474,74 @@ public class MainGameView {
      */
     public boolean isQuestBoardVisible() {
         return questBoardView != null && questBoardView.isQuestBoardVisible();
+    }
+    
+    /**
+     * Create Game Over UI Overlay
+     */
+    private void createGameOverOverlay() {
+        gameOverOverlay = new StackPane();
+        gameOverOverlay.setPrefSize(WindowConfig.SCREEN_WIDTH, WindowConfig.SCREEN_HEIGHT);
+        gameOverOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.8);"); // Dark, semi-transparent background
+        
+        // Content VBox centered in overlay
+        VBox contentBox = new VBox(30);
+        contentBox.setAlignment(Pos.CENTER);
+        contentBox.setMaxWidth(400);
+        
+        // "GAME OVER" Label (Large, Red/White font)
+        Label gameOverLabel = new Label("GAME OVER");
+        gameOverLabel.setFont(Font.font("Arial", FontWeight.BOLD, 48));
+        gameOverLabel.setTextFill(Color.WHITE);
+        gameOverLabel.setStyle("-fx-effect: dropshadow(one-pass-box, red, 5, 0, 0, 0);");
+        
+        // HBox with two buttons: RESTART and QUIT
+        HBox buttonBox = new HBox(20);
+        buttonBox.setAlignment(Pos.CENTER);
+        
+        // RESTART Button
+        Button restartButton = new Button("RESTART");
+        restartButton.setPrefSize(150, 50);
+        restartButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        restartButton.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
+        restartButton.setOnAction(e -> {
+            if (gameManager != null) {
+                gameManager.restartGame();
+            }
+        });
+        
+        // QUIT Button
+        Button quitButton = new Button("QUIT");
+        quitButton.setPrefSize(150, 50);
+        quitButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        quitButton.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
+        quitButton.setOnAction(e -> Platform.exit());
+        
+        buttonBox.getChildren().addAll(restartButton, quitButton);
+        contentBox.getChildren().addAll(gameOverLabel, buttonBox);
+        
+        gameOverOverlay.getChildren().add(contentBox);
+        
+        // Hide by default
+        gameOverOverlay.setVisible(false);
+    }
+    
+    /**
+     * Show Game Over UI
+     */
+    public void showGameOverUI() {
+        if (gameOverOverlay != null) {
+            gameOverOverlay.setVisible(true);
+            gameOverOverlay.toFront(); // Ensure it's on top
+        }
+    }
+    
+    /**
+     * Hide Game Over UI
+     */
+    public void hideGameOverUI() {
+        if (gameOverOverlay != null) {
+            gameOverOverlay.setVisible(false);
+        }
     }
 }

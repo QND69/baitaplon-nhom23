@@ -63,3 +63,6 @@ public class Quest {
         return Math.min(1.0, (double) currentProgress / targetAmount);
     }
 }
+
+
+
