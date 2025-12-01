@@ -330,11 +330,11 @@ public class MainGameView {
             hotbarView.setOnItemDropListener((slotIndex, scenePoint) -> {
                 // Check if dropped on trash can
                 if (hudView != null && hudView.isMouseOverTrash(scenePoint.getX(), scenePoint.getY())) {
-                    // Delete item at slot
+                    // Delete entire item stack at this slot (including tools with 0 durability)
                     if (gameManager != null && gameManager.getMainPlayer() != null) {
-                        ItemStack stack = gameManager.getMainPlayer().getHotbarItems()[slotIndex];
-                        if (stack != null) {
-                            gameManager.getMainPlayer().consumeItemAtSlot(slotIndex, stack.getQuantity());
+                        ItemStack[] items = gameManager.getMainPlayer().getHotbarItems();
+                        if (slotIndex >= 0 && slotIndex < items.length && items[slotIndex] != null) {
+                            items[slotIndex] = null; // Hard delete from inventory
                             updateHotbar(); // Refresh hotbar display
                             return true; // Indicate item was deleted
                         }

@@ -43,6 +43,9 @@ public class GameLogicConfig {
     public static final double XP_GAIN_PLANT = 2.0; // XP nhận được khi trồng cây
     public static final double XP_GAIN_WATER = 1.0; // XP nhận được khi tưới nước
     public static final double XP_GAIN_HOE = 1.0; // XP nhận được khi cuốc đất
+    public static final double XP_GAIN_AXE = 3.0; // XP nhận được khi dùng rìu (chặt cây/phá rào)
+    public static final double XP_GAIN_SHOVEL = 2.0; // XP nhận được khi dùng xẻng (xúc đất/xóa cây)
+    public static final double XP_GAIN_PICKAXE = 3.0; // XP nhận được khi dùng cuốc chim (đào đá)
     
     // --- Cấu hình Chi phí Stamina cho hành động ---
     public static final double STAMINA_COST_HOE = 2.0; // Chi phí stamina mỗi lần cuốc

@@ -265,6 +265,10 @@ public class ActionManager {
                         mainPlayer.gainXP(com.example.farmSimulation.config.GameLogicConfig.XP_GAIN_WATER);
                     } else if (currentState == PlayerView.PlayerState.HOE) {
                         mainPlayer.gainXP(com.example.farmSimulation.config.GameLogicConfig.XP_GAIN_HOE);
+                    } else if (currentState == PlayerView.PlayerState.AXE) {
+                        mainPlayer.gainXP(com.example.farmSimulation.config.GameLogicConfig.XP_GAIN_AXE);
+                    } else if (currentState == PlayerView.PlayerState.SHOVEL) {
+                        mainPlayer.gainXP(com.example.farmSimulation.config.GameLogicConfig.XP_GAIN_SHOVEL);
                     }
 
                     mainPlayer.setState(PlayerView.PlayerState.IDLE);
