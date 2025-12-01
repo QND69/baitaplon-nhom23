@@ -59,8 +59,8 @@ public class Player {
 
         // Gán Item ban đầu (Số lượng tùy ý)
         this.hotbarItems[0] = new ItemStack(ItemType.AXE, 1);
-        this.hotbarItems[1] = new ItemStack(ItemType.SWORD, 1);
-        this.hotbarItems[2] = new ItemStack(ItemType.SHEARS, 1);
+        this.hotbarItems[1] = new ItemStack(ItemType.WATERING_CAN, 1);
+        this.hotbarItems[2] = new ItemStack(ItemType.FERTILIZER, 10);
         this.hotbarItems[3] = new ItemStack(ItemType.EGG, 9);
         this.hotbarItems[4] = new ItemStack(ItemType.ITEM_COW, 2);
         this.hotbarItems[5] = new ItemStack(ItemType.ITEM_CHICKEN, 5);
