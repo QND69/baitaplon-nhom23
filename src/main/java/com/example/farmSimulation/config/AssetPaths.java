@@ -18,10 +18,10 @@ public final class AssetPaths {
     public static final String FERTILIZER_OVERLAY = "/assets/images/world/fertilizer_layer_2_scaled_2x.png";
 
     /** Spritesheet cho tất cả cây trồng (Dâu, Cà rốt...) */
-    public static final String CROP_SHEET = "/assets/images/items/crops/seed7_scaled_4x.png";
+    public static final String CROP_SHEET = "/assets/images/items/crops/full_crop_64x64.png";
 
-    /** Spritesheet cho cây tự nhiên (tree_64x64.png) */
-    public static final String TREE_SHEET = "/assets/images/world/tree_64x96.png";
+    /** Spritesheet cho cây tự nhiên (tree2_64x96.png) */
+    public static final String TREE_SHEET = "/assets/images/world/tree2_64x96.png";
 
     /** Spritesheet cho hàng rào (fences_64x64.png) */
     public static final String FENCE_SHEET = "/assets/images/world/fences_64x64.png";

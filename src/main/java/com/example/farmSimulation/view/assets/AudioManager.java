@@ -1,4 +1,4 @@
-package com.example.farmSimulation.view.audio;
+package com.example.farmSimulation.view.assets;
 
 import com.example.farmSimulation.config.SettingsMenuConfig;
 import javafx.scene.media.Media;
@@ -100,4 +100,7 @@ public class AudioManager {
         }
     }
 }
+
+
+
 

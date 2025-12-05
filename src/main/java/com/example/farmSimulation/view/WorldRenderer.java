@@ -12,7 +12,7 @@ import com.example.farmSimulation.model.Animal;
 import com.example.farmSimulation.model.Tile;
 import com.example.farmSimulation.model.TileData;
 import com.example.farmSimulation.model.WorldMap;
-import com.example.farmSimulation.view.assets.AssetManager;
+import com.example.farmSimulation.view.assets.ImageManager;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
@@ -34,7 +34,7 @@ public class WorldRenderer {
     private final ImageView[][] statusIconTiles; // Lớp 7: Icon báo hiệu
     private final ImageView[][] statusBackground; // Lớp 8: Mảng chứa nền mờ
 
-    private final AssetManager assetManager; // Để lấy textures
+    private final ImageManager assetManager; // Để lấy textures
     private final WorldMap worldMap;         // Để biết vẽ tile gì
 
     private final Pane worldPane;   // Pane "thế giới" chứa lưới, chỉ dùng để di chuyển cuộn mượt
@@ -59,7 +59,7 @@ public class WorldRenderer {
     private int lastRenderedStartCol = -1;
     private int lastRenderedStartRow = -1;
 
-    public WorldRenderer(AssetManager assetManager, WorldMap worldMap, Pane entityPane) {
+    public WorldRenderer(ImageManager assetManager, WorldMap worldMap, Pane entityPane) {
         this.assetManager = assetManager;
         this.worldMap = worldMap;
         this.entityPane = entityPane;
@@ -315,12 +315,20 @@ public class WorldRenderer {
                 shouldShow = true;
                 yOffsetCorrection = FenceConfig.FENCE_Y_OFFSET;
             } else if (itemType.name().startsWith("SEEDS_")) {
-                try {
-                    com.example.farmSimulation.model.CropType cropType = com.example.farmSimulation.model.CropType.valueOf(itemType.name().substring(6));
-                    ghostImage = assetManager.getSeedIcon(cropType);
+                // SEEDS_TREE: Sử dụng tree seed icon
+                if (itemType == com.example.farmSimulation.model.ItemType.SEEDS_TREE) {
+                    ghostImage = assetManager.getTreeSeedIcon();
                     shouldShow = true;
-                    yOffsetCorrection = CropConfig.CROP_Y_OFFSET;
-                } catch (IllegalArgumentException ignored) {}
+                    yOffsetCorrection = TreeConfig.TREE_Y_OFFSET;
+                } else {
+                    // Các loại hạt giống cây trồng khác
+                    try {
+                        com.example.farmSimulation.model.CropType cropType = com.example.farmSimulation.model.CropType.valueOf(itemType.name().substring(6));
+                        ghostImage = assetManager.getSeedIcon(cropType);
+                        shouldShow = true;
+                        yOffsetCorrection = CropConfig.CROP_Y_OFFSET;
+                    } catch (IllegalArgumentException ignored) {}
+                }
             }
         }
 
@@ -330,7 +338,22 @@ public class WorldRenderer {
             double imageWidth = ghostImage.getWidth();
             double imageHeight = ghostImage.getHeight();
             double offsetX = (WorldConfig.TILE_SIZE - imageWidth) / 2.0;
-            double offsetY = (WorldConfig.TILE_SIZE - imageHeight) / 2.0 - yOffsetCorrection;
+            
+            // [SỬA] Đối với SEEDS_TREE, sử dụng cùng logic positioning như treeTiles
+            // treeTiles được tạo với yOffset = -TreeConfig.TREE_Y_OFFSET trong createTileView
+            // createTileView set LayoutY = r * WorldConfig.TILE_SIZE + yOffset
+            // Vậy treeTile LayoutY = tileY * WorldConfig.TILE_SIZE - TreeConfig.TREE_Y_OFFSET (trong worldPane coordinates)
+            // Ghost placement cần match chính xác điều này
+            double offsetY;
+            if (currentItem != null && currentItem.getItemType() == com.example.farmSimulation.model.ItemType.SEEDS_TREE) {
+                // Match treeTiles positioning: LayoutY = tileY * WorldConfig.TILE_SIZE - TreeConfig.TREE_Y_OFFSET
+                // screenY đã là tileY * WorldConfig.TILE_SIZE + worldOffsetY
+                // Cần trừ TreeConfig.TREE_Y_OFFSET để match treeTiles
+                offsetY = -TreeConfig.TREE_Y_OFFSET;
+            } else {
+                // Các item khác dùng logic center vertically
+                offsetY = (WorldConfig.TILE_SIZE - imageHeight) / 2.0 - yOffsetCorrection;
+            }
 
             ghostPlacement.setImage(ghostImage);
             ghostPlacement.setFitWidth(imageWidth);

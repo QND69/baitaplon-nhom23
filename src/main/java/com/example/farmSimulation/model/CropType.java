@@ -9,10 +9,14 @@ import lombok.Getter;
 public enum CropType {
     // Định nghĩa các cây dựa
     // Tên, Số stage, Hàng sprite, Min sản lượng, Max sản lượng, [MỚI] Sản phẩm thu hoạch
-    STRAWBERRY("Strawberry", 6, 0, 2, 4, ItemType.STRAWBERRY),
-    RADISH("Radish", 6, 1, 1, 2, ItemType.RADISH),
-    POTATO("Potato", 6, 2, 2, 5, ItemType.POTATO),
-    CARROT("Carrot", 6, 3, 1, 3, ItemType.CARROT);
+    STRAWBERRY("Strawberry", 5, 0, 2, 4, ItemType.STRAWBERRY),
+    DAIKON("Daikon", 5, 1, 1, 2, ItemType.DAIKON),
+    POTATO("Potato", 5, 2, 2, 5, ItemType.POTATO),
+    CARROT("Carrot", 5, 3, 1, 3, ItemType.CARROT),
+    WATERMELON("Watermelon", 5, 4, 1, 2, ItemType.WATERMELON),
+    TOMATO("Tomato", 5, 5, 2, 4, ItemType.TOMATO),
+    WHEAT("Wheat", 5, 6, 2, 4, ItemType.WHEAT),
+    CORN("Corn", 5, 7, 2, 4, ItemType.CORN);
 
     @Getter private final String name;
     @Getter private final int maxStages;

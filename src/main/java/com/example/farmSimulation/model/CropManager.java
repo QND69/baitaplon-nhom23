@@ -79,7 +79,7 @@ public class CropManager {
             if (data.getCropData() != null || 
                 data.isWatered() || 
                 data.isFertilized() || 
-                (data.getBaseTileType() == Tile.SOIL && data.getDryStartTime() > 0)) {
+                data.getBaseTileType() == Tile.SOIL) { // Bao gồm tất cả đất SOIL (có hoặc không có dryStartTime)
                 tilesToUpdate.add(data);
             }
         }

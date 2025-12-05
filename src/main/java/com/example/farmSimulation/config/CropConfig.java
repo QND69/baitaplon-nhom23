@@ -48,6 +48,10 @@ public class CropConfig {
     /** Kích thước (pixel) của MỘT frame cây trong spritesheet gốc*/
     public static final double CROP_SPRITE_WIDTH = 64.0;
     public static final double CROP_SPRITE_HEIGHT = 64.0;
+    /** Frame index cho hạt giống (giai đoạn đầu) trong spritesheet */
+    public static final int CROP_SEED_FRAME_INDEX = 0;
+    /** Frame index cho icon sản phẩm thu hoạch trong spritesheet */
+    public static final int CROP_HARVEST_FRAME_INDEX = 5;
 
     // Độ dịch chuyển Y của cây
     public static final double CROP_Y_OFFSET = 16.0;

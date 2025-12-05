@@ -32,7 +32,7 @@ public class GameManager {
     private final ShopManager shopManager; // Quản lý shop
     private final WeatherManager weatherManager; // Quản lý thời tiết
     private final QuestManager questManager; // Quản lý quest (nhiệm vụ hàng ngày)
-    private final com.example.farmSimulation.view.audio.AudioManager audioManager; // Quản lý âm thanh nền
+        private final com.example.farmSimulation.view.assets.AudioManager audioManager; // Quản lý âm thanh nền
 
     // --- Trạng thái Game ---
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
@@ -71,7 +71,7 @@ public class GameManager {
         this.shopManager = new ShopManager(player); // Khởi tạo ShopManager
         this.weatherManager = new WeatherManager(); // Khởi tạo WeatherManager
         this.questManager = new QuestManager(); // Khởi tạo QuestManager
-        this.audioManager = new com.example.farmSimulation.view.audio.AudioManager(); // Khởi tạo AudioManager
+        this.audioManager = new com.example.farmSimulation.view.assets.AudioManager(); // Khởi tạo AudioManager
         
         // Liên kết Player với MainGameView để hiển thị thông báo
         player.setMainGameView(mainGameView);

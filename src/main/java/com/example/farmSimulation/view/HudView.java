@@ -4,7 +4,7 @@ import com.example.farmSimulation.config.GameLogicConfig;
 import com.example.farmSimulation.config.HudConfig;
 import com.example.farmSimulation.config.WindowConfig;
 import com.example.farmSimulation.model.GameManager;
-import com.example.farmSimulation.view.assets.AssetManager;
+import com.example.farmSimulation.view.assets.ImageManager;
 import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
@@ -26,7 +26,7 @@ public class HudView extends Pane {
     // Reference để lấy thông tin player và weather
     private GameManager gameManager;
     private MainGameView mainGameView;
-    private AssetManager assetManager; // Reference to AssetManager for GUI icons
+    private ImageManager assetManager; // Reference to ImageManager for GUI icons
     
     // Brightness setting (0.0 - 1.0)
     private double brightness = GameLogicConfig.DEFAULT_BRIGHTNESS;
@@ -330,15 +330,15 @@ public class HudView extends Pane {
     }
     
     /**
-     * Set AssetManager reference and load GUI icons
+     * Set ImageManager reference and load GUI icons
      */
-    public void setAssetManager(AssetManager assetManager) {
+    public void setAssetManager(ImageManager assetManager) {
         this.assetManager = assetManager;
         updateGuiIcons(); // Load icons when AssetManager is available
     }
     
     /**
-     * Load and update GUI icons from AssetManager
+     * Load and update GUI icons from ImageManager
      */
     private void updateGuiIcons() {
         if (assetManager == null) return;
