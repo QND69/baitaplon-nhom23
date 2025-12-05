@@ -75,26 +75,38 @@ public class TreeManager {
                 if (data.getTreeData() != null && data.getBaseTileType() == Tile.TREE) {
                     TreeData tree = data.getTreeData();
                     
-                    if (tree.getGrowthStage() == 0 && tree.getRegrowStartTime() > 0) {
-                        long timeSinceRegrow = (currentTime - tree.getRegrowStartTime()) / 1_000_000;
-                        if (timeSinceRegrow >= TreeConfig.REGROW_TIME_MS) {
-                            tree.setGrowthStage(1);
-                            tree.setRegrowStartTime(0);
-                            mapNeedsRedraw = true;
+                    // Xử lý gốc cây mọc lại (stump regrowth)
+                    if (tree.getChopCount() > 0) {
+                        // Gốc cây mọc lại sau REGROW_TIME_MS
+                        if (tree.getRegrowStartTime() > 0) {
+                            long timeSinceRegrow = (currentTime - tree.getRegrowStartTime()) / 1_000_000;
+                            if (timeSinceRegrow >= TreeConfig.REGROW_TIME_MS) {
+                                tree.setChopCount(0); // Không còn là gốc cây
+                                tree.setGrowthStage(TreeConfig.STUMP_REGROW_TARGET_STAGE); // Mọc lại thành stage 2
+                                tree.setRegrowStartTime(0);
+                                // Set lastChopTime để tính toán growth tiếp theo từ stage 2 lên stage 3
+                                // Cần set sao cho targetStage = 2 khi tính toán (timeSincePlant / TIME_PER_STAGE = 2)
+                                long targetTimeNanos = TreeConfig.STUMP_REGROW_TARGET_STAGE * TreeConfig.TIME_PER_GROWTH_STAGE_MS * 1_000_000L;
+                                tree.setLastChopTime(currentTime - targetTimeNanos);
+                                mapNeedsRedraw = true;
+                            }
                         }
                     }
-                    
-                    if (tree.getGrowthStage() > 0 && tree.getGrowthStage() < 2) {
-                        long timeSinceLastChop = tree.getLastChopTime() > 0 ? 
-                            (currentTime - tree.getLastChopTime()) / 1_000_000 : 
-                            TreeConfig.TIME_PER_GROWTH_STAGE_MS;
-                        
-                        int targetStage = (int) (timeSinceLastChop / TreeConfig.TIME_PER_GROWTH_STAGE_MS) + 1;
-                        targetStage = Math.min(targetStage, 2);
-                        
-                        if (targetStage > tree.getGrowthStage()) {
-                            tree.setGrowthStage(targetStage);
-                            mapNeedsRedraw = true;
+                    // Chỉ cho cây lớn lên nếu chưa bị chặt (chopCount == 0)
+                    else if (tree.getChopCount() == 0) {
+                        // Seed growth: Stage 0 -> 1 -> 2 -> 3
+                        if (tree.getGrowthStage() >= TreeConfig.TREE_SEED_STAGE && tree.getGrowthStage() < TreeConfig.TREE_MAX_GROWTH_STAGE) {
+                            long timeSincePlant = tree.getLastChopTime() > 0 ? 
+                                (currentTime - tree.getLastChopTime()) / 1_000_000 : 
+                                TreeConfig.TIME_PER_GROWTH_STAGE_MS;
+                            
+                            int targetStage = (int) (timeSincePlant / TreeConfig.TIME_PER_GROWTH_STAGE_MS);
+                            targetStage = Math.min(targetStage, TreeConfig.TREE_MAX_GROWTH_STAGE);
+                            
+                            if (targetStage > tree.getGrowthStage()) {
+                                tree.setGrowthStage(targetStage);
+                                mapNeedsRedraw = true;
+                            }
                         }
                     }
                 }
@@ -146,8 +158,8 @@ public class TreeManager {
                         
                         if (!hasTreeNearby(col, row)) {
                             data.setBaseTileType(Tile.TREE);
-                            double stageNoise = getDeterministicNoise(col + 1000, row + 1000); 
-                            int initialStage = (stageNoise > 0.5) ? 2 : 1; 
+                            // Luôn spawn cây ở stage trưởng thành (TREE_MATURE_STAGE)
+                            int initialStage = TreeConfig.TREE_MATURE_STAGE;
                             
                             TreeData tree = new TreeData(initialStage); 
                             data.setTreeData(tree);

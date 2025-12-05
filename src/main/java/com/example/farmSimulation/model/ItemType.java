@@ -17,16 +17,25 @@ public enum ItemType {
     // --- HẠT GIỐNG (SEEDS) ---
     // Giá mua: 50-80, không bán được
     SEEDS_STRAWBERRY("Strawberry Seeds", 36, true, 0, 50, 0, 0.0),
-    SEEDS_RADISH("Radish Seeds", 36, true, 0, 50, 0, 0.0),
+    SEEDS_DAIKON("Daikon Seeds", 36, true, 0, 50, 0, 0.0),
     SEEDS_POTATO("Potato Seeds", 36, true, 0, 60, 0, 0.0),
     SEEDS_CARROT("Carrot Seeds", 36, true, 0, 60, 0, 0.0),
+    SEEDS_WATERMELON("Watermelon Seeds", 36, true, 0, 70, 0, 0.0),
+    SEEDS_TOMATO("Tomato Seeds", 36, true, 0, 65, 0, 0.0),
+    SEEDS_WHEAT("Wheat Seeds", 36, true, 0, 55, 0, 0.0),
+    SEEDS_CORN("Corn Seeds", 36, true, 0, 65, 0, 0.0),
+    SEEDS_TREE("Tree Seeds", 36, true, 0, 40, 0, 0.0), // Hạt giống cây
 
     // --- SẢN PHẨM (CROPS/PRODUCE) ---
     // Không mua được, chỉ bán: 80-120
     STRAWBERRY("Strawberry", 36, true, 0, 0, 100, 10.0), // Hồi 10 stamina
-    RADISH("Radish", 36, true, 0, 0, 80, 10.0), // Hồi 10 stamina
+    DAIKON("Daikon", 36, true, 0, 0, 80, 10.0), // Hồi 10 stamina
     POTATO("Potato", 36, true, 0, 0, 100, 15.0), // Hồi 15 stamina
     CARROT("Carrot", 36, true, 0, 0, 100, 10.0), // Hồi 10 stamina
+    WATERMELON("Watermelon", 36, true, 0, 0, 140, 20.0), // Hồi 20 stamina
+    TOMATO("Tomato", 36, true, 0, 0, 110, 12.0), // Hồi 12 stamina
+    WHEAT("Wheat", 36, true, 0, 0, 90, 5.0), // Hồi 5 stamina
+    CORN("Corn", 36, true, 0, 0, 120, 15.0), // Hồi 15 stamina
     
     // --- VẬT LIỆU (MATERIALS) ---
     WOOD("Wood", 36, true, 0, 20, 10, 0.0), // Gỗ: mua 20, bán 10

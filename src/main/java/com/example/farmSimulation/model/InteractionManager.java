@@ -265,13 +265,37 @@ public class InteractionManager {
         if (itemType == ItemType.HOE && baseTile == Tile.GRASS) {
             TileData newData = new TileData(currentData);
             newData.setBaseTileType(Tile.SOIL);
+            newData.setDryStartTime(System.nanoTime()); // Bắt đầu đếm thời gian để chuyển về cỏ
             long duration = (long) GameLogicConfig.HOE_REPETITIONS * GameLogicConfig.HOE_DURATION_PER_REPETITION_MS;
             return new InteractionResult(newData, PlayerView.PlayerState.HOE, duration, true, null, 0);
         }
 
         // HẠT GIỐNG: Gieo lên đất
         if (itemType.name().startsWith("SEEDS_")) {
-            if ((baseTile == Tile.SOIL || baseTile == Tile.SOIL_WET) && currentData.getCropData() == null) {
+            // SEEDS_TREE: Trồng trên GRASS
+            if (itemType == ItemType.SEEDS_TREE) {
+                if (baseTile == Tile.GRASS && currentData.getCropData() == null && 
+                    currentData.getTreeData() == null && currentData.getFenceData() == null) {
+                    // Kiểm tra xem người chơi có chặn không
+                    if (isPlayerBlocking(col, row, mainPlayer, worldMap)) {
+                        return null;
+                    }
+                    // Kiểm tra xem động vật có chặn không
+                    if (isAnimalBlocking(col, row)) {
+                        return null;
+                    }
+                    
+                    TileData newData = new TileData(currentData);
+                    newData.setBaseTileType(Tile.TREE);
+                    TreeData tree = new TreeData(TreeConfig.TREE_SEED_STAGE); // Stage 0 = Seed/Sprout
+                    tree.setLastChopTime(System.nanoTime()); // Set timestamp để tính toán growth ngay lập tức
+                    tree.setRegrowStartTime(0); // Không phải regrow, là trồng mới
+                    newData.setTreeData(tree);
+                    return new InteractionResult(newData, PlayerView.PlayerState.PLANT, GameLogicConfig.PLANT_DURATION_MS, true, null, 0);
+                }
+            }
+            // Các loại hạt giống cây trồng khác: Gieo lên đất
+            else if ((baseTile == Tile.SOIL || baseTile == Tile.SOIL_WET) && currentData.getCropData() == null) {
                 try {
                     CropType type = CropType.valueOf(itemType.name().substring(6));
                     TileData newData = new TileData(currentData);
@@ -331,6 +355,18 @@ public class InteractionManager {
                 long duration = (long) GameLogicConfig.SHOVEL_REPETITIONS * GameLogicConfig.SHOVEL_DURATION_PER_REPETITION_MS;
                 return new InteractionResult(newData, PlayerView.PlayerState.SHOVEL, duration, true, null, 0);
             }
+            // XẺNG có thể dùng để xóa hạt giống cây (stage 0) hoặc gốc cây (stump)
+            if (currentData.getTreeData() != null) {
+                TreeData tree = currentData.getTreeData();
+                // Xóa hạt giống (stage 0) hoặc gốc cây (chopCount > 0)
+                if (tree.getGrowthStage() == TreeConfig.TREE_SEED_STAGE || tree.getChopCount() > 0) {
+                    TileData newData = new TileData(currentData);
+                    newData.setBaseTileType(Tile.GRASS);
+                    newData.setTreeData(null);
+                    long duration = (long) GameLogicConfig.SHOVEL_REPETITIONS * GameLogicConfig.SHOVEL_DURATION_PER_REPETITION_MS;
+                    return new InteractionResult(newData, PlayerView.PlayerState.SHOVEL, duration, true, null, 0);
+                }
+            }
         }
 
         // RÌU (AXE)
@@ -340,20 +376,19 @@ public class InteractionManager {
                 TileData newData = new TileData(currentData);
                 int woodAmount = 0;
                 
-                if (tree.getGrowthStage() > 0) {
-                    int currentStage = tree.getGrowthStage();
-                    if (currentStage == 1) woodAmount = TreeConfig.WOOD_PER_STAGE_1;
-                    else if (currentStage == 2) woodAmount = TreeConfig.WOOD_PER_STAGE_2;
-                    
-                    tree.setGrowthStage(0);
-                    tree.setLastChopTime(System.nanoTime());
-                    tree.setRegrowStartTime(System.nanoTime());
-                    tree.setChopCount(1);
+                // Chỉ cho phép chặt khi cây đã trưởng thành (stage 3)
+                if (tree.getGrowthStage() == TreeConfig.TREE_MATURE_STAGE && tree.getChopCount() == 0) {
+                    // Chặt cây trưởng thành -> Nhận gỗ và biến thành gốc (stump)
+                    woodAmount = TreeConfig.WOOD_PER_STAGE_2; // Sử dụng giá trị từ stage 2 (giữ nguyên logic cũ)
+                    tree.setChopCount(1); // Đánh dấu đã chặt (stump)
+                    tree.setRegrowStartTime(System.nanoTime()); // Bắt đầu đếm thời gian mọc lại
+                    // Không thay đổi growthStage, sẽ dùng chopCount để render stump
                     newData.setTreeData(tree);
                     long duration = (long) GameLogicConfig.AXE_REPETITIONS * GameLogicConfig.AXE_DURATION_PER_REPETITION_MS;
                     return new InteractionResult(newData, PlayerView.PlayerState.AXE, duration, true, ItemType.WOOD, woodAmount);
                 }
-                else if (tree.getGrowthStage() == 0 && tree.getChopCount() == 1) {
+                // Nếu đã là stump (chopCount > 0), chặt tiếp sẽ xóa hoàn toàn
+                else if (tree.getChopCount() > 0) {
                     newData.setBaseTileType(Tile.GRASS);
                     newData.setTreeData(null);
                     long duration = (long) GameLogicConfig.AXE_REPETITIONS * GameLogicConfig.AXE_DURATION_PER_REPETITION_MS;

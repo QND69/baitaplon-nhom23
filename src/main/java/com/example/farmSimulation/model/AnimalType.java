@@ -18,7 +18,8 @@ public enum AnimalType {
             AnimalConfig.SMALL_ANIMAL_HITBOX_WIDTH,
             AnimalConfig.SMALL_ANIMAL_HITBOX_HEIGHT,
             AnimalConfig.BASE_MOVEMENT_SPEED,
-            Arrays.asList(ItemType.SEEDS_STRAWBERRY, ItemType.SEEDS_RADISH, ItemType.SEEDS_POTATO, ItemType.SEEDS_CARROT, ItemType.SUPER_FEED),
+            Arrays.asList(ItemType.SEEDS_STRAWBERRY, ItemType.SEEDS_DAIKON, ItemType.SEEDS_POTATO, ItemType.SEEDS_CARROT, 
+                         ItemType.SEEDS_WATERMELON, ItemType.SEEDS_TOMATO, ItemType.SEEDS_WHEAT, ItemType.SEEDS_CORN, ItemType.SUPER_FEED),
             ItemType.EGG,
             AnimalConfig.BASE_PRODUCTION_TIME_MS,
             0L), // Không có thời gian trưởng thành (đã trưởng thành)
@@ -29,7 +30,7 @@ public enum AnimalType {
         AnimalConfig.LARGE_ANIMAL_HITBOX_WIDTH,
         AnimalConfig.LARGE_ANIMAL_HITBOX_HEIGHT,
         AnimalConfig.BASE_MOVEMENT_SPEED * 0.8, // Bò di chuyển chậm hơn
-        Arrays.asList(ItemType.STRAWBERRY, ItemType.RADISH, ItemType.POTATO, ItemType.CARROT, ItemType.SUPER_FEED),
+        Arrays.asList(ItemType.CORN, ItemType.WHEAT, ItemType.SUPER_FEED),
         ItemType.MILK,
         AnimalConfig.BASE_PRODUCTION_TIME_MS * 2L, // Sản xuất sữa lâu hơn
         0L),
@@ -40,9 +41,8 @@ public enum AnimalType {
         AnimalConfig.LARGE_ANIMAL_HITBOX_WIDTH,
         AnimalConfig.LARGE_ANIMAL_HITBOX_HEIGHT,
         AnimalConfig.BASE_MOVEMENT_SPEED * 0.9,
-        Arrays.asList(ItemType.STRAWBERRY, ItemType.RADISH, ItemType.POTATO, ItemType.CARROT, 
-                      ItemType.SEEDS_STRAWBERRY, ItemType.SEEDS_RADISH, ItemType.SEEDS_POTATO, ItemType.SEEDS_CARROT, 
-                      ItemType.SUPER_FEED), // Lợn ăn tạp
+        Arrays.asList(ItemType.STRAWBERRY, ItemType.DAIKON, ItemType.POTATO, ItemType.CARROT, 
+                      ItemType.WATERMELON, ItemType.TOMATO, ItemType.CORN, ItemType.SUPER_FEED), // Lợn ăn tạp (tất cả sản phẩm trừ WHEAT)
         null, // Lợn không có sản phẩm
         AnimalConfig.BASE_PRODUCTION_TIME_MS,
         0L),
@@ -53,7 +53,7 @@ public enum AnimalType {
           AnimalConfig.LARGE_ANIMAL_HITBOX_WIDTH,
           AnimalConfig.LARGE_ANIMAL_HITBOX_HEIGHT,
           AnimalConfig.BASE_MOVEMENT_SPEED * 0.85,
-          Arrays.asList(ItemType.STRAWBERRY, ItemType.RADISH, ItemType.POTATO, ItemType.CARROT, ItemType.SUPER_FEED),
+          Arrays.asList(ItemType.CORN, ItemType.WHEAT, ItemType.SUPER_FEED),
           ItemType.WOOL,
           (long)(AnimalConfig.BASE_PRODUCTION_TIME_MS * 1.5), // Sản xuất len
           0L),
@@ -64,7 +64,7 @@ public enum AnimalType {
              AnimalConfig.SMALL_ANIMAL_HITBOX_WIDTH,
              AnimalConfig.SMALL_ANIMAL_HITBOX_HEIGHT,
              AnimalConfig.BASE_MOVEMENT_SPEED * 0.7, // Di chuyển chậm hơn
-             Arrays.asList(ItemType.STRAWBERRY, ItemType.RADISH, ItemType.POTATO, ItemType.CARROT, ItemType.SUPER_FEED),
+            Arrays.asList(ItemType.CORN, ItemType.WHEAT, ItemType.SUPER_FEED),
              null, // Bò con chưa cho sữa
              AnimalConfig.BASE_PRODUCTION_TIME_MS,
              AnimalConfig.BABY_ANIMAL_GROWTH_TIME_MS), // Thời gian trưởng thành
@@ -75,9 +75,8 @@ public enum AnimalType {
              AnimalConfig.SMALL_ANIMAL_HITBOX_WIDTH,
              AnimalConfig.SMALL_ANIMAL_HITBOX_HEIGHT,
              AnimalConfig.BASE_MOVEMENT_SPEED * 0.7, // Di chuyển chậm hơn
-             Arrays.asList(ItemType.STRAWBERRY, ItemType.RADISH, ItemType.POTATO, ItemType.CARROT, 
-                          ItemType.SEEDS_STRAWBERRY, ItemType.SEEDS_RADISH, ItemType.SEEDS_POTATO, ItemType.SEEDS_CARROT, 
-                          ItemType.SUPER_FEED), // Lợn con ăn tạp
+             Arrays.asList(ItemType.STRAWBERRY, ItemType.DAIKON, ItemType.POTATO, ItemType.CARROT, 
+                          ItemType.WATERMELON, ItemType.TOMATO, ItemType.CORN, ItemType.SUPER_FEED), // Lợn con ăn tạp (tất cả sản phẩm trừ WHEAT)
              null, // Lợn con không có sản phẩm
              AnimalConfig.BASE_PRODUCTION_TIME_MS,
              AnimalConfig.BABY_ANIMAL_GROWTH_TIME_MS), // Thời gian trưởng thành
@@ -88,7 +87,7 @@ public enum AnimalType {
                AnimalConfig.SMALL_ANIMAL_HITBOX_WIDTH,
                AnimalConfig.SMALL_ANIMAL_HITBOX_HEIGHT,
                AnimalConfig.BASE_MOVEMENT_SPEED * 0.7, // Di chuyển chậm hơn
-               Arrays.asList(ItemType.STRAWBERRY, ItemType.RADISH, ItemType.POTATO, ItemType.CARROT, ItemType.SUPER_FEED),
+               Arrays.asList(ItemType.CORN, ItemType.WHEAT, ItemType.SUPER_FEED),
                null, // Cừu con chưa cho len
                AnimalConfig.BASE_PRODUCTION_TIME_MS,
                AnimalConfig.BABY_ANIMAL_GROWTH_TIME_MS), // Thời gian trưởng thành
@@ -99,7 +98,8 @@ public enum AnimalType {
                  AnimalConfig.BABY_CHICKEN_HITBOX_WIDTH,
                  AnimalConfig.BABY_CHICKEN_HITBOX_HEIGHT,
                  AnimalConfig.BASE_MOVEMENT_SPEED * 0.7, // Di chuyển chậm hơn
-                 Arrays.asList(ItemType.SEEDS_STRAWBERRY, ItemType.SEEDS_RADISH, ItemType.SEEDS_POTATO, ItemType.SEEDS_CARROT, ItemType.SUPER_FEED),
+                 Arrays.asList(ItemType.SEEDS_STRAWBERRY, ItemType.SEEDS_DAIKON, ItemType.SEEDS_POTATO, ItemType.SEEDS_CARROT, 
+                              ItemType.SEEDS_WATERMELON, ItemType.SEEDS_TOMATO, ItemType.SEEDS_WHEAT, ItemType.SEEDS_CORN, ItemType.SUPER_FEED),
                  null, // Gà con chưa đẻ trứng
                  AnimalConfig.BASE_PRODUCTION_TIME_MS,
                  AnimalConfig.BABY_CHICKEN_GROWTH_TIME_MS), // Thời gian trưởng thành

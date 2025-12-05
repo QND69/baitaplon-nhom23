@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 // Tải và quản lý tất cả tài nguyên
-public class AssetManager {
+public class ImageManager {
     // Cache là một cơ chế lưu trữ tạm thời dữ liệu đã tính toán hoặc đã tải về
     // để sử dụng lại sau này, nhằm tăng tốc độ truy xuất và giảm tài nguyên tiêu thụ.
 
@@ -279,7 +279,7 @@ public class AssetManager {
         PixelReader reader = cropSheet.getPixelReader();
 
         // Lấy Frame 0 (Giai đoạn hạt giống)
-        int x = 0;
+        int x = (int) (CropConfig.CROP_SEED_FRAME_INDEX * CropConfig.CROP_SPRITE_WIDTH);
         // Lấy hàng tương ứng với loại cây
         int y = (int) (type.getSpriteRow() * CropConfig.CROP_SPRITE_HEIGHT);
 
@@ -296,7 +296,7 @@ public class AssetManager {
         PixelReader reader = cropSheet.getPixelReader();
 
         // Lấy Frame cuối cùng (MaxStages)
-        int x = (int) (type.getMaxStages() * CropConfig.CROP_SPRITE_WIDTH);
+        int x = (int) (CropConfig.CROP_HARVEST_FRAME_INDEX * CropConfig.CROP_SPRITE_WIDTH);
         int y = (int) (type.getSpriteRow() * CropConfig.CROP_SPRITE_HEIGHT);
 
         return new WritableImage(reader, x, y, (int)CropConfig.CROP_SPRITE_WIDTH, (int)CropConfig.CROP_SPRITE_HEIGHT);
@@ -503,6 +503,28 @@ public class AssetManager {
             return null;
         }
 
+        // Nếu đã bị chặt (stump), hiển thị frame 4
+        if (treeData.getChopCount() > 0) {
+            String key = "tree_stump";
+            return spriteCache.computeIfAbsent(key, k -> {
+                Image treeSheet = getTexture(AssetPaths.TREE_SHEET);
+                if (treeSheet == null) return null;
+
+                PixelReader reader = treeSheet.getPixelReader();
+                double w = TreeConfig.TREE_SPRITE_WIDTH;
+                double h = TreeConfig.TREE_SPRITE_HEIGHT;
+                
+                // Frame 4 là stump
+                int x = (int) (TreeConfig.TREE_STUMP_FRAME_INDEX * w);
+                int y = 0; // Chỉ có 1 hàng trong spritesheet
+
+                if (x < 0 || y < 0 || x + w > treeSheet.getWidth() || y + h > treeSheet.getHeight()) return null;
+
+                return new WritableImage(reader, x, y, (int) w, (int) h);
+            });
+        }
+        
+        // Nếu chưa bị chặt, hiển thị theo growth stage
         int stage = treeData.getGrowthStage();
         String key = "tree_" + stage;
 
@@ -514,9 +536,32 @@ public class AssetManager {
             double w = TreeConfig.TREE_SPRITE_WIDTH;
             double h = TreeConfig.TREE_SPRITE_HEIGHT;
             
-            // Cây có 3 frame: 0 (gốc), 1 (cây nhỏ), 2 (cây trưởng thành)
-            // Cây chỉ phát triển tối đa đến stage 2
+            // Cây có 5 frame: 0 (seed/sprout), 1 (cây nhỏ), 2 (cây trung bình), 3 (cây trưởng thành), 4 (stump)
+            // Cây phát triển từ stage 0 đến stage 3
             int x = (int) (stage * w);
+            int y = 0; // Chỉ có 1 hàng trong spritesheet
+
+            if (x < 0 || y < 0 || x + w > treeSheet.getWidth() || y + h > treeSheet.getHeight()) return null;
+
+            return new WritableImage(reader, x, y, (int) w, (int) h);
+        });
+    }
+    
+    /**
+     * Lấy icon hạt giống cây từ TREE_SHEET (Frame 0)
+     */
+    public Image getTreeSeedIcon() {
+        String key = "tree_seed_icon";
+        return spriteCache.computeIfAbsent(key, k -> {
+            Image treeSheet = getTexture(AssetPaths.TREE_SHEET);
+            if (treeSheet == null) return null;
+
+            PixelReader reader = treeSheet.getPixelReader();
+            double w = TreeConfig.TREE_SPRITE_WIDTH;
+            double h = TreeConfig.TREE_SPRITE_HEIGHT;
+            
+            // Frame 0 là seed/sprout
+            int x = 0;
             int y = 0; // Chỉ có 1 hàng trong spritesheet
 
             if (x < 0 || y < 0 || x + w > treeSheet.getWidth() || y + h > treeSheet.getHeight()) return null;
@@ -612,3 +657,7 @@ public class AssetManager {
         });
     }
 }
+
+
+
+

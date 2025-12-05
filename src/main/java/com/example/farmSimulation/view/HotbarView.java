@@ -8,7 +8,7 @@ import com.example.farmSimulation.model.CropType;
 import com.example.farmSimulation.model.ItemStack;
 import com.example.farmSimulation.model.ItemType;
 import com.example.farmSimulation.model.Player;
-import com.example.farmSimulation.view.assets.AssetManager;
+import com.example.farmSimulation.view.assets.ImageManager;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.image.Image;
@@ -29,7 +29,7 @@ import java.util.function.BiConsumer;
 public class HotbarView extends Pane {
 
     private final Player player;
-    private final AssetManager assetManager;
+    private final ImageManager assetManager;
 
     // Mỗi slot là một StackPane để chứa (Nền, Icon, Số thứ tự, Số lượng)
     private final StackPane[] slots;
@@ -47,7 +47,7 @@ public class HotbarView extends Pane {
     private int dragSourceIndex = -1; // Vị trí bắt đầu kéo
     private double mouseAnchorX, mouseAnchorY; // Điểm neo khi bắt đầu kéo để tính offset
 
-    public HotbarView(Player player, AssetManager assetManager) {
+    public HotbarView(Player player, ImageManager assetManager) {
         this.player = player;
         this.assetManager = assetManager;
         this.itemTextureMap = new EnumMap<>(ItemType.class);
@@ -372,7 +372,7 @@ public class HotbarView extends Pane {
     /**
      * Cắt ảnh từ sprite sheet items_32x32.png và cache
      */
-    private void loadItemTextures(AssetManager assetManager) {
+    private void loadItemTextures(ImageManager assetManager) {
         Image itemsSheet = assetManager.getTexture(AssetPaths.ITEMS_SHEET);
         if (itemsSheet == null) return;
 
@@ -388,15 +388,24 @@ public class HotbarView extends Pane {
 
         // Cache Seeds (Frame 0 từ crop sheet)
         cacheItemSprite(ItemType.SEEDS_STRAWBERRY, assetManager.getSeedIcon(CropType.STRAWBERRY));
-        cacheItemSprite(ItemType.SEEDS_RADISH, assetManager.getSeedIcon(CropType.RADISH));
+        cacheItemSprite(ItemType.SEEDS_DAIKON, assetManager.getSeedIcon(CropType.DAIKON));
         cacheItemSprite(ItemType.SEEDS_POTATO, assetManager.getSeedIcon(CropType.POTATO));
         cacheItemSprite(ItemType.SEEDS_CARROT, assetManager.getSeedIcon(CropType.CARROT));
+        cacheItemSprite(ItemType.SEEDS_WATERMELON, assetManager.getSeedIcon(CropType.WATERMELON));
+        cacheItemSprite(ItemType.SEEDS_TOMATO, assetManager.getSeedIcon(CropType.TOMATO));
+        cacheItemSprite(ItemType.SEEDS_WHEAT, assetManager.getSeedIcon(CropType.WHEAT));
+        cacheItemSprite(ItemType.SEEDS_CORN, assetManager.getSeedIcon(CropType.CORN));
+        cacheItemSprite(ItemType.SEEDS_TREE, assetManager.getTreeSeedIcon());
 
         // Cache Harvest Items (Frame cuối từ crop sheet)
         cacheItemSprite(ItemType.STRAWBERRY, assetManager.getHarvestIcon(CropType.STRAWBERRY));
-        cacheItemSprite(ItemType.RADISH, assetManager.getHarvestIcon(CropType.RADISH));
+        cacheItemSprite(ItemType.DAIKON, assetManager.getHarvestIcon(CropType.DAIKON));
         cacheItemSprite(ItemType.POTATO, assetManager.getHarvestIcon(CropType.POTATO));
         cacheItemSprite(ItemType.CARROT, assetManager.getHarvestIcon(CropType.CARROT));
+        cacheItemSprite(ItemType.WATERMELON, assetManager.getHarvestIcon(CropType.WATERMELON));
+        cacheItemSprite(ItemType.TOMATO, assetManager.getHarvestIcon(CropType.TOMATO));
+        cacheItemSprite(ItemType.WHEAT, assetManager.getHarvestIcon(CropType.WHEAT));
+        cacheItemSprite(ItemType.CORN, assetManager.getHarvestIcon(CropType.CORN));
         
         // Cache Wood (từ tree sheet)
         cacheItemSprite(ItemType.WOOD, assetManager.getWoodIcon());

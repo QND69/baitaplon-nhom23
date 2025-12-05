@@ -9,7 +9,7 @@ import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.model.ItemStack;
 import com.example.farmSimulation.model.ItemType;
 import com.example.farmSimulation.model.WorldMap;
-import com.example.farmSimulation.view.assets.AssetManager;
+import com.example.farmSimulation.view.assets.ImageManager;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -32,7 +32,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MainGameView {
-    private final AssetManager assetManager; // Để lấy textures
+    private final ImageManager assetManager; // Để lấy textures
     private final WorldMap worldMap;         // Để biết vẽ tile gì
     private GameManager gameManager;
 
@@ -62,7 +62,7 @@ public class MainGameView {
      * Constructor (Hàm khởi tạo) nhận các thành phần nó cần
      * (Dependency Injection)
      */
-    public MainGameView(AssetManager assetManager, WorldMap worldMap, HotbarView hotbarView) {
+    public MainGameView(ImageManager assetManager, WorldMap worldMap, HotbarView hotbarView) {
         this.assetManager = assetManager;
         this.worldMap = worldMap;
         this.hotbarView = hotbarView;
@@ -322,7 +322,7 @@ public class MainGameView {
         if (hudView != null) {
             hudView.setGameManager(gameManager);
             hudView.setMainGameView(this);
-            hudView.setAssetManager(assetManager); // Set AssetManager để load GUI icons
+            hudView.setAssetManager(assetManager); // Set ImageManager để load GUI icons
         }
         
         // Set callback cho HotbarView item drop (for trash can deletion)

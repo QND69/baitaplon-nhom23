@@ -67,6 +67,7 @@ public class Player {
         this.hotbarItems[6] = new ItemStack(ItemType.ITEM_PIG, 3);
         this.hotbarItems[7] = new ItemStack(ItemType.ITEM_SHEEP, 2);
         this.hotbarItems[8] = new ItemStack(ItemType.WOOD, 30);
+        this.hotbarItems[9] = new ItemStack(ItemType.HOE, 1);
 
         // Các ô khác là null (tay không)
     }

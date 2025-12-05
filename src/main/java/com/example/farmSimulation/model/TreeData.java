@@ -18,7 +18,7 @@ public class TreeData {
     private int chopCount = 0;
     
     public TreeData() {
-        this.growthStage = 2; // Mặc định là cây trưởng thành (stage 2)
+        this.growthStage = 3; // Mặc định là cây trưởng thành (stage 3)
         this.lastChopTime = 0;
         this.regrowStartTime = 0;
     }

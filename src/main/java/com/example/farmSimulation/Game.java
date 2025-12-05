@@ -9,7 +9,7 @@ import com.example.farmSimulation.view.CharacterCreationView;
 import com.example.farmSimulation.view.HotbarView;
 import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
-import com.example.farmSimulation.view.assets.AssetManager;
+import com.example.farmSimulation.view.assets.ImageManager;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -19,7 +19,7 @@ import javafx.stage.Stage;
  */
 public class Game {
     private Stage primaryStage;
-    private AssetManager assetManager;
+    private ImageManager assetManager;
     private Player player;
     private WorldMap worldMap;
 
@@ -27,7 +27,7 @@ public class Game {
         this.primaryStage = primaryStage;
         
         // Tải tài nguyên (Assets)
-        assetManager = new AssetManager();
+        assetManager = new ImageManager();
         assetManager.loadAssets();
         
         // Set application icon (moved here to show icon during Character Creation screen)

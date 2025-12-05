@@ -5,7 +5,7 @@ import com.example.farmSimulation.model.ItemStack;
 import com.example.farmSimulation.model.ItemType;
 import com.example.farmSimulation.model.ShopManager;
 import com.example.farmSimulation.model.ShopSlot;
-import com.example.farmSimulation.view.assets.AssetManager;
+import com.example.farmSimulation.view.assets.ImageManager;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -25,7 +25,7 @@ import java.util.List;
  */
 public class ShopView extends StackPane {
     private final ShopManager shopManager;
-    private final AssetManager assetManager;
+    private final ImageManager assetManager;
     private final GridPane itemGrid;
     private final Label messageLabel; // Label for messages
     private final Label moneyLabel; // Label for player's money
@@ -36,7 +36,7 @@ public class ShopView extends StackPane {
     private Button buyTabButton;
     private Button sellTabButton;
     
-    public ShopView(ShopManager shopManager, AssetManager assetManager) {
+    public ShopView(ShopManager shopManager, ImageManager assetManager) {
         this.shopManager = shopManager;
         this.assetManager = assetManager;
         this.itemGrid = new GridPane();

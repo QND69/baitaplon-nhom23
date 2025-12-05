@@ -112,13 +112,13 @@ public class CollisionManager {
         }
         
         // Kiểm tra cây
-        // [SỬA] Gốc cây (stage 0) vẫn có collision, chỉ khi chặt lần 2 mới mất hoàn toàn
-        // Nếu có TreeData và baseTileType == TREE thì luôn có collision (dù là cây sống hay gốc cây)
+        // [SỬA] Hạt giống (stage 0) không có collision, có thể đi qua được
+        // Chỉ cây ở stage > 0 mới có collision
         if (data.getTreeData() != null && data.getBaseTileType() == Tile.TREE) {
             TreeData tree = data.getTreeData();
-            // Gốc cây (stage 0) và cây sống (stage > 0) đều có collision
-            // Chỉ mất collision khi TreeData == null (đã chặt lần 2 và xóa hoàn toàn)
-            if (tree.getGrowthStage() >= 0) {
+            // Hạt giống (stage 0) không có collision, có thể đi qua
+            // Chỉ cây ở stage > 0 mới có collision
+            if (tree.getGrowthStage() > TreeConfig.TREE_SEED_STAGE) {
                 double tileWorldX = col * WorldConfig.TILE_SIZE;
                 double tileWorldY = row * WorldConfig.TILE_SIZE;
     
