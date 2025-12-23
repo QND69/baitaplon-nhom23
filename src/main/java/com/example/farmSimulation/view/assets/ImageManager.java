@@ -34,7 +34,7 @@ public class ImageManager {
 
     // Cache riêng cho Icon trạng thái (Status)
     private final Map<CropStatusIndicator, Image> statusIconCache = new EnumMap<>(CropStatusIndicator.class);
-    
+
     // Cache cho GUI icons (Settings, Shop, Money, Weather, etc.)
     private final Map<String, Image> guiIconCache = new HashMap<>();
 
@@ -62,11 +62,11 @@ public class ImageManager {
         getTexture(AssetPaths.FERTILIZER_OVERLAY); // Tải phân bón
         getTexture(AssetPaths.CROP_SHEET); // Tải ảnh cây
         getTexture(AssetPaths.ICON_BG); // Tải nền icon
-        
+
         // Tải các tài nguyên cây và hàng rào
         getTexture(AssetPaths.TREE_SHEET); // Tải ảnh cây tự nhiên
         getTexture(AssetPaths.FENCE_SHEET); // Tải ảnh hàng rào
-        
+
         // Tải các tài nguyên động vật
         loadAnimalTextures();
 
@@ -79,7 +79,7 @@ public class ImageManager {
 
         // Cắt và cache các icon trạng thái từ Items Sheet
         loadStatusIcons(itemsSheet);
-        
+
         // Tải và cache GUI icons
         loadGuiIcons();
     }
@@ -115,73 +115,73 @@ public class ImageManager {
                 (int)ItemSpriteConfig.ITEM_SPRITE_WIDTH, (int)ItemSpriteConfig.ITEM_SPRITE_HEIGHT);
         statusIconCache.put(CropStatusIndicator.READY_TO_HARVEST, harvestIcon);
     }
-    
+
     /**
      * Cắt và cache các GUI icons từ GUI_icon_32x32.png
      */
     private void loadGuiIcons() {
         Image guiIconSheet = getTexture(AssetPaths.GUI_ICONS);
         if (guiIconSheet == null) return;
-        
+
         PixelReader reader = guiIconSheet.getPixelReader();
         double iconSize = HudConfig.GUI_ICON_SIZE;
         int row = 0; // All icons are in row 0
-        
+
         // Cắt Settings (Gear) icon
         WritableImage settingsIcon = new WritableImage(reader,
                 (int)(HudConfig.GUI_ICON_SETTINGS_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("SETTINGS", settingsIcon);
-        
+
         // Cắt Shop icon
         WritableImage shopIcon = new WritableImage(reader,
                 (int)(HudConfig.GUI_ICON_SHOP_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("SHOP", shopIcon);
-        
+
         // Cắt Money ($) icon
         WritableImage moneyIcon = new WritableImage(reader,
                 (int)(HudConfig.GUI_ICON_MONEY_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("MONEY", moneyIcon);
-        
+
         // Cắt Sunny weather icon
         WritableImage sunnyIcon = new WritableImage(reader,
                 (int)(HudConfig.GUI_ICON_SUNNY_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("SUNNY", sunnyIcon);
-        
+
         // Cắt Rain weather icon
         WritableImage rainIcon = new WritableImage(reader,
                 (int)(HudConfig.GUI_ICON_RAIN_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("RAIN", rainIcon);
-        
+
         // Cắt Energy Bar Empty (Lightning) icon
         WritableImage energyEmptyIcon = new WritableImage(reader,
                 (int)(HudConfig.GUI_ICON_ENERGY_EMPTY_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("ENERGY_EMPTY", energyEmptyIcon);
-        
+
         // Cắt Energy Bar Full (Lightning) icon
         WritableImage energyFullIcon = new WritableImage(reader,
                 (int)(HudConfig.GUI_ICON_ENERGY_FULL_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("ENERGY_FULL", energyFullIcon);
-        
+
         // Cắt Trash Can icon
         WritableImage trashIcon = new WritableImage(reader,
                 (int)(HudConfig.GUI_ICON_TRASH_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("TRASH", trashIcon);
-        
+
         // Cắt Quest (Scroll/Checklist) icon
         WritableImage questIcon = new WritableImage(reader,
                 (int)(HudConfig.GUI_ICON_QUEST_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("QUEST", questIcon);
     }
-    
+
     /**
      * Lấy GUI icon đã cache
      * @param iconName Tên icon: "SETTINGS", "SHOP", "MONEY", "SUNNY", "RAIN", "ENERGY_EMPTY", "ENERGY_FULL", "TRASH", "QUEST"
@@ -316,7 +316,7 @@ public class ImageManager {
     public Image getItemIcon(ItemType type) {
         return itemIconCache.get(type);
     }
-    
+
     /**
      * Tải tất cả texture động vật
      */
@@ -326,40 +326,41 @@ public class ImageManager {
             getTexture(animalType.getAssetPath());
         }
     }
-    
+
     /**
      * Lấy sprite của động vật dựa trên type và direction
      * @param animalType Loại động vật
      * @param direction Hướng (0: Down, 1: Right, 2: Left, 3: Up)
      * @param action Hành động (IDLE, WALK, EAT)
+     * @param frameIndex Chỉ số frame hoạt hình hiện tại (được tính theo FPS ở ngoài)
      * @return Image sprite của động vật
      */
-    public Image getAnimalTexture(AnimalType animalType, int direction, Animal.Action action) {
+    public Image getAnimalTexture(AnimalType animalType, int direction, Animal.Action action, int frameIndex) {
         if (animalType == null) return null;
-        
+
         // Tạo key cache: type_direction_action_frame (thêm frame index để cache từng frame riêng)
-        // Frame index sẽ là 0 cho lần đầu (sẽ được cập nhật động trong animation)
-        int frameIndex = 0; // Frame hiện tại (sẽ được quản lý bởi animation system)
+        // [SỬA] Sử dụng frameIndex truyền vào thay vì hardcode 0
         String key = animalType.name() + "_" + direction + "_" + action.name() + "_" + frameIndex;
-        
+
         return spriteCache.computeIfAbsent(key, k -> {
             Image animalSheet = getTexture(animalType.getAssetPath());
             if (animalSheet == null) return null;
-            
+
             PixelReader reader = animalSheet.getPixelReader();
             double spriteSize = animalType.getSpriteSize();
-            
+
             int row = 0;
             int col = 0;
-            
+
             // Xử lý riêng cho EGG_ENTITY (trứng đặt dưới đất)
             if (animalType == AnimalType.EGG_ENTITY) {
                 // EGG_ENTITY nằm ở hàng 4 (Idle Down theo logic Standard)
-                row = AnimalConfig.STANDARD_IDLE_DOWN_ROW;
+                row = AnimalConfig.STANDARD_ROW_IDLE_DOWN;
                 // Lấy 1 trong 2 frame trứng (cột 4 và 5)
                 // Sử dụng hằng số mới từ AnimalConfig
                 int eggFrameStart = AnimalConfig.EGG_FRAME_START_INDEX;
-                col = eggFrameStart + (key.hashCode() % AnimalConfig.EGG_FRAME_COUNT); // Random 0 hoặc 1, cộng vào frameStart -> frame 4 hoặc 5
+                // [SỬA] Sử dụng frameIndex để chọn biến thể, hoặc hash nếu không animate
+                col = eggFrameStart + (frameIndex % AnimalConfig.EGG_FRAME_COUNT);
             }
             // Xử lý riêng cho CHICKEN (chicken_32x32.png)
             else if (animalType == AnimalType.CHICKEN) {
@@ -367,57 +368,62 @@ public class ImageManager {
                 // Nhóm A (Trái/Xuống): direction = 2 (LEFT) hoặc 0 (DOWN)
                 // Nhóm B (Phải/Trên): direction = 1 (RIGHT) hoặc 3 (UP)
                 boolean isGroupA = (direction == 2 || direction == 0); // LEFT hoặc DOWN
-                
+
                 if (action == Animal.Action.IDLE) {
                     // IDLE: Nhóm A dùng Hàng 0 (8 frames), Nhóm B dùng Hàng 1 (8 frames)
-                    row = isGroupA ? 0 : 1;
+                    // [SỬA] Sử dụng constant từ AnimalConfig
+                    row = isGroupA ? AnimalConfig.CHICKEN_ROW_IDLE_LEFT : AnimalConfig.CHICKEN_ROW_IDLE_RIGHT;
                 } else if (action == Animal.Action.WALK) {
                     // WALK: Nhóm A dùng Hàng 2 (4 frames), Nhóm B dùng Hàng 3 (4 frames)
-                    row = isGroupA ? 2 : 3;
+                    // [SỬA] Sử dụng constant từ AnimalConfig
+                    row = isGroupA ? AnimalConfig.CHICKEN_ROW_WALK_LEFT : AnimalConfig.CHICKEN_ROW_WALK_RIGHT;
                 } else {
                     // EAT: Fallback về IDLE
-                    row = isGroupA ? 0 : 1;
+                    row = isGroupA ? AnimalConfig.CHICKEN_ROW_IDLE_LEFT : AnimalConfig.CHICKEN_ROW_IDLE_RIGHT;
                 }
-                col = 0; // Lấy frame đầu tiên (frameIndex sẽ được xử lý trong animation)
+                // [SỬA] Sử dụng frameIndex truyền vào
+                col = frameIndex;
             }
             // Xử lý cho các động vật khác & Gà con (Standard layout)
             else {
-                // Mapping direction sang index hàng: Down(0)->Row 0, Up(3)->Row 1, Left(2)->Row 2, Right(1)->Row 3
-                int mappedRowIndex;
-                switch (direction) {
-                    case 0: mappedRowIndex = 0; break; // Down -> Row 0
-                    case 3: mappedRowIndex = 1; break; // Up -> Row 1
-                    case 2: mappedRowIndex = 2; break; // Left -> Row 2
-                    case 1: mappedRowIndex = 3; break; // Right -> Row 3
-                    default: mappedRowIndex = 0; break;
-                }
-                
+                // [SỬA] Sử dụng switch với các constant từ AnimalConfig thay vì tính toán thủ công
                 if (action == Animal.Action.WALK) {
-                    // WALK: Dùng 4 hàng đầu (Row 0-3), mỗi hàng có 6 frames
-                    row = mappedRowIndex;
-                } else if (action == Animal.Action.IDLE) {
-                    // IDLE: Dùng 4 hàng sau (Row 4-7), mỗi hàng có 4 frames
-                    row = mappedRowIndex + 4;
-                } else {
-                    // EAT: Fallback về IDLE
-                    row = mappedRowIndex + 4;
+                    // WALK: Dùng 4 hàng đầu (Row 0-3)
+                    switch (direction) {
+                        case 0: row = AnimalConfig.STANDARD_ROW_WALK_DOWN; break; // Down
+                        case 3: row = AnimalConfig.STANDARD_ROW_WALK_UP; break;   // Up
+                        case 2: row = AnimalConfig.STANDARD_ROW_WALK_LEFT; break; // Left
+                        case 1: row = AnimalConfig.STANDARD_ROW_WALK_RIGHT; break;// Right
+                        default: row = AnimalConfig.STANDARD_ROW_WALK_DOWN; break;
+                    }
+                } else { // IDLE or EAT
+                    // IDLE: Dùng 4 hàng sau (Row 4-7)
+                    switch (direction) {
+                        case 0: row = AnimalConfig.STANDARD_ROW_IDLE_DOWN; break; // Down
+                        case 3: row = AnimalConfig.STANDARD_ROW_IDLE_UP; break;   // Up
+                        case 2: row = AnimalConfig.STANDARD_ROW_IDLE_LEFT; break; // Left
+                        case 1: row = AnimalConfig.STANDARD_ROW_IDLE_RIGHT; break;// Right
+                        default: row = AnimalConfig.STANDARD_ROW_IDLE_DOWN; break;
+                    }
                 }
-                col = 0; // Lấy frame đầu tiên (frameIndex sẽ được xử lý trong animation)
+                // [SỬA] Sử dụng frameIndex truyền vào
+                col = frameIndex;
             }
-            
+
             int x = (int) (col * spriteSize);
             int y = (int) (row * spriteSize);
-            
+
             if (x < 0 || y < 0 || x + spriteSize > animalSheet.getWidth() || y + spriteSize > animalSheet.getHeight()) {
                 // Nếu không đủ frame, dùng frame đầu tiên
                 x = 0;
-                y = 0;
+                // Giữ nguyên y (row) để không bị sai hướng
+                y = (int) (row * spriteSize);
             }
-            
+
             return new WritableImage(reader, x, y, (int) spriteSize, (int) spriteSize);
         });
     }
-    
+
     /**
      * Lấy icon item cho vật nuôi (ITEM_COW, ITEM_CHICKEN, etc.)
      * Lấy từ animal_item_32x32.png
@@ -434,40 +440,40 @@ public class ImageManager {
         } else if (itemType == ItemType.ITEM_PIG) {
             col = ItemSpriteConfig.ANIMAL_ITEM_PIG_COL;
         }
-        
+
         if (col < 0) return null;
-        
+
         // Tạo key cache
         String cacheKey = "animal_item_icon_" + itemType.name();
-        
+
         // Kiểm tra cache trước
         if (spriteCache.containsKey(cacheKey)) {
             return spriteCache.get(cacheKey);
         }
-        
+
         // Lấy từ animal_item_32x32.png
         Image animalItemSheet = getTexture(AssetPaths.ANIMAL_ITEM_SHEET);
         if (animalItemSheet == null) return null;
-        
+
         PixelReader reader = animalItemSheet.getPixelReader();
         double spriteWidth = ItemSpriteConfig.ITEM_SPRITE_WIDTH;
         double spriteHeight = ItemSpriteConfig.ITEM_SPRITE_HEIGHT;
-        
+
         // Lấy từ animal_item_32x32.png ở cột tương ứng, hàng 0
         int x = (int) (col * spriteWidth);
         int y = 0;
-        
+
         if (x < 0 || y < 0 || x + spriteWidth > animalItemSheet.getWidth() || y + spriteHeight > animalItemSheet.getHeight()) {
             return null;
         }
-        
+
         Image icon = new WritableImage(reader, x, y, (int) spriteWidth, (int) spriteHeight);
-        
+
         // Cache và trả về
         spriteCache.put(cacheKey, icon);
         return icon;
     }
-    
+
     /**
      * Lấy icon cho trứng (EGG item) trong túi đồ
      * Lấy từ items_32x32.png ở cột ITEM_EGG_COL (Row 0)
@@ -477,23 +483,23 @@ public class ImageManager {
         return spriteCache.computeIfAbsent(key, k -> {
             Image itemsSheet = getTexture(AssetPaths.ITEMS_SHEET);
             if (itemsSheet == null) return null;
-            
+
             PixelReader reader = itemsSheet.getPixelReader();
             double spriteWidth = ItemSpriteConfig.ITEM_SPRITE_WIDTH;
             double spriteHeight = ItemSpriteConfig.ITEM_SPRITE_HEIGHT;
-            
+
             // Lấy từ items_32x32.png ở cột ITEM_EGG_COL, hàng 0
             int x = (int) (ItemSpriteConfig.ITEM_EGG_COL * spriteWidth);
             int y = 0;
-            
+
             if (x < 0 || y < 0 || x + spriteWidth > itemsSheet.getWidth() || y + spriteHeight > itemsSheet.getHeight()) {
                 return null;
             }
-            
+
             return new WritableImage(reader, x, y, (int) spriteWidth, (int) spriteHeight);
         });
     }
-    
+
 
     /**
      * Lấy sprite của cây tự nhiên dựa trên growth stage
@@ -513,7 +519,7 @@ public class ImageManager {
                 PixelReader reader = treeSheet.getPixelReader();
                 double w = TreeConfig.TREE_SPRITE_WIDTH;
                 double h = TreeConfig.TREE_SPRITE_HEIGHT;
-                
+
                 // Frame 4 là stump
                 int x = (int) (TreeConfig.TREE_STUMP_FRAME_INDEX * w);
                 int y = 0; // Chỉ có 1 hàng trong spritesheet
@@ -523,7 +529,7 @@ public class ImageManager {
                 return new WritableImage(reader, x, y, (int) w, (int) h);
             });
         }
-        
+
         // Nếu chưa bị chặt, hiển thị theo growth stage
         int stage = treeData.getGrowthStage();
         String key = "tree_" + stage;
@@ -535,7 +541,7 @@ public class ImageManager {
             PixelReader reader = treeSheet.getPixelReader();
             double w = TreeConfig.TREE_SPRITE_WIDTH;
             double h = TreeConfig.TREE_SPRITE_HEIGHT;
-            
+
             // Cây có 5 frame: 0 (seed/sprout), 1 (cây nhỏ), 2 (cây trung bình), 3 (cây trưởng thành), 4 (stump)
             // Cây phát triển từ stage 0 đến stage 3
             int x = (int) (stage * w);
@@ -546,7 +552,7 @@ public class ImageManager {
             return new WritableImage(reader, x, y, (int) w, (int) h);
         });
     }
-    
+
     /**
      * Lấy icon hạt giống cây từ TREE_SHEET (Frame 0)
      */
@@ -559,7 +565,7 @@ public class ImageManager {
             PixelReader reader = treeSheet.getPixelReader();
             double w = TreeConfig.TREE_SPRITE_WIDTH;
             double h = TreeConfig.TREE_SPRITE_HEIGHT;
-            
+
             // Frame 0 là seed/sprout
             int x = 0;
             int y = 0; // Chỉ có 1 hàng trong spritesheet
@@ -579,23 +585,23 @@ public class ImageManager {
         return spriteCache.computeIfAbsent(key, k -> {
             Image itemsSheet = getTexture(AssetPaths.ITEMS_SHEET);
             if (itemsSheet == null) return null;
-            
+
             PixelReader reader = itemsSheet.getPixelReader();
             double spriteWidth = ItemSpriteConfig.ITEM_SPRITE_WIDTH;
             double spriteHeight = ItemSpriteConfig.ITEM_SPRITE_HEIGHT;
-            
+
             // Lấy từ items_32x32.png ở cột ITEM_WOOD_COL, hàng 0
             int x = (int) (ItemSpriteConfig.ITEM_WOOD_COL * spriteWidth);
             int y = 0;
-            
+
             if (x < 0 || y < 0 || x + spriteWidth > itemsSheet.getWidth() || y + spriteHeight > itemsSheet.getHeight()) {
                 return null;
             }
-            
+
             return new WritableImage(reader, x, y, (int) spriteWidth, (int) spriteHeight);
         });
     }
-    
+
 
     /**
      * Lấy sprite của hàng rào dựa trên pattern và trạng thái mở/đóng
@@ -607,8 +613,8 @@ public class ImageManager {
         if (fenceData.isOpen()) {
             return spriteCache.computeIfAbsent("fence_open", k -> {
                 Image fenceSheet = getTexture(AssetPaths.FENCE_SHEET);
-                return new WritableImage(fenceSheet.getPixelReader(), 
-                    0, (int)(3 * 64), 64, 64); // Cột 0, Hàng 3
+                return new WritableImage(fenceSheet.getPixelReader(),
+                        0, (int)(3 * 64), 64, 64); // Cột 0, Hàng 3
             });
         }
 
@@ -619,17 +625,17 @@ public class ImageManager {
         return spriteCache.computeIfAbsent(key, k -> {
             Image fenceSheet = getTexture(AssetPaths.FENCE_SHEET);
             PixelReader reader = fenceSheet.getPixelReader();
-            
+
             int col, row;
 
             switch (pattern) {
                 // --- NHÓM 1: CÁC ĐẦU MÚT & ĐƯỜNG THẲNG (CỘT 0 & HÀNG 0) ---
                 case 0:  col = 0; row = 3; break; // Cọc đơn (Không nối gì)
-                
+
                 case 1:  col = 0; row = 2; break; // Chỉ nối Lên (Đầu dưới)
                 case 4:  col = 0; row = 0; break; // Chỉ nối Xuống (Đầu trên)
                 case 5:  col = 0; row = 1; break; // Dọc (Lên + Xuống)
-                
+
                 case 2:  col = 1; row = 0; break; // Chỉ nối Phải (Đầu trái)
                 case 8:  col = 3; row = 0; break; // Chỉ nối Trái (Đầu phải)
                 case 10: col = 2; row = 0; break; // Ngang (Trái + Phải)
@@ -651,13 +657,9 @@ public class ImageManager {
 
                 default: col = 0; row = 3; break; // Fallback về cọc đơn
             }
-            
+
             // Cắt ảnh 64x64
             return new WritableImage(reader, col * 64, row * 64, 64, 64);
         });
     }
 }
-
-
-
-

@@ -40,6 +40,21 @@ public final class AssetPaths {
     // Audio
     public static final String BACKGROUND_MUSIC = "/assets/sounds/bg_music_2.mp3";
 
+    // --- Animal Sheets (Cấu hình đúng theo tên file ảnh) ---
+
+    // Chicken - 48x48
+    public static final String CHICKEN_SHEET = "/assets/images/entities/animal/chicken_48x48.png";
+
+    // Cow, Pig - 96x96
+    public static final String COW_SHEET = "/assets/images/entities/animal/cow_96x96.png";
+    public static final String PIG_SHEET = "/assets/images/entities/animal/pig_96x96.png";
+
+    // Sheep - 64x64
+    public static final String SHEEP_SHEET = "/assets/images/entities/animal/sheep_64x64.png";
+
+    // Egg & Baby Chick (Dùng riêng cho trứng hoặc gà con nếu không scale từ gà lớn) - 32x32
+    public static final String BABY_CHICKEN_EGG_SHEET = "/assets/images/entities/animal/babychick&egg_32x32.png";
+
     private AssetPaths() {
     }
 }

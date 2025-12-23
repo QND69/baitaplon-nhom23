@@ -338,7 +338,7 @@ public class WorldRenderer {
             double imageWidth = ghostImage.getWidth();
             double imageHeight = ghostImage.getHeight();
             double offsetX = (WorldConfig.TILE_SIZE - imageWidth) / 2.0;
-            
+
             // [SỬA] Đối với SEEDS_TREE, sử dụng cùng logic positioning như treeTiles
             // treeTiles được tạo với yOffset = -TreeConfig.TREE_Y_OFFSET trong createTileView
             // createTileView set LayoutY = r * WorldConfig.TILE_SIZE + yOffset
@@ -382,6 +382,9 @@ public class WorldRenderer {
             if (bg != null) entityPane.getChildren().remove(bg);
         }
 
+        // [MỚI] Lấy thời gian hiện tại để tính frame animation chung cho tất cả động vật
+        long now = System.currentTimeMillis();
+
         for (Animal animal : animals) {
             if (animal.isDead()) continue;
             ImageView animalView = animalViews.get(animal);
@@ -393,7 +396,36 @@ public class WorldRenderer {
                 animalViews.put(animal, animalView);
                 entityPane.getChildren().add(animalView);
             }
-            Image animalTexture = assetManager.getAnimalTexture(animal.getType(), animal.getDirection(), animal.getCurrentAction());
+
+            // [SỬA] Tính toán frameIndex dựa trên thời gian và cấu hình
+            int frameCount = 1;
+            int animationSpeedMs = 150; // Tốc độ mặc định
+
+            if (animal.getType() == com.example.farmSimulation.model.AnimalType.EGG_ENTITY) {
+                frameCount = AnimalConfig.EGG_FRAME_COUNT;
+                animationSpeedMs = 500; // Trứng nhấp nháy chậm
+            } else if (animal.getType() == com.example.farmSimulation.model.AnimalType.CHICKEN) {
+                if (animal.getCurrentAction() == Animal.Action.WALK) {
+                    frameCount = AnimalConfig.CHICKEN_WALK_FRAMES;
+                    animationSpeedMs = 100; // Gà đi nhanh
+                } else {
+                    frameCount = AnimalConfig.CHICKEN_IDLE_FRAMES;
+                    animationSpeedMs = 150;
+                }
+            } else { // Các động vật chuẩn (Bò, Cừu, Lợn)
+                if (animal.getCurrentAction() == Animal.Action.WALK) {
+                    frameCount = AnimalConfig.STANDARD_WALK_FRAMES;
+                    animationSpeedMs = 120;
+                } else {
+                    frameCount = AnimalConfig.STANDARD_IDLE_FRAMES;
+                    animationSpeedMs = 200;
+                }
+            }
+
+            // Tính frame index: (time / speed) % totalFrames
+            int frameIndex = (int) ((now / animationSpeedMs) % frameCount);
+
+            Image animalTexture = assetManager.getAnimalTexture(animal.getType(), animal.getDirection(), animal.getCurrentAction(), frameIndex);
             animalView.setImage(animalTexture);
             double spriteSize = animal.getType().getSpriteSize();
             animalView.setFitWidth(spriteSize);
