@@ -173,4 +173,15 @@ public enum AnimalType {
     public boolean canGrow() {
         return growthTimeMs > 0;
     }
+
+    // [MỚI] Helper để lấy loại con non tương ứng (cho việc Breeding)
+    public AnimalType getBabyType() {
+        switch (this) {
+            case COW: return BABY_COW;
+            case PIG: return BABY_PIG;
+            case SHEEP: return BABY_SHEEP;
+            case CHICKEN: return BABY_CHICKEN; // Hoặc EGG_ENTITY tùy logic
+            default: return null;
+        }
+    }
 }

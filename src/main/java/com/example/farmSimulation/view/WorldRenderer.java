@@ -9,6 +9,7 @@ import com.example.farmSimulation.config.FenceConfig;
 import com.example.farmSimulation.config.ItemSpriteConfig;
 import com.example.farmSimulation.config.PlayerSpriteConfig;
 import com.example.farmSimulation.model.Animal;
+import com.example.farmSimulation.model.AnimalType; // [MỚI] Thêm import
 import com.example.farmSimulation.model.Tile;
 import com.example.farmSimulation.model.TileData;
 import com.example.farmSimulation.model.WorldMap;
@@ -257,8 +258,6 @@ public class WorldRenderer {
                     }
                 }
 
-                this.fenceTiles[r][c].setImage(assetManager.getFenceTexture(data.getFenceData()));
-
                 if (FenceConfig.DEBUG_FENCE_HITBOX && PlayerSpriteConfig.DEBUG_PLAYER_BOUNDS && fenceHitboxes[r][c] != null) {
                     if (data.getFenceData() != null && data.getFenceData().isSolid()) {
                         double tileLocalX = c * WorldConfig.TILE_SIZE;
@@ -397,7 +396,7 @@ public class WorldRenderer {
                 entityPane.getChildren().add(animalView);
             }
 
-            // [SỬA] Tính toán frameIndex dựa trên thời gian và cấu hình
+            // [SỬA] Tính toán frame index dựa trên thời gian và cấu hình
             int frameIndex = 0;
 
             // Xử lý đặc biệt cho TRỨNG: Không animate theo thời gian, mà dùng variant cố định
@@ -436,13 +435,22 @@ public class WorldRenderer {
 
             Image animalTexture = assetManager.getAnimalTexture(animal.getType(), animal.getDirection(), animal.getCurrentAction(), frameIndex);
             animalView.setImage(animalTexture);
+
+            // [MỚI] Áp dụng logic Scale để hiển thị con non đúng kích thước
             double spriteSize = animal.getType().getSpriteSize();
-            animalView.setFitWidth(spriteSize);
-            animalView.setFitHeight(spriteSize);
+            double scale = animal.getType().getScale(); // Lấy tỉ lệ (vd: 0.5 cho con non)
+            double displaySize = spriteSize * scale;    // Kích thước hiển thị thực tế
+
+            animalView.setFitWidth(displaySize);
+            animalView.setFitHeight(displaySize);
+
             double screenX = animal.getX() + worldOffsetX;
             double screenY = animal.getY() + worldOffsetY + AnimalConfig.ANIMAL_Y_OFFSET;
-            animalView.setLayoutX(screenX - spriteSize / 2.0);
-            animalView.setLayoutY(screenY - spriteSize);
+
+            // [SỬA] Dùng displaySize để căn vị trí thay vì spriteSize gốc
+            animalView.setLayoutX(screenX - displaySize / 2.0);
+            animalView.setLayoutY(screenY - displaySize);
+
             updateAnimalStatusIcon(animal, worldOffsetX, worldOffsetY);
         }
     }
@@ -457,41 +465,73 @@ public class WorldRenderer {
             // Always use SUPER_FEED icon for hunger (universal visual cue)
             iconImage = assetManager.getItemIcon(com.example.farmSimulation.model.ItemType.SUPER_FEED);
             needsIcon = iconImage != null;
-        } else if (animal.isHasProduct() && animal.getType().canProduce()) {
+        }
+        // [SỬA ĐỔI] Thêm điều kiện: Gà (CHICKEN) không hiện icon sản phẩm vì đã đẻ trứng ra đất
+        else if (animal.isHasProduct() && animal.getType().canProduce() && animal.getType() != AnimalType.CHICKEN) {
             // Display the specific product item icon (Egg, Milk, Wool)
             iconImage = assetManager.getItemIcon(animal.getType().getProduct());
             needsIcon = iconImage != null;
         }
 
         if (needsIcon && iconImage != null) {
-            if (iconView == null) {
-                iconView = new ImageView();
-                iconView.setSmooth(false);
-                iconView.setMouseTransparent(true);
-                animalStatusIcons.put(animal, iconView);
-                entityPane.getChildren().add(iconView);
-            }
+            // [FIX LỖI MÀU TRẮNG] Thêm bgView TRƯỚC, sau đó mới thêm iconView để icon nằm ĐÈ lên nền
             if (bgView == null) {
                 bgView = new ImageView();
                 bgView.setImage(assetManager.getIconBG());
                 bgView.setSmooth(false);
                 bgView.setMouseTransparent(true);
                 animalStatusBackgrounds.put(animal, bgView);
-                entityPane.getChildren().add(bgView);
+                entityPane.getChildren().add(bgView); // Add background first
             }
+            if (iconView == null) {
+                iconView = new ImageView();
+                iconView.setSmooth(false);
+                iconView.setMouseTransparent(true);
+                animalStatusIcons.put(animal, iconView);
+                entityPane.getChildren().add(iconView); // Add icon second (on top)
+            }
+
             iconView.setImage(iconImage);
             iconView.setFitWidth(HudConfig.ICON_SIZE);
             iconView.setFitHeight(HudConfig.ICON_SIZE);
             bgView.setFitWidth(HudConfig.ICON_BG_SIZE);
             bgView.setFitHeight(HudConfig.ICON_BG_SIZE);
+
+            // [MỚI] Sử dụng displaySize (có scale) để tính toán vị trí icon chính xác cho con non
             double spriteSize = animal.getType().getSpriteSize();
+            double scale = animal.getType().getScale();
+            double displaySize = spriteSize * scale;
+
             double screenX = animal.getX() + worldOffsetX;
-            double screenY = animal.getY() + worldOffsetY + AnimalConfig.ANIMAL_Y_OFFSET - spriteSize;
-            double iconOffset = (HudConfig.ICON_BG_SIZE - HudConfig.ICON_SIZE) / 2.0;
+
+            // [MỚI] Chọn offset phù hợp theo từng loại động vật
+            double typeSpecificOffset = AnimalConfig.ANIMAL_ICON_Y_OFFSET; // Fallback
+            if (animal.getType() == AnimalType.CHICKEN) {
+                typeSpecificOffset = AnimalConfig.ICON_OFFSET_CHICKEN;
+            } else if (animal.getType() == AnimalType.COW) {
+                typeSpecificOffset = AnimalConfig.ICON_OFFSET_COW;
+            } else if (animal.getType() == AnimalType.PIG) {
+                typeSpecificOffset = AnimalConfig.ICON_OFFSET_PIG;
+            } else if (animal.getType() == AnimalType.SHEEP) {
+                typeSpecificOffset = AnimalConfig.ICON_OFFSET_SHEEP;
+            } else if (animal.isBaby()) { // Kiểm tra con non
+                typeSpecificOffset = AnimalConfig.ICON_OFFSET_BABY;
+            }
+
+            // [SỬA] Tính screenY dựa trên displaySize (đỉnh đầu thực tế của con vật)
+            double screenY = animal.getY() + worldOffsetY + AnimalConfig.ANIMAL_Y_OFFSET - displaySize;
+
+            // Tính toán vị trí nền
             bgView.setLayoutX(screenX - HudConfig.ICON_BG_SIZE / 2.0);
-            bgView.setLayoutY(screenY - HudConfig.ICON_BG_SIZE - HudConfig.ICON_Y_OFFSET);
+            bgView.setLayoutY(screenY - HudConfig.ICON_BG_SIZE - typeSpecificOffset);
+
+            // Tính toán vị trí icon (có thêm ICON_CONTENT_Y_OFFSET để chỉnh vị trí trong nền)
+            double iconOffset = (HudConfig.ICON_BG_SIZE - HudConfig.ICON_SIZE) / 2.0;
             iconView.setLayoutX(screenX - HudConfig.ICON_BG_SIZE / 2.0 + iconOffset);
-            iconView.setLayoutY(screenY - HudConfig.ICON_BG_SIZE - HudConfig.ICON_Y_OFFSET + iconOffset);
+
+            // [MỚI] Thêm AnimalConfig.ICON_CONTENT_Y_OFFSET vào tính toán Y của icon
+            iconView.setLayoutY(screenY - HudConfig.ICON_BG_SIZE - typeSpecificOffset + iconOffset + AnimalConfig.ICON_CONTENT_Y_OFFSET);
+
             iconView.setVisible(true);
             bgView.setVisible(true);
         } else {

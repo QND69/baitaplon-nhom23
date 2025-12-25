@@ -45,10 +45,10 @@ public class GameController {
                     gameManager.toggleSettingsMenu(); // Gọi hàm hiển thị/ẩn menu
                 }
             }
-            
+
             // Block all other inputs when game is paused (Settings Menu is open)
             if (gameManager != null && gameManager.isPaused()) return;
-            
+
             // Xử lý phím Q để ném item từ slot mà chuột đang trỏ vào
             if (event.getCode() == KeyCode.Q) {
                 if (gameManager != null) {
@@ -77,6 +77,14 @@ public class GameController {
                     mainGameView.toggleQuestBoard();
                 }
             }
+
+            // [MỚI] Cheat code: Bấm 'L' để thêm tiền
+            if (event.getCode() == KeyCode.L) {
+                if (gameManager != null) {
+                    gameManager.getMainPlayer().addMoney(com.example.farmSimulation.config.GameLogicConfig.CHEAT_MONEY_AMOUNT);
+                }
+            }
+
             // Xử lý phím số (1-9, 0) để đổi hotbar
             if (event.getCode().isDigitKey()) {
                 int slot = -1;
@@ -135,14 +143,14 @@ public class GameController {
     public void handleMouseClick(MouseEvent event) {
         // Block all mouse interactions when game is paused (Settings Menu is open)
         if (gameManager != null && gameManager.isPaused()) return;
-        
+
         // Xử lý click chuột phải (SECONDARY) để mở/đóng hàng rào hoặc ăn đồ
         if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
             if (gameManager != null) {
                 // First: Check if clicking on a Fence -> Toggle Fence
                 int tileX = gameManager.getCurrentMouseTileX();
                 int tileY = gameManager.getCurrentMouseTileY();
-                
+
                 // Check if there's a fence at this position
                 if (gameManager.hasFenceAt(tileX, tileY)) {
                     gameManager.toggleFence(tileX, tileY);
@@ -153,7 +161,7 @@ public class GameController {
             }
             return;
         }
-        
+
         // Xử lý click chuột trái (PRIMARY) cho các hành động khác
         if (event.getButton() != javafx.scene.input.MouseButton.PRIMARY) return;
         // GỌI HÀM LOGIC GAME (Ném hành động vào hàng đợi)

@@ -774,10 +774,19 @@ public class InteractionManager {
             return null; // Thành công
         }
 
-        // Bước 3 (Tương tác): Nếu không phải hành động đặt, tìm động vật để tương tác
+        // Bước 3 (Tương tác): Tìm động vật để tương tác
         Animal animal = animalManager.getAnimalAt(worldX, worldY, WorldConfig.TILE_SIZE);
         if (animal == null || animal.isDead()) {
-            return null; // Không tìm thấy động vật
+            return null;
+        }
+
+        // [MỚI] CHẶN TƯƠNG TÁC KHI ĐANG SINH SẢN
+        // Nếu động vật đang bận sinh sản, không cho làm gì cả (trừ khi bạn muốn cho phép giết)
+        // Ở đây tôi chặn tất cả để tránh lỗi logic
+        if (animal.isBreeding()) {
+            // Có thể trả về thông báo "Animal is busy" nếu muốn, hoặc null để lờ đi
+            // Return null ở đây nghĩa là click vào không có tác dụng gì
+            return null;
         }
 
         // --- CHO ĂN ---

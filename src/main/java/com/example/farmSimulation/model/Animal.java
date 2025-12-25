@@ -1,5 +1,6 @@
 package com.example.farmSimulation.model;
 
+import com.example.farmSimulation.config.AnimalConfig;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -63,6 +64,13 @@ public class Animal {
     // [MỚI] Thời điểm kết thúc hành động hiện tại (để khóa trạng thái)
     private long actionEndTime;
 
+    // [MỚI] Timer cho việc sinh sản (Breeding Cooldown) - nanoTime
+    private long breedingCooldownTimer;
+
+    // [MỚI - LOGIC SINH SẢN NÂNG CAO]
+    private Animal breedingPartner; // Con vật đang nhắm tới để sinh sản
+    private long matingStartTime; // Thời điểm bắt đầu "tán tỉnh" (đứng yên cạnh nhau), 0 nếu chưa
+
     /**
      * Constructor để tạo một con vật mới
      * @param type Loại động vật
@@ -90,6 +98,17 @@ public class Animal {
         this.lastHungerUpdateTime = System.nanoTime();
         this.starvationStartTime = 0; // Chưa đói
         this.actionEndTime = 0; // Sẵn sàng hành động ngay
+
+        // [SỬA] Kiểm tra config để áp dụng cooldown sinh sản ngay khi spawn
+        if (AnimalConfig.ENABLE_BREEDING_COOLDOWN_ON_SPAWN) {
+            // Gán timer bằng thời gian hiện tại -> Logic check sẽ thấy (now - timer) gần bằng 0 < COOLDOWN -> Chưa đẻ được
+            this.breedingCooldownTimer = System.nanoTime();
+        } else {
+            this.breedingCooldownTimer = 0; // Có thể sinh sản ngay nếu đủ điều kiện (trưởng thành)
+        }
+
+        this.breedingPartner = null;
+        this.matingStartTime = 0;
 
         // Random trạng thái cho trứng (0 hoặc 1)
         if (type == AnimalType.EGG_ENTITY) {
@@ -176,6 +195,43 @@ public class Animal {
                 return ItemType.MEAT_SHEEP;
             default:
                 return null; // Trứng hoặc loại khác không có thịt
+        }
+    }
+
+    /**
+     * Kiểm tra xem động vật có đang trong quá trình sinh sản không
+     * (Đang đi tìm bạn tình HOẶC đang đứng tán tỉnh)
+     */
+    public boolean isBreeding() {
+        return this.breedingPartner != null || this.matingStartTime > 0;
+    }
+
+    /**
+     * [MỚI] Lấy Scale hiển thị dựa trên loại động vật
+     * Đảm bảo con non được vẽ nhỏ hơn, sử dụng Config thay vì Hardcode.
+     */
+    public double getVisualScale() {
+        switch (type) {
+            case BABY_COW:
+                return AnimalConfig.SCALE_BABY_COW;
+            case BABY_PIG:
+                return AnimalConfig.SCALE_BABY_PIG;
+            case BABY_SHEEP:
+                return AnimalConfig.SCALE_BABY_SHEEP;
+            case BABY_CHICKEN:
+                return AnimalConfig.SCALE_BABY_CHICKEN;
+            case EGG_ENTITY:
+                return AnimalConfig.SCALE_EGG;
+            case CHICKEN:
+                return AnimalConfig.SCALE_CHICKEN;
+            case COW:
+                return AnimalConfig.SCALE_COW;
+            case PIG:
+                return AnimalConfig.SCALE_PIG;
+            case SHEEP:
+                return AnimalConfig.SCALE_SHEEP;
+            default:
+                return 1.0;
         }
     }
 }

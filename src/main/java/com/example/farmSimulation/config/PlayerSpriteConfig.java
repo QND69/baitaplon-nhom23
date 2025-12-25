@@ -27,19 +27,19 @@ public class PlayerSpriteConfig {
 
     // --- Giá trị gốc (Base values) trước khi scale ---
     // Kích thước Hitbox va chạm gốc (nhỏ hơn người, nằm ở chân)
-    private static final double BASE_COLLISION_BOX_WIDTH = 28.0;  // Hẹp hơn chiều rộng người
-    private static final double BASE_COLLISION_BOX_HEIGHT = 11.0; // Thấp, chỉ lấy phần chân
-    private static final double BASE_COLLISION_BOX_BOTTOM_PADDING = 68.0; // Padding đáy gốc
+    public static final double BASE_COLLISION_BOX_WIDTH = 28.0;  // Hẹp hơn chiều rộng người
+    public static final double BASE_COLLISION_BOX_HEIGHT = 11.0; // Thấp, chỉ lấy phần chân
+    public static final double BASE_COLLISION_BOX_BOTTOM_PADDING = 68.0; // Padding đáy gốc
     
     // Offset gốc để căn giữa nhân vật trong khung mặc định
-    private static final double BASE_PLAYER_SPRITE_OFFSET_X = (BASE_PLAYER_FRAME_WIDTH - PLAYER_FRAME_WIDTH) / 2;
-    private static final double BASE_PLAYER_SPRITE_OFFSET_Y = (BASE_PLAYER_FRAME_HEIGHT - PLAYER_FRAME_HEIGHT) / 2;
+    public static final double BASE_PLAYER_SPRITE_OFFSET_X = (BASE_PLAYER_FRAME_WIDTH - PLAYER_FRAME_WIDTH) / 2;
+    public static final double BASE_PLAYER_SPRITE_OFFSET_Y = (BASE_PLAYER_FRAME_HEIGHT - PLAYER_FRAME_HEIGHT) / 2;
 
     // [MỚI] Cấu hình Tâm Hoạt Động (Interaction Center) gốc
     // Dịch chuyển tâm hoạt động xuống dưới so với tâm hình học (Giữa ảnh)
     // Giá trị dương = dịch xuống dưới (về phía chân), Giá trị âm = dịch lên trên
     // Ví dụ: 35.0 pixel (ở tỉ lệ gốc 1.0)
-    private static final double BASE_INTERACTION_CENTER_Y_OFFSET = 15.0;
+    public static final double BASE_INTERACTION_CENTER_Y_OFFSET = 15.0;
 
     // --- Giá trị đã scale (Scaled values) - TẤT CẢ ĐỀU SCALE THEO BASE_PLAYER_FRAME_SCALE ---
     // Offset để căn giữa nhân vật trong khung mặc định (đã scale)

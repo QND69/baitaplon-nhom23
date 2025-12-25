@@ -32,7 +32,7 @@ public class GameManager {
     private final ShopManager shopManager; // Quản lý shop
     private final WeatherManager weatherManager; // Quản lý thời tiết
     private final QuestManager questManager; // Quản lý quest (nhiệm vụ hàng ngày)
-        private final com.example.farmSimulation.view.assets.AudioManager audioManager; // Quản lý âm thanh nền
+    private final com.example.farmSimulation.view.assets.AudioManager audioManager; // Quản lý âm thanh nền
 
     // --- Trạng thái Game ---
     private AnimationTimer gameLoop; // Khởi tạo gameLoop
@@ -43,7 +43,7 @@ public class GameManager {
     // Tọa độ ô chuột đang trỏ tới
     private int currentMouseTileX = 0;
     private int currentMouseTileY = 0;
-    
+
     // [MỚI] Tọa độ chuột thực tế trong thế giới
     private double currentMouseWorldX = 0;
     private double currentMouseWorldY = 0;
@@ -72,13 +72,13 @@ public class GameManager {
         this.weatherManager = new WeatherManager(); // Khởi tạo WeatherManager
         this.questManager = new QuestManager(); // Khởi tạo QuestManager
         this.audioManager = new com.example.farmSimulation.view.assets.AudioManager(); // Khởi tạo AudioManager
-        
+
         // Liên kết Player với MainGameView để hiển thị thông báo
         player.setMainGameView(mainGameView);
-        
+
         // Set Player reference in PlayerView for accessing timeOfDeath (for death animation)
         playerView.setPlayer(player);
-        
+
         // Liên kết các Manager với nhau
         this.actionManager.setFenceManager(this.fenceManager);
         this.actionManager.setAnimalManager(this.animalManager); // Liên kết AnimalManager với ActionManager
@@ -107,10 +107,10 @@ public class GameManager {
             }
         };
         gameLoop.start();
-        
+
         // Generate initial daily quests
         questManager.generateDailyQuests();
-        
+
         System.out.println("Game Started!");
     }
 
@@ -122,12 +122,12 @@ public class GameManager {
         if (this.isPaused) {
             return;
         }
-        
+
         // Check if player is DEAD - stop all game logic processing
         if (mainPlayer.getState() == PlayerView.PlayerState.DEAD) {
             // Sync PlayerView state to DEAD
             playerView.setState(PlayerView.PlayerState.DEAD, mainPlayer.getDirection());
-            
+
             // Trigger Game Over sequence only once
             if (!isGameOverSequenceTriggered) {
                 isGameOverSequenceTriggered = true;
@@ -154,7 +154,7 @@ public class GameManager {
 
         // Cập nhật thời gian & chu kỳ ngày đêm
         timeManager.update();
-        
+
         // Check if new day started and refresh shop stock
         if (timeManager.hasNewDayStarted()) {
             shopManager.generateDailyStock(true); // Allow discounts on natural day refresh
@@ -162,7 +162,7 @@ public class GameManager {
             System.out.println("New day started! Shop stock refreshed.");
             System.out.println("New daily quests generated!");
         }
-        
+
         // Tự động hồi phục stamina (khi không hoạt động)
         updateStaminaRecovery(deltaTime);
 
@@ -186,20 +186,21 @@ public class GameManager {
         if (treesUpdated) {
             actionManager.setMapNeedsUpdate(true); // Báo map cần vẽ lại
         }
-        
+
         // Cập nhật logic động vật
-        boolean animalsUpdated = animalManager.updateAnimals(now);
+        // [SỬA] Đã thêm tham số mainPlayer để khớp với logic AnimalManager mới
+        boolean animalsUpdated = animalManager.updateAnimals(now, mainPlayer);
         if (animalsUpdated) {
             actionManager.setMapNeedsUpdate(true); // Báo map cần vẽ lại
         }
-        
+
         // Cập nhật vẽ động vật
         mainGameView.updateAnimals(animalManager.getAnimals(), camera.getWorldOffsetX(), camera.getWorldOffsetY());
-        
+
         // [MỚI] Cập nhật thời tiết
         weatherManager.updateWeather(now);
         mainGameView.updateWeather(weatherManager.isRaining());
-        
+
         // Cập nhật HUD (Player Stats, Weather Icon)
         if (mainGameView.getHudView() != null) {
             mainGameView.getHudView().updatePlayerStats();
@@ -208,13 +209,13 @@ public class GameManager {
 
         // Cập nhật chuột
         updateMouseSelector();
-        
+
         // Cập nhật ghost placement
         updateGhostPlacement();
-        
+
         // Cập nhật collision hitbox (debug mode)
         updateCollisionHitbox();
-        
+
         // [MỚI] Cập nhật hiển thị tiền
         mainGameView.updateMoneyDisplay(mainPlayer.getMoney());
     }
@@ -224,7 +225,7 @@ public class GameManager {
      */
     private void updateStaminaRecovery(double deltaTime) {
         PlayerView.PlayerState currentState = mainPlayer.getState();
-        
+
         if (currentState == PlayerView.PlayerState.WALK) {
             // Running costs stamina - drain stamina while walking
             double drainAmount = GameLogicConfig.STAMINA_DRAIN_RUNNING * deltaTime;
@@ -238,7 +239,7 @@ public class GameManager {
         }
         // Other states (Action/Busy): Do nothing - actions have their own instant stamina costs
     }
-    
+
     /**
      * Cập nhật vị trí ô vuông chọn
      */
@@ -258,7 +259,7 @@ public class GameManager {
                 camera.getWorldOffsetY()      // Vị trí Y của thế giới
         );
     }
-    
+
     /**
      * Cập nhật ghost placement (bóng mờ khi cầm item có thể đặt)
      */
@@ -277,7 +278,7 @@ public class GameManager {
                 currentItem
         );
     }
-    
+
     /**
      * Cập nhật collision hitbox (debug mode)
      */
@@ -301,7 +302,7 @@ public class GameManager {
         double scaledPlayerWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
         double scaledPlayerHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
         double playerX = mainPlayer.getTileX() + scaledPlayerWidth / 2;
-        
+
         // [SỬA] Cộng thêm INTERACTION_CENTER_Y_OFFSET để tâm tính toán hạ thấp xuống (ngang hông/chân)
         double playerY = mainPlayer.getTileY() + scaledPlayerHeight / 2 + PlayerSpriteConfig.INTERACTION_CENTER_Y_OFFSET;
 
@@ -333,9 +334,9 @@ public class GameManager {
                 range = GameLogicConfig.FERTILIZER_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             } else if (type.name().startsWith("SEEDS_")) {
                 range = GameLogicConfig.PLANT_INTERACTION_RANGE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE; // Áp dụng cho tất cả loại hạt
-            } else if (type == ItemType.ITEM_COW || type == ItemType.ITEM_CHICKEN || 
-                       type == ItemType.ITEM_PIG || type == ItemType.ITEM_SHEEP || 
-                       type == ItemType.EGG) {
+            } else if (type == ItemType.ITEM_COW || type == ItemType.ITEM_CHICKEN ||
+                    type == ItemType.ITEM_PIG || type == ItemType.ITEM_SHEEP ||
+                    type == ItemType.EGG) {
                 range = AnimalConfig.PLACEMENT_RANGE * WorldConfig.TILE_SIZE * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             } else {
                 // Các item khác dùng mặc định HAND range (đã scale)
@@ -354,7 +355,7 @@ public class GameManager {
         double scaledPlayerWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
         double scaledPlayerHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
         double playerX = mainPlayer.getTileX() + scaledPlayerWidth / 2;
-        
+
         // [SỬA] Cộng thêm INTERACTION_CENTER_Y_OFFSET để tâm quay hướng cũng chính xác
         double playerY = mainPlayer.getTileY() + scaledPlayerHeight / 2 + PlayerSpriteConfig.INTERACTION_CENTER_Y_OFFSET;
 
@@ -413,14 +414,14 @@ public class GameManager {
         // Thay vì tính lại từ đầu, ta dùng giá trị đã được đồng bộ với camera mới nhất
         double mouseWorldX = this.currentMouseWorldX;
         double mouseWorldY = this.currentMouseWorldY;
-        
+
         // Lưu lại state trước khi hành động
         PlayerView.PlayerState oldState = mainPlayer.getState();
 
         // Bước 1: Ưu tiên xử lý tương tác động vật (nếu đang cầm item động vật hoặc EGG)
         // Gọi processAnimalInteraction TRƯỚC với tọa độ chuột thực tế (để đặt tự do)
         String animalErrorMsg = interactionManager.processAnimalInteraction(mainPlayer, playerView, mouseWorldX, mouseWorldY);
-        
+
         // Nếu processAnimalInteraction đã xử lý (trả về lỗi hoặc thành công), hiển thị thông báo và return
         if (animalErrorMsg != null) {
             double playerScreenX = playerView.getSpriteContainer().getLayoutX();
@@ -428,21 +429,21 @@ public class GameManager {
             mainGameView.showTemporaryText(animalErrorMsg, playerScreenX, playerScreenY);
             return; // Đã xử lý xong, không cần gọi processInteraction
         }
-        
+
         // [QUAN TRỌNG - SỬA LỖI FALL-THROUGH]
         // Kiểm tra xem hành động với động vật có THÀNH CÔNG hay không (state thay đổi sang BUSY, AXE...)
         // Nếu thành công thì không chạy tiếp xuống logic đào đất/trồng cây
         if (mainPlayer.getState() != oldState) {
-             mainGameView.updateHotbar();
-             return; // Dừng lại ở đây
+            mainGameView.updateHotbar();
+            return; // Dừng lại ở đây
         }
-        
+
         // [MỚI] Nếu đặt động vật thành công (trả về null và không lỗi), cần cập nhật Hotbar
         // Kiểm tra xem có phải vừa đặt động vật không?
         // Nếu InteractionManager.processAnimalInteraction trả về null, nó có thể là "không làm gì" HOẶC "thành công".
         // Để chắc chắn, ta gọi updateHotbar() ở đây để đồng bộ Item
         mainGameView.updateHotbar();
-        
+
         // Bước 2: Nếu không phải tương tác động vật, xử lý tương tác với tile (cây trồng/đất)
         // Nhận thông báo lỗi trực tiếp từ hàm processInteraction
         String errorMsg = interactionManager.processInteraction(mainPlayer, playerView, worldMap, col, row);
@@ -482,7 +483,7 @@ public class GameManager {
         TileData data = worldMap.getTileData(col, row);
         return data != null && data.getFenceData() != null;
     }
-    
+
     public void toggleFence(int col, int row) {
         // [SỬA] Thêm kiểm tra tầm hoạt động bằng Tay (Hand)
         // Truyền null vào currentStack để sử dụng HAND_INTERACTION_RANGE mặc định
@@ -491,7 +492,7 @@ public class GameManager {
             double playerScreenX = playerView.getSpriteContainer().getLayoutX();
             double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
             mainGameView.showTemporaryText(HudConfig.TOO_FAR_TEXT, playerScreenX, playerScreenY);
-            return; 
+            return;
         }
 
         TileData data = worldMap.getTileData(col, row);
@@ -501,7 +502,7 @@ public class GameManager {
             mainGameView.updateMap(camera.getWorldOffsetX(), camera.getWorldOffsetY(), true);
         }
     }
-    
+
     /**
      * Xử lý logic ăn đồ của player khi right-click (nếu không click vào fence)
      */
@@ -511,33 +512,33 @@ public class GameManager {
         if (currentState != PlayerView.PlayerState.IDLE && currentState != PlayerView.PlayerState.WALK) {
             return; // Player đang bận, không cho ăn
         }
-        
+
         // Thử ăn item hiện tại
         if (mainPlayer.eatCurrentItem()) {
             // Tạo TimedTileAction để giữ BUSY state trong thời gian ngắn (0.5 giây)
             long eatDurationMs = 500; // 0.5 giây
             int framesRemaining = (int) (eatDurationMs / (1000.0 / 60.0)); // Chuyển đổi sang frames (60 FPS)
-            
+
             // Tạo action không thay đổi tile (newTileData = null)
             TimedTileAction eatAction = new TimedTileAction(
-                (int) mainPlayer.getTileX(), // Không quan trọng vì không thay đổi tile
-                (int) mainPlayer.getTileY(),
-                null, // Không thay đổi tile
-                framesRemaining,
-                false, // Không tiêu thụ item (đã xử lý trong eatCurrentItem)
-                -1
+                    (int) mainPlayer.getTileX(), // Không quan trọng vì không thay đổi tile
+                    (int) mainPlayer.getTileY(),
+                    null, // Không thay đổi tile
+                    framesRemaining,
+                    false, // Không tiêu thụ item (đã xử lý trong eatCurrentItem)
+                    -1
             );
             eatAction.setActionState(PlayerView.PlayerState.BUSY);
-            
+
             // Thêm action vào hàng đợi
             actionManager.addPendingAction(eatAction);
-            
+
             // Set PlayerView state to BUSY
             playerView.setState(PlayerView.PlayerState.BUSY, mainPlayer.getDirection());
-            
+
             // Cập nhật hotbar để hiển thị item đã giảm số lượng
             mainGameView.updateHotbar();
-            
+
             // Hiển thị thông báo
             double playerScreenX = playerView.getSpriteContainer().getLayoutX();
             double playerScreenY = playerView.getSpriteContainer().getLayoutY() + PlayerSpriteConfig.PLAYER_SPRITE_OFFSET_Y;
@@ -552,33 +553,33 @@ public class GameManager {
             if (mainGameView != null && mainGameView.getShopView() != null && mainGameView.getShopView().isShopVisible()) {
                 mainGameView.getShopView().toggle();
             }
-            
+
             if (gameLoop != null) {
                 gameLoop.stop(); // ⬅️ Dừng game loop
                 //System.out.println("Game Loop đã dừng.");
             }
-            
+
             // Tạm dừng nhạc nền khi pause
             if (audioManager != null) {
                 audioManager.pauseMusic();
             }
-            
+
             mainGameView.showSettingsMenu(mainPlayer.getName(), mainPlayer.getLevel());
         } else {
             if (gameLoop != null) {
                 gameLoop.start(); // ⬅️ Tiếp tục game loop
                 //System.out.println("Game Loop đã tiếp tục.");
             }
-            
+
             // Tiếp tục phát nhạc nền khi resume
             if (audioManager != null) {
                 audioManager.resumeMusic();
             }
-            
+
             mainGameView.hideSettingsMenu();
         }
     }
-    
+
     /**
      * [MỚI] Toggle thời tiết (dùng cho test)
      */
@@ -591,21 +592,21 @@ public class GameManager {
             }
         }
     }
-    
+
     /**
      * [MỚI] Getter cho ShopManager
      */
     public ShopManager getShopManager() {
         return shopManager;
     }
-    
+
     /**
      * [MỚI] Getter cho WeatherManager
      */
     public WeatherManager getWeatherManager() {
         return weatherManager;
     }
-    
+
     /**
      * Tính slot index từ tọa độ chuột (trong scene coordinates)
      */
@@ -613,15 +614,15 @@ public class GameManager {
         if (mainGameView == null || mainGameView.getHotbarView() == null) {
             return -1;
         }
-        
+
         // Chuyển tọa độ scene sang tọa độ local của HotbarView
         javafx.geometry.Point2D scenePoint = new javafx.geometry.Point2D(mouseX, mouseY);
         javafx.geometry.Point2D localPoint = mainGameView.getHotbarView().sceneToLocal(scenePoint);
-        
+
         // Gọi hàm trong HotbarView để tính slot index
         return mainGameView.getHotbarView().getSlotIndexFromMouse(localPoint.getX(), localPoint.getY());
     }
-    
+
     /**
      * Ném item từ hotbar slot chỉ định xuống dưới chân player
      * @param slotIndex Slot index cần ném item
@@ -632,56 +633,56 @@ public class GameManager {
         if (currentState != PlayerView.PlayerState.IDLE && currentState != PlayerView.PlayerState.WALK) {
             return; // Player đang bận, không cho ném item
         }
-        
+
         // Kiểm tra slot index hợp lệ
         if (slotIndex < 0 || slotIndex >= mainPlayer.getHotbarItems().length) {
             return;
         }
-        
+
         // Lấy item từ slot chỉ định
         ItemStack stackToDrop = mainPlayer.getHotbarItems()[slotIndex];
         if (stackToDrop == null) {
             return; // Không có item để ném
         }
-        
+
         // Tính toán vị trí player (vị trí để ném item)
         // Item ném ra từ vị trí player (tileX, tileY), giống như thịt rơi từ động vật
         // Vị trí player là góc trên-trái của sprite, item ném từ đó
         double playerX = mainPlayer.getTileX() + (PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE) / 2.0; // Tâm ngang
         double playerY = mainPlayer.getTileY() + (PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE) - ItemSpriteConfig.ITEM_SPRITE_HEIGHT / 2.0; // Gần chân player
-        
+
         // Ném item xuống dưới chân player (không theo hướng chuột)
         // Vị trí đích: ngay dưới chân player, với scatter ngẫu nhiên nhỏ
         double targetX = playerX;
         double targetY = playerY + WorldConfig.TILE_SIZE * 0.3; // Ném xuống dưới một chút
-        
+
         // Tính tile và offset
         int targetTileCol = (int) Math.floor(targetX / WorldConfig.TILE_SIZE);
         int targetTileRow = (int) Math.floor(targetY / WorldConfig.TILE_SIZE);
-        
+
         // Tính offset trong tile (để item không dính ở giữa ô)
         double offsetX = targetX - (targetTileCol * WorldConfig.TILE_SIZE);
         double offsetY = targetY - (targetTileRow * WorldConfig.TILE_SIZE);
-        
+
         // Trừ đi một nửa kích thước item để item nằm giữa điểm đó
         offsetX -= ItemSpriteConfig.ITEM_SPRITE_WIDTH / 2.0;
         offsetY -= ItemSpriteConfig.ITEM_SPRITE_HEIGHT / 2.0;
-        
+
         // Thêm scatter ngẫu nhiên nhỏ để item không bị dính chặt
         double scatter = GameLogicConfig.ITEM_DROP_SCATTER_RANGE * 0.5; // Scatter nhỏ hơn một chút
         offsetX += (Math.random() - 0.5) * scatter;
         offsetY += (Math.random() - 0.5) * scatter;
-        
+
         // Lấy item type và số lượng
         ItemType itemType = stackToDrop.getItemType();
         int amount = stackToDrop.getQuantity();
-        
+
         // Tìm ô trống xung quanh để đặt item (giống như thịt)
         int searchRadius = GameLogicConfig.ITEM_DROP_SEARCH_RADIUS;
         int finalCol = -1;
         int finalRow = -1;
         boolean foundSpot = false;
-        
+
         // 1. Kiểm tra ô lý tưởng trước
         TileData idealTile = worldMap.getTileData(targetTileCol, targetTileRow);
         if (idealTile.getGroundItem() == null) {
@@ -698,7 +699,7 @@ public class GameManager {
             for (int r = targetTileRow - searchRadius; r <= targetTileRow + searchRadius; r++) {
                 for (int c = targetTileCol - searchRadius; c <= targetTileCol + searchRadius; c++) {
                     if (r == targetTileRow && c == targetTileCol) continue; // Đã check rồi
-                    
+
                     TileData checkTile = worldMap.getTileData(c, r);
                     if (checkTile.getGroundItem() == null) {
                         finalCol = c;
@@ -710,19 +711,19 @@ public class GameManager {
                 if (foundSpot) break;
             }
         }
-        
+
         // Nếu vẫn không tìm thấy chỗ -> Bắt buộc phải đè lên ô lý tưởng
         if (!foundSpot) {
             finalCol = targetTileCol;
             finalRow = targetTileRow;
         }
-        
+
         // Đặt item vào ô đã chọn
         TileData finalTile = worldMap.getTileData(finalCol, finalRow);
-        
+
         // Lấy độ bền hiện tại của item (nếu có)
         int itemDurability = stackToDrop.getCurrentDurability();
-        
+
         // Nếu cộng dồn
         if (finalTile.getGroundItem() == itemType) {
             finalTile.setGroundItemAmount(finalTile.getGroundItemAmount() + amount);
@@ -737,7 +738,7 @@ public class GameManager {
             finalTile.setGroundItemAmount(amount);
             // Lưu độ bền của item (0 nếu không có độ bền hoặc không áp dụng)
             finalTile.setGroundItemDurability(itemType.hasDurability() ? itemDurability : 0);
-            
+
             // Nếu đặt đúng ô lý tưởng -> Dùng offset đã tính
             if (finalCol == targetTileCol && finalRow == targetTileRow) {
                 finalTile.setGroundItemOffsetX(offsetX);
@@ -751,23 +752,23 @@ public class GameManager {
                 finalTile.setGroundItemOffsetY(finalTile.getGroundItemOffsetY() + jitterY);
             }
         }
-        
+
         worldMap.setTileData(finalCol, finalRow, finalTile);
         actionManager.setMapNeedsUpdate(true);
-        
+
         // Xóa item khỏi hotbar slot chỉ định
         mainPlayer.getHotbarItems()[slotIndex] = null;
-        
+
         // Cập nhật hotbar view
         mainGameView.updateHotbar();
     }
-    
+
     /**
      * Trigger Game Over sequence with delay before showing UI
      */
     private void triggerGameOverSequence() {
         javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
-            javafx.util.Duration.seconds(GameLogicConfig.GAME_OVER_DELAY_SECONDS)
+                javafx.util.Duration.seconds(GameLogicConfig.GAME_OVER_DELAY_SECONDS)
         );
         pause.setOnFinished(e -> {
             if (mainGameView != null) {
@@ -776,7 +777,7 @@ public class GameManager {
         });
         pause.play();
     }
-    
+
     /**
      * Restart the game - reset player and hide Game Over UI
      */
@@ -785,7 +786,7 @@ public class GameManager {
         if (mainGameView != null) {
             mainGameView.hideGameOverUI();
         }
-        
+
         // Reset Player: Full Stamina, State IDLE, Position (0,0)
         mainPlayer.setCurrentStamina(mainPlayer.getMaxStamina());
         mainPlayer.setState(PlayerView.PlayerState.IDLE);
@@ -793,23 +794,23 @@ public class GameManager {
         mainPlayer.setTileY(GameLogicConfig.PLAYER_START_Y);
         mainPlayer.setTimeOfDeath(0); // Reset time of death
         mainPlayer.setDirection(PlayerView.Direction.DOWN); // Reset direction
-        
+
         // Reset Game Over sequence flag
         isGameOverSequenceTriggered = false;
-        
+
         // Reset player view state
         if (playerView != null) {
             playerView.setState(PlayerView.PlayerState.IDLE, PlayerView.Direction.DOWN);
         }
-        
+
         // Update camera position
         camera.initializePosition(mainPlayer, playerView);
-        
+
         // Update map
         if (mainGameView != null) {
             mainGameView.updateMap(camera.getWorldOffsetX(), camera.getWorldOffsetY(), true);
         }
-        
+
         // Resume game if paused
         isPaused = false;
     }
