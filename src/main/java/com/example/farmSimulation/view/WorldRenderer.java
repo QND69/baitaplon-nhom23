@@ -398,32 +398,41 @@ public class WorldRenderer {
             }
 
             // [SỬA] Tính toán frameIndex dựa trên thời gian và cấu hình
-            int frameCount = 1;
-            int animationSpeedMs = 150; // Tốc độ mặc định
+            int frameIndex = 0;
 
+            // Xử lý đặc biệt cho TRỨNG: Không animate theo thời gian, mà dùng variant cố định
             if (animal.getType() == com.example.farmSimulation.model.AnimalType.EGG_ENTITY) {
-                frameCount = AnimalConfig.EGG_FRAME_COUNT;
-                animationSpeedMs = 500; // Trứng nhấp nháy chậm
-            } else if (animal.getType() == com.example.farmSimulation.model.AnimalType.CHICKEN) {
-                if (animal.getCurrentAction() == Animal.Action.WALK) {
-                    frameCount = AnimalConfig.CHICKEN_WALK_FRAMES;
-                    animationSpeedMs = 100; // Gà đi nhanh
-                } else {
-                    frameCount = AnimalConfig.CHICKEN_IDLE_FRAMES;
-                    animationSpeedMs = 150;
-                }
-            } else { // Các động vật chuẩn (Bò, Cừu, Lợn)
-                if (animal.getCurrentAction() == Animal.Action.WALK) {
-                    frameCount = AnimalConfig.STANDARD_WALK_FRAMES;
-                    animationSpeedMs = 120;
-                } else {
-                    frameCount = AnimalConfig.STANDARD_IDLE_FRAMES;
-                    animationSpeedMs = 200;
-                }
+                // [SỬA] Trứng nằm ở cột 4 và 5 trong hàng (tính theo index 0-based)
+                // Cần cộng thêm Offset để trỏ đúng frame
+                frameIndex = AnimalConfig.EGG_FRAME_START_INDEX + animal.getVariant();
             }
+            // Xử lý cho các động vật khác: Animate theo thời gian
+            else {
+                int frameCount = 1;
+                int animationSpeedMs = 200; // Default fallback
 
-            // Tính frame index: (time / speed) % totalFrames
-            int frameIndex = (int) ((now / animationSpeedMs) % frameCount);
+                if (animal.getType() == com.example.farmSimulation.model.AnimalType.CHICKEN) {
+                    if (animal.getCurrentAction() == Animal.Action.WALK) {
+                        frameCount = AnimalConfig.CHICKEN_WALK_FRAMES;
+                        animationSpeedMs = AnimalConfig.ANIM_SPEED_CHICKEN_WALK; // Dùng config mới
+                    } else {
+                        frameCount = AnimalConfig.CHICKEN_IDLE_FRAMES;
+                        animationSpeedMs = AnimalConfig.ANIM_SPEED_CHICKEN_IDLE; // Dùng config mới
+                    }
+                } else { // Các động vật chuẩn (Bò, Cừu, Lợn, GÀ CON)
+                    // Gà con (Baby Chicken) dùng layout chuẩn: Walk 6 frames, Idle 4 frames
+                    if (animal.getCurrentAction() == Animal.Action.WALK) {
+                        frameCount = AnimalConfig.STANDARD_WALK_FRAMES;
+                        animationSpeedMs = AnimalConfig.ANIM_SPEED_STANDARD_WALK; // Dùng config mới
+                    } else {
+                        frameCount = AnimalConfig.STANDARD_IDLE_FRAMES;
+                        animationSpeedMs = AnimalConfig.ANIM_SPEED_STANDARD_IDLE; // Dùng config mới
+                    }
+                }
+
+                // Tính frame index: (time / speed) % totalFrames
+                frameIndex = (int) ((now / animationSpeedMs) % frameCount);
+            }
 
             Image animalTexture = assetManager.getAnimalTexture(animal.getType(), animal.getDirection(), animal.getCurrentAction(), frameIndex);
             animalView.setImage(animalTexture);

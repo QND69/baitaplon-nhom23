@@ -101,8 +101,8 @@ public enum AnimalType {
             AnimalConfig.SCALE_BABY_SHEEP), // [SCALE] 0.5
 
     BABY_CHICKEN("Baby Chicken",
-            AssetPaths.CHICKEN_SHEET, // [DÙNG CHUNG] sheet với gà lớn (theo yêu cầu 1 ảnh)
-            AnimalConfig.SPRITE_SIZE_CHICKEN, // [DÙNG KÍCH THƯỚC GỐC] 48
+            AssetPaths.BABY_CHICKEN_EGG_SHEET, // [SỬA] Dùng sheet riêng cho Gà con (chung với trứng)
+            AnimalConfig.SPRITE_SIZE_BABY_CHICKEN_EGG, // [SỬA] Size 32x32
             AnimalConfig.BABY_CHICKEN_HITBOX_WIDTH,
             AnimalConfig.BABY_CHICKEN_HITBOX_HEIGHT,
             AnimalConfig.BASE_MOVEMENT_SPEED * 0.7, // Di chuyển chậm hơn
@@ -111,11 +111,11 @@ public enum AnimalType {
             null, // Gà con chưa đẻ trứng
             AnimalConfig.BASE_PRODUCTION_TIME_MS,
             AnimalConfig.BABY_CHICKEN_GROWTH_TIME_MS, // Thời gian trưởng thành
-            AnimalConfig.SCALE_BABY_CHICKEN), // [SCALE] 0.5
+            AnimalConfig.SCALE_BABY_CHICKEN), // [SỬA] Scale 1.0 (vì ảnh gốc 32px nhỏ sẵn)
 
     EGG_ENTITY("Egg",
             AssetPaths.BABY_CHICKEN_EGG_SHEET, // Trứng vẫn dùng sheet riêng 32x32
-            AnimalConfig.SPRITE_SIZE_EGG, // 32
+            AnimalConfig.SPRITE_SIZE_BABY_CHICKEN_EGG, // [SỬA] Size 32x32 (dùng chung hằng số)
             AnimalConfig.BABY_CHICKEN_HITBOX_WIDTH,
             AnimalConfig.BABY_CHICKEN_HITBOX_HEIGHT,
             0.0, // Trứng không di chuyển

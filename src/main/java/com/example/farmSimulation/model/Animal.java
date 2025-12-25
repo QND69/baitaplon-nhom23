@@ -54,11 +54,14 @@ public class Animal {
     private long productionTimer; // Thời gian đếm ngược để ra sản phẩm (nanoTime)
     private boolean hasProduct; // Cờ đánh dấu có sản phẩm sẵn sàng thu hoạch
 
-    // --- Sinh trưởng ---
+    // --- Sinh trưởng & Logic ---
     private long spawnTime; // Thời điểm spawn (nanoTime) - để tính tuổi và trưởng thành
     private long lastDirectionChangeTime; // Thời điểm đổi hướng lần cuối (nanoTime)
     private long lastHungerUpdateTime; // Thời điểm cập nhật đói lần cuối (nanoTime)
     private long starvationStartTime; // Thời điểm bắt đầu đói (nanoTime) - để tính thời gian chết đói
+
+    // [MỚI] Thời điểm kết thúc hành động hiện tại (để khóa trạng thái)
+    private long actionEndTime;
 
     /**
      * Constructor để tạo một con vật mới
@@ -86,6 +89,7 @@ public class Animal {
         this.lastDirectionChangeTime = System.nanoTime();
         this.lastHungerUpdateTime = System.nanoTime();
         this.starvationStartTime = 0; // Chưa đói
+        this.actionEndTime = 0; // Sẵn sàng hành động ngay
 
         // Random trạng thái cho trứng (0 hoặc 1)
         if (type == AnimalType.EGG_ENTITY) {

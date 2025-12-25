@@ -13,15 +13,39 @@ public class AnimalConfig {
     /** Khoảng cách tối đa động vật có thể di chuyển từ vị trí spawn (tiles) */
     public static final double MAX_WANDER_DISTANCE = 10.0;
 
-    /** * Xác suất động vật di chuyển mỗi frame (0.0 - 1.0) 
-     * [SỬA] Tăng lên 0.6 (60%) để động vật di chuyển rất thường xuyên.
-     */
-    public static final double MOVEMENT_CHANCE = 0.6;
+    // --- [SỬA] Cấu hình State Timer (Phân tách Gà và Thú thường) ---
 
-    /** * Thời gian giữa các lần đổi hướng (ms)
-     * [SỬA] Giảm xuống 1000ms để động vật đổi hướng nhanh hơn nếu bị kẹt.
-     */
-    public static final long DIRECTION_CHANGE_INTERVAL_MS = 1000;
+    // 1. Cấu hình cho GÀ (Chicken) - Giữ nguyên như cũ vì bạn thấy hợp lý
+    /** Thời gian tối thiểu gà đứng yên (ms) */
+    public static final int CHICKEN_MIN_IDLE_TIME_MS = 2000;
+
+    /** Thời gian tối đa gà đứng yên (ms) */
+    public static final int CHICKEN_MAX_IDLE_TIME_MS = 5000;
+
+    /** Thời gian tối thiểu gà đi bộ (ms) */
+    public static final int CHICKEN_MIN_WALK_TIME_MS = 1000;
+
+    /** Thời gian tối đa gà đi bộ (ms) */
+    public static final int CHICKEN_MAX_WALK_TIME_MS = 3000;
+
+    /** Tỷ lệ gà chọn hành động đi bộ (0.3 = 30% đi, 70% đứng) */
+    public static final double CHICKEN_WALK_CHANCE = 0.3;
+
+    // 2. Cấu hình cho THÚ THƯỜNG (Cow, Pig, Sheep) - Tăng hoạt động lên
+    /** Thời gian tối thiểu thú thường đứng yên (ms) - Giảm xuống để ít đứng hơn */
+    public static final int STANDARD_MIN_IDLE_TIME_MS = 1000;
+
+    /** Thời gian tối đa thú thường đứng yên (ms) */
+    public static final int STANDARD_MAX_IDLE_TIME_MS = 3000;
+
+    /** Thời gian tối thiểu thú thường đi bộ (ms) - Đi lâu hơn chút */
+    public static final int STANDARD_MIN_WALK_TIME_MS = 1500;
+
+    /** Thời gian tối đa thú thường đi bộ (ms) */
+    public static final int STANDARD_MAX_WALK_TIME_MS = 4000;
+
+    /** Tỷ lệ thú thường chọn hành động đi bộ (0.6 = 60% đi, 40% đứng) - Tăng gấp đôi so với gà */
+    public static final double STANDARD_WALK_CHANCE = 0.6;
 
     // --- Cấu hình Đói & Sinh tồn ---
 
@@ -70,6 +94,9 @@ public class AnimalConfig {
     /** Kích thước sprite Gà (Chicken) - từ file PNG 48x48 */
     public static final double SPRITE_SIZE_CHICKEN = 48.0;
 
+    /** [MỚI] Kích thước sprite Gà con và Trứng - từ file PNG 32x32 */
+    public static final double SPRITE_SIZE_BABY_CHICKEN_EGG = 32.0;
+
     /** Kích thước sprite Bò (Cow) - từ file PNG 96x96 */
     public static final double SPRITE_SIZE_COW = 96.0;
 
@@ -98,7 +125,9 @@ public class AnimalConfig {
     public static final double SCALE_BABY_COW = 0.5; // 96 -> 48
     public static final double SCALE_BABY_PIG = 0.5; // 96 -> 48
     public static final double SCALE_BABY_SHEEP = 0.5; // 64 -> 32
-    public static final double SCALE_BABY_CHICKEN = 0.5; // 48 -> 24
+
+    // [SỬA] Gà con dùng sheet 32x32, scale 1.0 sẽ ra 32px (nhỏ hơn gà lớn 48px)
+    public static final double SCALE_BABY_CHICKEN = 1.0;
 
     // --- Cấu hình Hitbox ---
 
@@ -155,7 +184,8 @@ public class AnimalConfig {
     public static final int CHICKEN_ROW_WALK_RIGHT = 3;
 
 
-    // 2. Cấu hình STANDARD ANIMALS (Cow, Pig, Sheep, Baby Animals)
+    // 2. Cấu hình STANDARD ANIMALS (Cow, Pig, Sheep, Baby Animals & BABY CHICKEN)
+    // [LƯU Ý] Baby Chicken 32x32 cũng tuân theo layout này:
     // Hàng 0-3: WALK (Down, Up, Left, Right) - 6 frames
     // Hàng 4-7: IDLE (Down, Up, Left, Right) - 4 frames
 
@@ -187,6 +217,21 @@ public class AnimalConfig {
 
     /** Cột bắt đầu của trứng (Cột 4 và 5) */
     public static final int EGG_FRAME_START_INDEX = 4;
+
+    // --- [MỚI] Cấu hình tốc độ Animation (ms per frame) ---
+    // Số càng lớn thì animation càng chậm
+
+    /** Tốc độ animation đi bộ của Gà (ms/frame) */
+    public static final int ANIM_SPEED_CHICKEN_WALK = 200; // Tăng lên để đi chậm lại
+
+    /** Tốc độ animation đứng yên của Gà (ms/frame) */
+    public static final int ANIM_SPEED_CHICKEN_IDLE = 300; // Tăng lên để mổ/nhìn chậm lại
+
+    /** Tốc độ animation đi bộ của thú thường (Bò, Lợn, Cừu) (ms/frame) */
+    public static final int ANIM_SPEED_STANDARD_WALK = 250; // Tăng lên
+
+    /** Tốc độ animation đứng yên của thú thường (ms/frame) */
+    public static final int ANIM_SPEED_STANDARD_IDLE = 500; // Tăng lên để chớp mắt/đuôi chậm thôi
 
     private AnimalConfig() {}
 }
