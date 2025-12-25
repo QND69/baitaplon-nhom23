@@ -180,6 +180,18 @@ public class ImageManager {
                 (int)(HudConfig.GUI_ICON_QUEST_COL * iconSize), (int)(row * iconSize),
                 (int)iconSize, (int)iconSize);
         guiIconCache.put("QUEST", questIcon);
+
+        // [MỚI] Cắt Stamina icon (Cột 5)
+        WritableImage staminaIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_STAMINA_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("STAMINA", staminaIcon);
+
+        // [MỚI] Cắt EXP icon (Cột 10)
+        WritableImage expIcon = new WritableImage(reader,
+                (int)(HudConfig.GUI_ICON_EXP_COL * iconSize), (int)(row * iconSize),
+                (int)iconSize, (int)iconSize);
+        guiIconCache.put("EXP", expIcon);
     }
 
     /**
