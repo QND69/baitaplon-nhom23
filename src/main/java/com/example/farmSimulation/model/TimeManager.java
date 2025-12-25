@@ -7,12 +7,14 @@ public class TimeManager {
 
     // --- Các trường (fields) để lưu cấu hình ---
     private double gameTimeSeconds; // Thời gian game hiện tại
-    private final double SECONDS_PER_FRAME;
     private final double DAY_CYCLE_DURATION_SECONDS;
     private final double MIN_LIGHT_INTENSITY;
     private double currentLightIntensity; // Cường độ ánh sáng hiện tại (0.0 - 1.0)
     private int currentDay; // Ngày hiện tại (bắt đầu từ 1)
     private int lastCheckedDay; // Ngày đã kiểm tra lần cuối (để tránh trigger nhiều lần)
+
+    // [MỚI] Biến để tính deltaTime tự động
+    private long lastUpdateTimeNanos = 0;
 
     private final MainGameView mainGameView;
 
@@ -25,7 +27,7 @@ public class TimeManager {
 
         // Tự gán giá trị từ file config
         this.gameTimeSeconds = GameLogicConfig.PLAYER_START_TIME_SECONDS;
-        this.SECONDS_PER_FRAME = GameLogicConfig.SECONDS_PER_FRAME;
+        // [SỬA] Đã xóa SECONDS_PER_FRAME vì không dùng nữa
         this.DAY_CYCLE_DURATION_SECONDS = GameLogicConfig.DAY_CYCLE_DURATION_SECONDS;
         this.MIN_LIGHT_INTENSITY = GameLogicConfig.MIN_LIGHT_INTENSITY;
         this.currentLightIntensity = 1.0; // Khởi tạo ban đầu (sáng)
@@ -35,7 +37,21 @@ public class TimeManager {
 
     // Hàm update chính cho thời gian
     public void update() {
-        updateGameTime();
+        // [MỚI] Tự tính toán deltaTime để độc lập hoàn toàn với FPS
+        long currentNanos = System.nanoTime();
+        if (lastUpdateTimeNanos == 0) {
+            lastUpdateTimeNanos = currentNanos;
+            return; // Frame đầu tiên, chưa có delta
+        }
+
+        // Tính thời gian trôi qua thực tế (giây)
+        double deltaTime = (currentNanos - lastUpdateTimeNanos) / 1_000_000_000.0;
+        lastUpdateTimeNanos = currentNanos;
+
+        // Cap deltaTime để tránh lỗi logic khi lag quá nặng (VD: dừng tại breakpoint)
+        if (deltaTime > 0.1) deltaTime = 0.1;
+
+        updateGameTime(deltaTime);
         updateDayCycle();
     }
 
@@ -71,18 +87,23 @@ public class TimeManager {
     }
 
     // Phương thức mới để cập nhật thời gian
-    private void updateGameTime() {
-        // [SỬA] Đọc từ trường (field) của class
-        this.gameTimeSeconds += this.SECONDS_PER_FRAME;
+    // [SỬA] Nhận deltaTime để tính toán chính xác
+    private void updateGameTime(double deltaTime) {
+        // [SỬA] Cộng thời gian dựa trên deltaTime thực tế và hệ số nhân tốc độ (Config)
+        // Code cũ dùng hằng số cố định gây phụ thuộc FPS
+        this.gameTimeSeconds += deltaTime * GameLogicConfig.GAME_TIME_SPEED_MULTIPLIER;
 
         // Update current day based on elapsed time
         updateCurrentDay();
 
         // Định dạng thời gian thành chuỗi HH:MM (thời gian trong ngày hiện tại) - định dạng 12 giờ
         double timeInCurrentDay = this.gameTimeSeconds % this.DAY_CYCLE_DURATION_SECONDS;
-        int totalSeconds = (int) Math.round(timeInCurrentDay);
-        int hours24 = totalSeconds / 3600; // Giờ theo format 24h (0-23)
-        int minutes = (totalSeconds % 3600) / 60;
+        // Map thời gian game sang thời gian hiển thị (24h)
+        // Tỷ lệ: timeInCurrentDay / Duration = realHour / 24h
+        double gameHours = (timeInCurrentDay / this.DAY_CYCLE_DURATION_SECONDS) * 24.0;
+
+        int hours24 = (int) gameHours;
+        int minutes = (int) ((gameHours - hours24) * 60);
 
         // Chuyển đổi từ 24 giờ sang 12 giờ (đơn giản, không có AM/PM)
         int hours12 = hours24 % 12;

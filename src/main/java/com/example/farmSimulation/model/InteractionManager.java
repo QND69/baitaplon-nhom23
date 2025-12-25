@@ -86,8 +86,12 @@ public class InteractionManager {
         return false; // Inventory đầy
     }
 
+    // [SỬA LỖI] Thay thế logic cũ phụ thuộc vào SECONDS_PER_FRAME
     private int getDelayInFrames(long durationMs) {
-        int delay = (int) (durationMs / (GameLogicConfig.SECONDS_PER_FRAME * 1000));
+        // Tính toán số frame dựa trên chuẩn 60 FPS (1 giây = 60 frames)
+        // Công thức: (Số giây) * 60
+        int delay = (int) ((durationMs / 1000.0) * 60);
+
         // CRITICAL: Enforce minimum 10 frames for tree chopping and other timed actions to prevent instant execution
         // This prevents glitches when deltaTime spikes or game pauses/resumes
         return Math.max(10, delay); // Đảm bảo ít nhất 10 frames để tránh bug tree biến mất ngay

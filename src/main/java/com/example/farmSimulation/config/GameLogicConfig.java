@@ -6,9 +6,14 @@ public class GameLogicConfig {
     // --- Cấu hình Game Time & Day Cycle ---
     // Thời gian bắt đầu game: 12:00 PM (Noon) - đỉnh điểm sáng nhất trong ngày
     // Công thức: DAY_CYCLE_DURATION_SECONDS / 2 để game bắt đầu ở giữa chu kỳ ngày (sáng nhất)
-    public static final double DAY_CYCLE_DURATION_SECONDS = 1440.0; // 24 phút
+    // [SỬA CHO DEMO] Giảm xuống 600s (10 phút) để một ngày trôi qua nhanh hơn khi thuyết trình
+    public static final double DAY_CYCLE_DURATION_SECONDS = 600.0;
     public static final double PLAYER_START_TIME_SECONDS = DAY_CYCLE_DURATION_SECONDS / 2; // 12:00 PM (Noon)
-    public static final double SECONDS_PER_FRAME = 1.0 / 60.0;
+
+    // [SỬA] Xóa SECONDS_PER_FRAME cố định, thay bằng hệ số tốc độ thời gian
+    // Tăng số này lên > 1.0 nếu muốn thời gian trôi nhanh hơn nữa (VD: 2.0 là nhanh gấp đôi)
+    public static final double GAME_TIME_SPEED_MULTIPLIER = 1.0;
+
     public static final double MIN_LIGHT_INTENSITY = 0.1; // Độ sáng tối thiểu (10%)
     public static final double MAX_DARKNESS_OPACITY = 0.8; // Độ tối tối đa (80%)
 
