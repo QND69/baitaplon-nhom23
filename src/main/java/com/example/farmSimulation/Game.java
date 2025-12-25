@@ -25,11 +25,11 @@ public class Game {
 
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
-        
+
         // Tải tài nguyên (Assets)
         assetManager = new ImageManager();
         assetManager.loadAssets();
-        
+
         // Set application icon (moved here to show icon during Character Creation screen)
         primaryStage.getIcons().add(assetManager.getTexture(AssetPaths.LOGO));
 
@@ -39,28 +39,35 @@ public class Game {
 
         // Tạo và hiển thị Character Creation Screen
         CharacterCreationView characterCreationView = new CharacterCreationView();
-        
-        // Set callback khi người chơi click "Start Game"
+
+        // Set callback khi người chơi click "Start New Game"
         characterCreationView.setOnStartGame((name, gender) -> {
             // Cập nhật Player với thông tin từ Character Creation
             player.setName(name);
             player.setGender(gender);
-            
-            // Khởi tạo game và chuyển sang MainGameView
-            initializeAndStartGame();
+
+            // Khởi tạo game và chuyển sang MainGameView (chế độ New Game)
+            initializeAndStartGame(false);
         });
-        
+
+        // [MỚI] Set callback khi người chơi click "Load Game"
+        characterCreationView.setOnLoadGame(() -> {
+            // Khởi tạo game và chuyển sang MainGameView (chế độ Load Game)
+            initializeAndStartGame(true);
+        });
+
         // Hiển thị Character Creation Scene
         Scene characterCreationScene = characterCreationView.createScene();
         primaryStage.setTitle("Farm Simulation - Character Creation");
         primaryStage.setScene(characterCreationScene);
         primaryStage.show();
     }
-    
+
     /**
      * Khởi tạo và bắt đầu game sau khi character creation hoàn tất
+     * @param loadFromSave Nếu true, sẽ tải dữ liệu từ file save thay vì dùng mặc định
      */
-    private void initializeAndStartGame() {
+    private void initializeAndStartGame(boolean loadFromSave) {
         // Khởi tạo View (Hình ảnh)
         // PlayerView được tạo và nhận Image từ AssetManager
         PlayerView playerView = new PlayerView(
@@ -96,7 +103,7 @@ public class Game {
         hotbarView.setOnSwapListener((indexA, indexB) -> {
             gameManager.swapHotbarItems(indexA, indexB);
         });
-        
+
         // Liên kết callback cho item drop (including trash can deletion)
         // Note: This needs to be set after mainGameView.setGameManager() is called
         // We'll set it in a separate call after setGameManager
@@ -113,13 +120,20 @@ public class Game {
                 playerView.getDebugCollisionHitbox()
         );
 
+        // Liên kết GameManager vào View
+        mainGameView.setGameManager(gameManager);
+
+        // [MỚI] Nếu là Load Game, thực hiện load dữ liệu TRƯỚC khi start game loop
+        if (loadFromSave) {
+            gameManager.loadGameData();
+        }
+
         // Bắt đầu Game Loop
         gameManager.startGame();
-        mainGameView.setGameManager(gameManager);
-        
+
         // Bắt đầu phát nhạc nền
         gameManager.getAudioManager().playMusic(AssetPaths.BACKGROUND_MUSIC);
-        
+
         // Cập nhật title
         primaryStage.setTitle("Farm Simulation");
     }

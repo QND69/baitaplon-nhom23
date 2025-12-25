@@ -54,14 +54,14 @@ public class TimeManager {
 
         // [SỬA] Đọc từ trường (field) của class
         lightIntensity = this.MIN_LIGHT_INTENSITY + (1.0 - this.MIN_LIGHT_INTENSITY) * lightIntensity;
-        
+
         // Lưu light intensity hiện tại
         this.currentLightIntensity = lightIntensity;
 
         // Gửi cường độ ánh sáng tới View
         mainGameView.updateLighting(lightIntensity);
     }
-    
+
     /**
      * Lấy cường độ ánh sáng hiện tại (dùng để kiểm tra ban đêm)
      * @return Cường độ ánh sáng (0.0 - 1.0)
@@ -74,7 +74,7 @@ public class TimeManager {
     private void updateGameTime() {
         // [SỬA] Đọc từ trường (field) của class
         this.gameTimeSeconds += this.SECONDS_PER_FRAME;
-        
+
         // Update current day based on elapsed time
         updateCurrentDay();
 
@@ -83,19 +83,19 @@ public class TimeManager {
         int totalSeconds = (int) Math.round(timeInCurrentDay);
         int hours24 = totalSeconds / 3600; // Giờ theo format 24h (0-23)
         int minutes = (totalSeconds % 3600) / 60;
-        
+
         // Chuyển đổi từ 24 giờ sang 12 giờ (đơn giản, không có AM/PM)
         int hours12 = hours24 % 12;
         if (hours12 == 0) {
             hours12 = 12; // 0 giờ và 12 giờ đều hiển thị là 12
         }
-        
+
         String timeString = String.format("%d:%02d", hours12, minutes); // Định dạng 12 giờ: "12:10" hoặc "1:05"
 
         // Gửi day và time riêng biệt tới View
         mainGameView.updateTimer(this.currentDay, timeString);
     }
-    
+
     /**
      * Update current day number based on elapsed game time
      */
@@ -104,7 +104,7 @@ public class TimeManager {
         // +1 because day starts from 1
         this.currentDay = (int)(this.gameTimeSeconds / this.DAY_CYCLE_DURATION_SECONDS) + 1;
     }
-    
+
     /**
      * Get current day number
      * @return Current day (starts from 1)
@@ -112,7 +112,7 @@ public class TimeManager {
     public int getCurrentDay() {
         return currentDay;
     }
-    
+
     /**
      * Check if a new day has started since last check
      * @return true if new day started since last check, false otherwise
@@ -124,7 +124,7 @@ public class TimeManager {
         }
         return false; // Still same day
     }
-    
+
     /**
      * Get game time in seconds
      * @return Current game time in seconds
@@ -132,12 +132,21 @@ public class TimeManager {
     public double getGameTimeSeconds() {
         return gameTimeSeconds;
     }
-    
+
     /**
      * Check if it's night time
      * @return true if light intensity is low (night)
      */
     public boolean isNight() {
         return currentLightIntensity < 0.5; // Consider night when intensity < 50%
+    }
+
+    /**
+     * [MỚI] Set game time (dùng cho Load Game)
+     */
+    public void setGameTime(double seconds) {
+        this.gameTimeSeconds = seconds;
+        updateCurrentDay(); // Recalculate day
+        this.lastCheckedDay = this.currentDay; // Reset check to avoid re-triggering daily events immediately
     }
 }

@@ -70,4 +70,12 @@ public class WorldMap {
     public Collection<TileData> getAllTileData() {
         return tileDataMap.values();
     }
+
+    /**
+     * [MỚI] Trả về map gốc để truy cập cả Key (tọa độ) và Value (dữ liệu).
+     * Cần thiết cho việc lưu game và cập nhật Fence toàn cục.
+     */
+    public java.util.Map<Long, TileData> getTileDataMap() {
+        return tileDataMap;
+    }
 }

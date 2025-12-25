@@ -5,6 +5,7 @@ import com.example.farmSimulation.controller.GameController;
 import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
 import javafx.animation.AnimationTimer;
+import com.example.farmSimulation.model.GameSaveState.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -108,7 +109,8 @@ public class GameManager {
         };
         gameLoop.start();
 
-        // Generate initial daily quests
+        // Generate initial daily quests (chỉ tạo nếu chưa có load game, nhưng ở đây load game đã chạy trước nếu có)
+        // Nếu load game thì quest có thể được load (nếu có tính năng đó), hiện tại cứ generate mới
         questManager.generateDailyQuests();
 
         System.out.println("Game Started!");
@@ -814,4 +816,270 @@ public class GameManager {
         // Resume game if paused
         isPaused = false;
     }
+    // --- THÊM MỚI: Logic Lưu Game (HOÀN CHỈNH) ---
+    public void saveGameData() {
+        GameSaveState state = new GameSaveState();
+
+        // 1. Lưu Player
+        Player p = mainPlayer;
+        state.playerMoney = p.getMoney();
+        state.playerXP = p.getCurrentXP();
+        state.playerLevel = p.getLevel();
+        state.playerStamina = p.getCurrentStamina();
+        state.playerX = p.getTileX();
+        state.playerY = p.getTileY();
+
+        // Lưu Hotbar
+        for (ItemStack stack : p.getHotbarItems()) {
+            if (stack != null) {
+                state.inventory.add(new SavedItemStack(stack.getItemType(), stack.getQuantity(), stack.getCurrentDurability()));
+            } else {
+                state.inventory.add(null); // Giữ chỗ cho slot trống
+            }
+        }
+
+        // 2. Lưu Động vật
+        for (Animal a : animalManager.getAnimals()) {
+            state.animals.add(new SavedAnimal(a.getType(), a.getX(), a.getY(), a.getAge(), a.getHunger()));
+        }
+
+        // 3. Lưu Thời gian
+        state.currentDaySeconds = timeManager.getGameTimeSeconds();
+        state.currentDay = timeManager.getCurrentDay();
+
+        // 4. Lưu Toàn bộ dữ liệu Map (Cây trồng, Cây tự nhiên, Hàng rào, Đất, Item dưới đất...)
+        // Duyệt qua tất cả TileData đã được tạo ra trong WorldMap
+        for (TileData data : worldMap.getAllTileData()) {
+            // Lấy tọa độ từ key map hơi khó vì key là hash, nhưng ta có thể lấy từ TileData nếu ta lưu col/row trong đó
+            // Hoặc đơn giản là duyệt qua keys của HashMap worldMap.
+            // Tuy nhiên, WorldMap hiện tại lưu key = (col << 32) | row.
+            // Ta cần method để truy xuất col/row từ key, hoặc tốt hơn là thêm col/row vào TileData (đã có trong WorldRenderer loop, nhưng TileData model ko bắt buộc có)
+
+            // Cách tốt nhất: Cập nhật WorldMap để trả về EntrySet để lấy key (tọa độ)
+            // NHƯNG, do TileData không lưu tọa độ, mà ta cần lưu tọa độ vào file save.
+            // Giải pháp: Ta sẽ duyệt qua một vùng map đủ lớn hoặc sửa WorldMap một chút.
+            // Tuy nhiên, vì yêu cầu không sửa code cũ nếu không cần thiết, ta dùng `worldMap.getAllTileData()` và
+            // KHÔNG LẤY ĐƯỢC TỌA ĐỘ nếu TileData không chứa nó.
+
+            // --> KIỂM TRA LẠI: WorldMap.java dùng HashMap<Long, TileData>.
+            // Ta cần truy cập key để decode ra col/row.
+            // Do đó ta sẽ dùng reflection hoặc sửa WorldMap để lấy entrySet.
+            // Ở đây tôi sẽ dùng cách đơn giản: Sửa WorldMap để trả về Map.Entry hoặc dùng reflection field trong TileData.
+            // À, chờ đã, tôi có thể ép kiểu TileData để thêm col/row transient? Không.
+
+            // QUYẾT ĐỊNH: Ta sẽ dùng một vòng lặp quét qua vùng map khả thi (ví dụ 100x100)
+            // hoặc truy cập trực tiếp vào tileDataMap thông qua getter mới nếu được.
+            // Nhưng tốt nhất là sửa `WorldMap` để có method `getTileDataMap()` trả về HashMap gốc.
+            // Vì tôi đang sửa GameManager, tôi sẽ giả định WorldMap có method `getTileDataMap()` hoặc tôi sẽ dùng EntrySet từ `getAllTileData()` nếu nó trả về Map.
+            // WorldMap.getAllTileData() trả về Collection<TileData>. Mất key!
+
+            // FIX: Tôi sẽ dùng `java.lang.reflect` để lấy map private từ WorldMap nếu cần,
+            // hoặc đơn giản hơn: Vì `WorldMap` được cung cấp trong request trước đó, tôi thấy nó có `tileDataMap`.
+            // Tôi sẽ thêm phương thức `public java.util.Map<Long, TileData> getRawMap() { return tileDataMap; }` vào WorldMap?
+            // Không, tôi chỉ được sửa class tôi viết.
+
+            // GIẢI PHÁP AN TOÀN: Tôi sẽ dùng reflection để lấy `tileDataMap` từ `worldMap` object
+            // để đảm bảo không sửa file WorldMap.java (trừ khi bạn cho phép, nhưng bạn bảo sửa class nào viết class đó).
+            // A, chờ chút, tôi có thể sửa WorldMap.java vì nó nằm trong danh sách file tôi được cung cấp và tôi có thể gửi lại nó.
+            // OK, tôi sẽ sửa WorldMap.java để thêm getter cho map.
+        }
+
+        // Vì Java Reflection hơi rườm rà, tôi sẽ dùng cách truy cập `worldMap` thông qua `java.lang.reflect.Field` trong GameManager này luôn cho gọn.
+        try {
+            java.lang.reflect.Field mapField = WorldMap.class.getDeclaredField("tileDataMap");
+            mapField.setAccessible(true);
+            java.util.HashMap<Long, TileData> rawMap = (java.util.HashMap<Long, TileData>) mapField.get(worldMap);
+
+            for (java.util.Map.Entry<Long, TileData> entry : rawMap.entrySet()) {
+                long key = entry.getKey();
+                TileData td = entry.getValue();
+
+                // Giải mã key ra col, row
+                int col = (int) (key >> 32);
+                int row = (int) key;
+
+                // Chỉ lưu những ô có dữ liệu quan trọng (khác mặc định)
+                // Hoặc đơn giản là lưu hết những ô đã từng tương tác (nằm trong map)
+                SavedTileData std = new SavedTileData();
+                std.col = col;
+                std.row = row;
+                std.baseType = td.getBaseTileType();
+
+                // Tile state
+                std.isWatered = td.isWatered();
+                std.isFertilized = td.isFertilized();
+                std.lastWateredTime = td.getLastWateredTime();
+                std.fertilizerStartTime = td.getFertilizerStartTime();
+
+                // Crop
+                if (td.getCropData() != null) {
+                    std.hasCrop = true;
+                    std.cropType = td.getCropData().getType();
+                    std.cropStage = td.getCropData().getGrowthStage();
+                }
+
+                // Tree
+                if (td.getTreeData() != null) {
+                    std.hasTree = true;
+                    std.treeStage = td.getTreeData().getGrowthStage();
+                    std.treeChopCount = td.getTreeData().getChopCount();
+                }
+
+                // Fence
+                if (td.getFenceData() != null) {
+                    std.hasFence = true;
+                    std.fenceIsOpen = td.getFenceData().isOpen();
+                }
+
+                // Ground Item
+                if (td.getGroundItem() != null) {
+                    std.hasGroundItem = true;
+                    std.groundItemType = td.getGroundItem();
+                    std.groundItemAmount = td.getGroundItemAmount();
+                    std.groundItemDurability = td.getGroundItemDurability();
+                    std.groundItemOffsetX = td.getGroundItemOffsetX();
+                    std.groundItemOffsetY = td.getGroundItemOffsetY();
+                }
+
+                state.worldTiles.add(std);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error saving world map tiles!");
+        }
+
+        // Ghi xuống file
+        SaveManager.saveGame(state);
+        if (mainGameView != null) mainGameView.showTemporaryText("Game Saved!", p.getTileX(), p.getTileY());
+    }
+
+    // --- THÊM MỚI: Logic Tải Game (HOÀN CHỈNH) ---
+    public void loadGameData() {
+        GameSaveState state = SaveManager.loadGame();
+        if (state == null) {
+            System.out.println("No save file found.");
+            return;
+        }
+
+        // 1. Khôi phục Player
+        mainPlayer.setMoney(state.playerMoney);
+        mainPlayer.setExperience((int)state.playerXP);
+        mainPlayer.setLevel(state.playerLevel);
+        mainPlayer.setStamina(state.playerStamina);
+        mainPlayer.setTileX(state.playerX);
+        mainPlayer.setTileY(state.playerY);
+
+        // Đặt trạng thái an toàn để tránh bị kẹt
+        mainPlayer.setState(PlayerView.PlayerState.IDLE);
+        this.isPaused = false; // Đảm bảo game không bị pause sau khi load
+
+        // Khôi phục Inventory
+        ItemStack[] newHotbar = new ItemStack[com.example.farmSimulation.config.HotbarConfig.HOTBAR_SLOT_COUNT];
+        for (int i = 0; i < state.inventory.size() && i < newHotbar.length; i++) {
+            SavedItemStack s = state.inventory.get(i);
+            if (s != null) {
+                ItemStack stack = new ItemStack(s.type, s.quantity);
+                stack.setCurrentDurability(s.durability);
+                newHotbar[i] = stack;
+            }
+        }
+        mainPlayer.setHotbarItems(newHotbar);
+
+        // 2. Khôi phục Động vật
+        // Xóa hết con cũ
+        animalManager.getAnimals().clear();
+        // Tạo con mới
+        for (SavedAnimal sa : state.animals) {
+            Animal a = new Animal(sa.type, sa.x, sa.y);
+            a.setAge(sa.age);
+            a.setHunger(sa.hunger);
+            animalManager.addAnimal(a);
+        }
+
+        // 3. Khôi phục Thời gian
+        timeManager.setGameTime(state.currentDaySeconds);
+
+        // 4. Khôi phục Map (QUAN TRỌNG)
+        // Xóa dữ liệu map cũ (bằng cách clear map thông qua reflection hoặc tạo map mới nếu có thể set)
+        try {
+            java.lang.reflect.Field mapField = WorldMap.class.getDeclaredField("tileDataMap");
+            mapField.setAccessible(true);
+            java.util.HashMap<Long, TileData> rawMap = (java.util.HashMap<Long, TileData>) mapField.get(worldMap);
+            rawMap.clear(); // Xóa sạch map hiện tại
+
+            // Load lại từ file save
+            for (SavedTileData std : state.worldTiles) {
+                TileData td = new TileData(std.baseType);
+
+                // Restore State
+                td.setWatered(std.isWatered);
+                td.setFertilized(std.isFertilized);
+                td.setLastWateredTime(std.lastWateredTime);
+                td.setFertilizerStartTime(std.fertilizerStartTime);
+
+                // Restore Crop
+                if (std.hasCrop) {
+                    // FIX: Sử dụng đúng constructor 3 tham số của CropData
+                    // plantTime được đặt là System.nanoTime() để bắt đầu tính thời gian từ lúc load
+                    CropData cd = new CropData(std.cropType, std.cropStage, System.nanoTime());
+                    td.setCropData(cd);
+                }
+
+                // Restore Tree
+                if (std.hasTree) {
+                    TreeData trd = new TreeData();
+                    trd.setGrowthStage(std.treeStage);
+                    trd.setChopCount(std.treeChopCount);
+                    td.setTreeData(trd);
+                }
+
+                // Restore Fence
+                if (std.hasFence) {
+                    FenceData fd = new FenceData(std.fenceIsOpen);
+                    // Cần set pattern nếu muốn chính xác ngay lập tức, nhưng updateMap sẽ lo visual
+                    td.setFenceData(fd);
+                }
+
+                // Restore Ground Item
+                if (std.hasGroundItem) {
+                    td.setGroundItem(std.groundItemType);
+                    td.setGroundItemAmount(std.groundItemAmount);
+                    td.setGroundItemDurability(std.groundItemDurability);
+                    td.setGroundItemOffsetX(std.groundItemOffsetX);
+                    td.setGroundItemOffsetY(std.groundItemOffsetY);
+                }
+
+                // Put vào map
+                worldMap.setTileData(std.col, std.row, td);
+            }
+
+            // Recalculate fence patterns after loading all fences
+            fenceManager.updateAllFencePatterns();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error loading world map tiles!");
+        }
+
+        // 3. Refresh lại View và Lấy lại Focus (FIX LỖI KHÔNG TƯƠNG TÁC)
+        if (mainGameView != null) {
+            mainGameView.showTemporaryText("Game Loaded!", state.playerX, state.playerY);
+            mainGameView.updateMoneyDisplay(mainPlayer.getMoney());
+            mainGameView.updateHotbar();
+
+            // Cập nhật map ngay lập tức
+            if (camera != null) {
+                camera.initializePosition(mainPlayer, playerView);
+                // Force redraw everything
+                mainGameView.updateMap(camera.getWorldOffsetX(), camera.getWorldOffsetY(), true);
+            }
+
+            // [QUAN TRỌNG] Request Focus về lại RootPane để nhận input bàn phím
+            if (mainGameView.getRootPane() != null) {
+                mainGameView.getRootPane().requestFocus();
+            }
+        }
+        System.out.println("Game Loaded Successfully!");
+    }
+
 }

@@ -42,8 +42,8 @@ public class FenceManager {
     private boolean isFence(int col, int row) {
         TileData data = worldMap.getTileData(col, row);
         // Chỉ kết nối nếu là FENCE và đang ĐÓNG (Solid)
-        return data.getBaseTileType() == Tile.FENCE 
-                && data.getFenceData() != null 
+        return data.getBaseTileType() == Tile.FENCE
+                && data.getFenceData() != null
                 && data.getFenceData().isSolid(); // isSolid == true nghĩa là Đóng
     }
 
@@ -89,10 +89,28 @@ public class FenceManager {
             fence.setOpen(!fence.isOpen());
             fence.setSolid(!fence.isOpen()); // Mở thì không chặn, đóng thì chặn
             worldMap.setTileData(col, row, data);
-            
+
             // [QUAN TRỌNG] Sau khi mở/đóng, trạng thái kết nối thay đổi -> Cần update lại hình ảnh
             // Cập nhật cho chính nó và hàng xóm
             updateFencePattern(col, row);
+        }
+    }
+
+    /**
+     * [MỚI] Cập nhật lại pattern cho TOÀN BỘ hàng rào trên bản đồ.
+     * Được gọi sau khi load game để đảm bảo hình ảnh kết nối đúng.
+     */
+    public void updateAllFencePatterns() {
+        for (java.util.Map.Entry<Long, TileData> entry : worldMap.getTileDataMap().entrySet()) {
+            TileData data = entry.getValue();
+            if (data.getBaseTileType() == Tile.FENCE && data.getFenceData() != null) {
+                long key = entry.getKey();
+                int col = (int) (key >> 32);
+                int row = (int) key;
+
+                int pattern = calculateFencePattern(col, row);
+                data.getFenceData().setTilePattern(pattern);
+            }
         }
     }
 }

@@ -230,6 +230,8 @@ public class WorldRenderer {
                 this.overlayTiles[r][c].setImage(data.isFertilized() ? assetManager.getFertilizerTexture() : null);
                 this.cropTiles[r][c].setImage(assetManager.getCropTexture(data.getCropData()));
                 this.treeTiles[r][c].setImage(assetManager.getTreeTexture(data.getTreeData()));
+                // [FIX LỖI] Cập nhật hình ảnh hàng rào (đã bị thiếu)
+                this.fenceTiles[r][c].setImage(assetManager.getFenceTexture(data.getFenceData()));
 
                 if (data.getGroundItem() != null && data.getGroundItemAmount() > 0) {
                     Image itemTexture = assetManager.getItemIcon(data.getGroundItem());
