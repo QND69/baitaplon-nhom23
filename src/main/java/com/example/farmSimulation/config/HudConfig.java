@@ -95,6 +95,12 @@ public class HudConfig {
     public static final String MONEY_CONTAINER_STYLE = "-fx-background-color: rgba(0, 0, 0, 0.5); -fx-background-radius: 15; -fx-padding: 5 10 5 5;"; // Rounded box for money container
     public static final String MONEY_TEXT_STYLE = "-fx-font-size: 18px; -fx-text-fill: white; -fx-font-weight: bold;"; // Text only, no background
 
+    // [MỚI] Cấu hình hiển thị Tọa độ (Coordinates)
+    public static final double COORDS_OFFSET_Y_FROM_MONEY = 40.0; // Khoảng cách Y bên dưới tiền
+    public static final String COORDS_CONTAINER_STYLE = "-fx-background-color: rgba(0, 0, 0, 0.3); -fx-background-radius: 10; -fx-padding: 3 8 3 8;"; // Mờ hơn và nhỏ hơn tiền
+    public static final String COORDS_TEXT_STYLE = "-fx-font-size: 12px; -fx-text-fill: white;"; // Font nhỏ hơn tiền (12px vs 18px)
+    public static final boolean DEFAULT_SHOW_COORDINATES = true; // Mặc định tắt
+
     // --- Cấu hình GUI Icons (from GUI_icon_32x32.png) ---
     public static final double GUI_ICON_SIZE = 32.0; // Kích thước mỗi icon trong sheet
     public static final int GUI_ICON_SETTINGS_COL = 0; // Settings (Gear) icon column
@@ -132,6 +138,9 @@ public class HudConfig {
     public static final double HARVEST_FADE_DELAY_MS = 400; // Delay trước khi mờ
     public static final double HARVEST_SCALE_FROM = 1.0;
     public static final double HARVEST_SCALE_TO = 0.5; // Thu nhỏ lại khi về túi
+
+    // --- [MỚI] CẤU HÌNH DEBUG COORDINATES ---
+    // (Đã được thay thế bằng hệ thống HUD Coordinates mới ở trên)
 
     private HudConfig() {
     }

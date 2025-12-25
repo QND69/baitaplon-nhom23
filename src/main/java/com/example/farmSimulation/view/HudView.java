@@ -3,6 +3,7 @@ package com.example.farmSimulation.view;
 import com.example.farmSimulation.config.GameLogicConfig;
 import com.example.farmSimulation.config.HudConfig;
 import com.example.farmSimulation.config.WindowConfig;
+import com.example.farmSimulation.config.WorldConfig;
 import com.example.farmSimulation.model.GameManager;
 import com.example.farmSimulation.view.assets.ImageManager;
 import javafx.animation.FadeTransition;
@@ -48,6 +49,11 @@ public class HudView extends Pane {
     private final Label moneyLabel; // Label hiển thị số tiền
     private final HBox moneyContainer; // Container for money icon and text (with shared background)
     private ImageView moneyIcon; // Icon money (from GUI icons)
+
+    // [MỚI] Coordinates Display (Tọa độ)
+    private final Label coordsLabel; // Label hiển thị tọa độ X, Y
+    private final HBox coordsContainer; // Container nền mờ cho tọa độ
+    private boolean showCoordinates = HudConfig.DEFAULT_SHOW_COORDINATES;
 
     // --- Top-Right: Info & Controls ---
     private final Label dayLabel; // Label hiển thị Day (ngày)
@@ -164,6 +170,21 @@ public class HudView extends Pane {
         moneyLabel.setStyle(HudConfig.MONEY_TEXT_STYLE);
         moneyLabel.setMouseTransparent(true);
         moneyContainer.getChildren().add(moneyLabel);
+
+        // [MỚI] Coordinates Display (Ngay dưới Money)
+        // Dùng HBox để có nền mờ giống tiền, nhưng style riêng (nhỏ hơn)
+        coordsContainer = new HBox();
+        coordsContainer.setAlignment(Pos.CENTER_LEFT);
+        coordsContainer.setStyle(HudConfig.COORDS_CONTAINER_STYLE); // Style mờ hơn, nhỏ hơn
+        coordsContainer.setLayoutX(HudConfig.HUD_TOP_LEFT_X);
+        // Vị trí Y = Vị trí Money + Offset
+        coordsContainer.setLayoutY(currentY + HudConfig.COORDS_OFFSET_Y_FROM_MONEY);
+        coordsContainer.setMouseTransparent(true);
+        coordsContainer.setVisible(HudConfig.DEFAULT_SHOW_COORDINATES); // Ẩn hiện theo config
+
+        coordsLabel = new Label("X: 0, Y: 0"); // Giá trị khởi tạo
+        coordsLabel.setStyle(HudConfig.COORDS_TEXT_STYLE); // Font nhỏ, trắng
+        coordsContainer.getChildren().add(coordsLabel);
 
         // --- Khởi tạo Top-Right Elements (từ trên xuống: Settings, Timer, Weather) ---
         // Tính toán vị trí X để dính sát cạnh phải: Icons centered at SCREEN_WIDTH - MARGIN - RADIUS
@@ -320,6 +341,7 @@ public class HudView extends Pane {
                 expIconView, xpBarBg, xpBarFill,
                 staminaIconView, staminaBarBg, staminaBarFill,
                 moneyContainer, // Money Container (Icon + Text with shared background)
+                coordsContainer, // [MỚI] Coordinates Container
                 dayLabel, timerLabel, weatherIconPane, questIconButtonPane, // Day, Time, Weather Icon, Quest Icon (Top-Right)
                 shopIconButtonPane, // Shop Icon (ImageView) ở Bottom-Right
                 trashIconButtonPane, // Trash Can Icon (ImageView) ở Bottom-Left
@@ -458,6 +480,27 @@ public class HudView extends Pane {
             staminaColor = Color.web("#e74c3c");
         }
         staminaBarFill.setFill(staminaColor);
+
+        // [MỚI] Cập nhật tọa độ Player (nếu đang hiển thị)
+        if (showCoordinates && coordsLabel != null) {
+            // Lấy tọa độ Tile thực tế bằng cách làm tròn (hoặc ép kiểu int)
+            // Trong game này, tileX và tileY trong Player đã là tọa độ Tile (đơn vị 1 tile = 1 đơn vị)
+            // chứ không phải pixel. (Xem Player.java constructor và WorldConfig)
+            // Player.java: this.tileX = GameLogicConfig.PLAYER_START_X; (ví dụ 10.0)
+
+            // Trục X: Từ trái sang phải -> OK
+            int tileX = (int) Math.floor(player.getTileX() / WorldConfig.TILE_SIZE);
+
+            // Trục Y: Trong game engine (JavaFX), Y tăng từ trên xuống dưới.
+            // Yêu cầu của bạn: Hệ tọa độ "logic" (Ox dưới lên).
+            // => Khi nhân vật đi xuống (Y tăng trong engine), tọa độ hiển thị phải GIẢM.
+            // => Khi nhân vật đi lên (Y giảm trong engine), tọa độ hiển thị phải TĂNG.
+            // => Công thức đơn giản nhất là đảo dấu: -tileY
+
+            int tileY = -(int) Math.floor(player.getTileY() / WorldConfig.TILE_SIZE);
+
+            coordsLabel.setText(String.format("X: %d, Y: %d", tileX, tileY));
+        }
     }
 
     /**
@@ -577,5 +620,18 @@ public class HudView extends Pane {
      */
     public Rectangle getDarknessOverlay() {
         return darknessOverlay;
+    }
+
+    // [MỚI] Bật/Tắt hiển thị tọa độ
+    public void setCoordinatesVisible(boolean visible) {
+        this.showCoordinates = visible;
+        if (coordsContainer != null) {
+            coordsContainer.setVisible(visible);
+        }
+    }
+
+    // [MỚI] Kiểm tra trạng thái hiển thị tọa độ
+    public boolean isCoordinatesVisible() {
+        return showCoordinates;
     }
 }
