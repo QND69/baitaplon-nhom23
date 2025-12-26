@@ -390,23 +390,8 @@ public class SettingsMenuView extends GridPane {
         tutorialLabel.setMinHeight(Region.USE_PREF_SIZE); // Force label to calculate full height based on wrapped text
         tutorialLabel.setFont(Font.font(SettingsMenuConfig.SETTINGS_MENU_FONT_FAMILY, 14));
         tutorialLabel.setTextFill(javafx.scene.paint.Color.WHITE);
-        tutorialLabel.setText(
-                "WELCOME TO FARM SIMULATION!\n\n" +
-                        "Goal: Manage your farm, grow crops, raise animals, and complete daily quests to become the richest farmer!\n\n" +
-                        "Farming:\n" +
-                        "1. Use the Hoe to till soil.\n" +
-                        "2. Plant Seeds on tilled soil.\n" +
-                        "3. Water crops daily with the Watering Can.\n" +
-                        "4. Harvest crops when fully grown.\n\n" +
-                        "Animals:\n" +
-                        "- Buy animals from the Shop (B).\n" +
-                        "- Feed them Super Feed to keep them happy.\n" +
-                        "- Harvest products (Milk, Wool, Eggs) when ready.\n\n" +
-                        "Tips:\n" +
-                        "- Watch your Stamina! Eat food or drink Energy Drinks to recover.\n" +
-                        "- Check the Quest Board (J) daily for extra rewards.\n" +
-                        "- Use Reroll in the shop to find rare items."
-        );
+        // [ĐÃ SỬA] Sử dụng hằng số từ Config thay vì hardcode
+        tutorialLabel.setText(SettingsMenuConfig.TUTORIAL_TEXT);
 
         // VBox container for proper padding
         VBox tutorialContainer = new VBox(10);

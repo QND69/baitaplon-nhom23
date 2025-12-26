@@ -46,5 +46,37 @@ public class SettingsMenuConfig {
     // [MỚI] Text cho màn hình chờ
     public static final String START_NEW_GAME_TEXT = "START NEW GAME";
 
+    // [MỚI] Nội dung hướng dẫn chơi game chi tiết (Tutorial)
+    public static final String TUTORIAL_TEXT =
+            "WELCOME TO FARM SIMULATION!\n\n" +
+                    "GOAL: Manage your farm, grow crops, raise animals, and complete daily quests.\n\n" +
+                    "1. BASIC CONTROLS:\n" +
+                    "- Move: W, A, S, D\n" +
+                    "- Select Item: Keys 1-9 or Scroll Mouse\n" +
+                    "- Primary Action (Use Tool/Place Item): Left Click\n" +
+                    "- Secondary Action (Eat/Toggle Fence): Right Click\n" +
+                    "- Drop Item: Q Key\n" +
+                    "- Open/Close Shop: B Key\n" +
+                    "- Open/Close Quest Board: J Key\n" +
+                    "- Settings/Pause: ESC Key\n\n" +
+                    "2. FARMING GUIDE:\n" +
+                    "- Hoe: Use on grass to till soil.\n" +
+                    "- Seeds: Hold seeds and Left Click on tilled soil.\n" +
+                    "- Watering Can: Water crops daily. Refill at the river when empty.\n" +
+                    "- Fertilizer: Use on growing crops to speed up growth.\n" +
+                    "- Harvest: Use Hand (or Scythe) when crops are fully grown.\n" +
+                    "- Shovel: Remove plants/crops to clear the soil.\n" +
+                    "- Axe: Chop trees for wood (requires multiple hits).\n" +
+                    "- Wood: Hold wood and Left Click to build fences.\n\n" +
+                    "3. ANIMAL GUIDE:\n" +
+                    "- Buy animals at the Shop (B Key) and place them on the ground.\n" +
+                    "- Feed: Hold food and click on the animal.\n" +
+                    "- Harvest Products:\n" +
+                    "  + Cow: Use Milk Bucket to gather milk.\n" +
+                    "  + Sheep: Use Shears to gather wool.\n" +
+                    "  + Chicken: Lays eggs automatically, click to collect.\n" +
+                    "- Slaughter: Use Axe or Sword (drops corresponding meat).\n\n" +
+                    "TIP: Watch your Stamina bar. Eat food or drink Energy Drinks to recover!";
+
     private SettingsMenuConfig() {}
 }

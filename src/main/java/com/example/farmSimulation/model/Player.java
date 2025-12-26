@@ -31,10 +31,10 @@ public class Player {
     // --- Hotbar (Thanh công cụ) ---
     private ItemStack[] hotbarItems;
     private int selectedHotbarSlot;
-    
+
     // Tham chiếu đến MainGameView để hiển thị thông báo level up
     private com.example.farmSimulation.view.MainGameView mainGameView;
-    
+
     // Time of death for death animation timing
     private long timeOfDeath = 0;
 
@@ -45,7 +45,7 @@ public class Player {
         this.state = PlayerView.PlayerState.IDLE; // Trạng thái ban đầu
         this.direction = PlayerView.Direction.DOWN; // Hướng ban đầu
         this.money = GameLogicConfig.PLAYER_START_MONEY; // Khởi tạo tiền ban đầu
-        
+
         // Khởi tạo Stamina & XP
         this.maxStamina = GameLogicConfig.PLAYER_MAX_STAMINA;
         this.currentStamina = GameLogicConfig.PLAYER_START_STAMINA;
@@ -103,7 +103,7 @@ public class Player {
 
         return addedAny; // Trả về false nếu không thêm được gì (Inventory Full)
     }
-    
+
     /**
      * Thêm item vào inventory với độ bền cụ thể (overload method)
      * @param type Loại item
@@ -118,9 +118,9 @@ public class Player {
         for (ItemStack stack : hotbarItems) {
             if (stack != null && stack.getItemType() == type) {
                 // Chỉ stack được nếu cả hai đều không có độ bền, hoặc cùng độ bền
-                boolean canStack = !type.hasDurability() || 
-                                  (stack.getCurrentDurability() == (durability > 0 ? durability : type.getMaxDurability()));
-                
+                boolean canStack = !type.hasDurability() ||
+                        (stack.getCurrentDurability() == (durability > 0 ? durability : type.getMaxDurability()));
+
                 if (canStack) {
                     int remaining = stack.add(amount);
                     if (remaining < amount) addedAny = true;
@@ -148,7 +148,7 @@ public class Player {
 
         return addedAny; // Trả về false nếu không thêm được gì (Inventory Full)
     }
-    
+
     /**
      * Tính số lượng item có thể thêm vào inventory
      * @param type Loại item
@@ -157,10 +157,10 @@ public class Player {
      */
     public int calculateAddableAmount(ItemType type, int amount) {
         if (amount <= 0) return 0;
-        
+
         int remainingToAdd = amount;
         int maxStackSize = type.getMaxStackSize();
-        
+
         // Kiểm tra stack vào ô có sẵn
         for (ItemStack stack : hotbarItems) {
             if (stack != null && stack.getItemType() == type) {
@@ -170,7 +170,7 @@ public class Player {
                 if (remainingToAdd <= 0) return amount; // Có thể thêm hết
             }
         }
-        
+
         // Kiểm tra số ô trống
         int emptySlots = 0;
         for (ItemStack stack : hotbarItems) {
@@ -178,11 +178,11 @@ public class Player {
                 emptySlots++;
             }
         }
-        
+
         // Tính số lượng có thể thêm từ các ô trống
         int canAddFromEmptySlots = emptySlots * maxStackSize;
         int totalAddable = amount - remainingToAdd + Math.min(canAddFromEmptySlots, remainingToAdd);
-        
+
         return Math.min(totalAddable, amount);
     }
 
@@ -199,10 +199,11 @@ public class Player {
                 // Item có độ bền -> Giảm độ bền
                 boolean broken = stack.decreaseDurability(amount); // amount thường là 1
 
-                // Bình tưới nước: Hết độ bền (hết nước) -> KHÔNG MẤT, chỉ không dùng được
-                if (broken && stack.getItemType() != ItemType.WATERING_CAN) {
-                    hotbarItems[slotIndex] = null; // Item thường gãy thì mất
-                    System.out.println("Item broken!");
+                // [SỬA LẠI] Bình tưới nước: Hết độ bền -> MẤT LUÔN (Theo logic mới)
+                // Logic cũ: if (broken && stack.getItemType() != ItemType.WATERING_CAN)
+                if (broken) {
+                    hotbarItems[slotIndex] = null; // Item gãy/hết bền thì mất
+                    System.out.println("Item broken/consumed!");
                 }
             } else {
                 // Item thường -> Giảm số lượng
@@ -229,7 +230,7 @@ public class Player {
         // Ở đây logic chọn dựa trên index (selectedHotbarSlot) nên không cần đổi index,
         // người chơi vẫn trỏ vào ô số đó, nhưng item bên trong đã khác.
     }
-    
+
     /**
      * Thêm tiền cho người chơi
      * @param amount Số tiền cần thêm
@@ -242,7 +243,7 @@ public class Player {
         this.money += amount;
         return true;
     }
-    
+
     /**
      * Trừ tiền của người chơi (mua hàng)
      * @param amount Số tiền cần trừ
@@ -258,16 +259,16 @@ public class Player {
         this.money -= amount;
         return true;
     }
-    
+
     // --- Stamina Methods ---
-    
+
     /**
      * Giảm stamina
      * @param amount Lượng stamina cần giảm
      */
     public void reduceStamina(double amount) {
         this.currentStamina = Math.max(0, this.currentStamina - amount);
-        
+
         // Kiểm tra Game Over nếu stamina <= 0
         if (this.currentStamina <= 0) {
             this.currentStamina = 0;
@@ -279,7 +280,7 @@ public class Player {
             }
         }
     }
-    
+
     /**
      * Hồi phục stamina
      * @param amount Lượng stamina cần hồi phục
@@ -287,7 +288,7 @@ public class Player {
     public void recoverStamina(double amount) {
         this.currentStamina = Math.min(maxStamina, this.currentStamina + amount);
     }
-    
+
     /**
      * Kiểm tra xem có đang bị penalty do stamina thấp không
      * Áp dụng penalty khi stamina <= 15% (khi thanh chuyển đỏ)
@@ -298,79 +299,79 @@ public class Player {
         double percentage = maxStamina > 0 ? (currentStamina / maxStamina) : 0.0;
         return percentage <= 0.15; // Penalty khi stamina <= 15% (mức đỏ)
     }
-    
+
     /**
      * Getter cho stamina hiện tại (tương thích với code cũ)
      */
     public double getStamina() {
         return currentStamina;
     }
-    
+
     /**
      * Setter cho stamina hiện tại (tương thích với code cũ)
      */
     public void setStamina(double stamina) {
         this.currentStamina = Math.min(maxStamina, Math.max(0, stamina));
     }
-    
+
     /**
      * Getter cho experience (tương thích với code cũ)
      */
     public int getExperience() {
         return (int) currentXP;
     }
-    
+
     /**
      * Setter cho experience (tương thích với code cũ)
      */
     public void setExperience(int experience) {
         this.currentXP = experience;
     }
-    
+
     // --- XP & Leveling Methods ---
-    
+
     /**
      * Tăng XP cho người chơi
      * @param amount Lượng XP cần tăng
      */
     public void gainXP(double amount) {
         this.currentXP += amount;
-        
+
         // Kiểm tra level up
         while (currentXP >= xpToNextLevel) {
             levelUp();
         }
     }
-    
+
     /**
      * Lên level
      */
     private void levelUp() {
         this.level++;
         this.currentXP -= xpToNextLevel;
-        
+
         // Tăng max stamina
         this.maxStamina += GameLogicConfig.STAMINA_INCREASE_PER_LEVEL;
-        
+
         // Refill stamina
         this.currentStamina = maxStamina;
-        
+
         // Tăng XP cần thiết cho level tiếp theo
         this.xpToNextLevel *= GameLogicConfig.XP_MULTIPLIER_PER_LEVEL;
-        
+
         // Hiển thị thông báo "LEVEL UP!"
         if (mainGameView != null) {
             mainGameView.showTemporaryText("LEVEL UP! Level " + level, tileX, tileY);
         }
     }
-    
+
     /**
      * Set MainGameView reference (để hiển thị thông báo)
      */
     public void setMainGameView(com.example.farmSimulation.view.MainGameView mainGameView) {
         this.mainGameView = mainGameView;
     }
-    
+
     /**
      * Ăn item hiện tại đang cầm để hồi phục stamina
      * @return true nếu ăn thành công, false nếu không thể ăn (item không có staminaRestore hoặc stamina đã đầy)
@@ -378,33 +379,33 @@ public class Player {
     public boolean eatCurrentItem() {
         ItemStack currentItem = getCurrentItem();
         if (currentItem == null) return false;
-        
+
         ItemType itemType = currentItem.getItemType();
-        
+
         // Kiểm tra xem item có thể ăn không (có staminaRestore > 0)
         if (itemType.getStaminaRestore() <= 0) {
             return false;
         }
-        
+
         // Kiểm tra xem stamina có đầy không (không ăn nếu đã đầy)
         if (currentStamina >= maxStamina) {
             return false;
         }
-        
+
         // Hồi phục stamina
         recoverStamina(itemType.getStaminaRestore());
-        
+
         // Giảm số lượng item (tiêu thụ 1 item)
         currentItem.remove(1);
-        
+
         // Xóa item nếu đã hết
         if (currentItem.isEmpty()) {
             hotbarItems[selectedHotbarSlot] = null;
         }
-        
+
         // Set state thành BUSY (sẽ được xử lý bởi ActionManager)
         this.state = PlayerView.PlayerState.BUSY;
-        
+
         return true;
     }
 }

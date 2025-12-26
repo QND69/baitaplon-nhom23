@@ -319,11 +319,8 @@ public class InteractionManager {
         if (itemType == ItemType.WATERING_CAN) {
             if (currentStack.getCurrentDurability() <= 0) return null;
 
-            if (baseTile == Tile.WATER) {
-                currentStack.refillDurability();
-                System.out.println("Refilled Water!");
-                return new InteractionResult(null, PlayerView.PlayerState.WATER, 500, false, null, 0);
-            }
+            // [SỬA ĐỔI] Loại bỏ logic Refill vì bình tưới giờ là consumable (dùng hết thì mất)
+            // if (baseTile == Tile.WATER) { ... } -> DELETE
 
             if (baseTile == Tile.SOIL && currentData.getCropData() != null) {
                 TileData newData = new TileData(currentData);
