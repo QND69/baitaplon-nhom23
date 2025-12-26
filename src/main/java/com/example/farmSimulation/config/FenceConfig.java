@@ -21,24 +21,6 @@ public class FenceConfig {
     /** Độ dịch chuyển Y của hàng rào (để căn chỉnh) */
     public static final double FENCE_Y_OFFSET = 0.0;
     
-    // --- Tọa độ Sprite trong tileset ---
-    
-    /** Cọc đơn (Fence Post/Open): */
-    public static final int FENCE_POST_COL = 0;
-    public static final int FENCE_POST_ROW = 3;
-    
-    /** Rào dọc (Vertical): */
-    public static final int FENCE_VERTICAL_COL = 0;
-    public static final int FENCE_VERTICAL_ROW = 1;
-    
-    /** Rào ngang (Horizontal): */
-    public static final int FENCE_HORIZONTAL_COL = 2;
-    public static final int FENCE_HORIZONTAL_ROW = 0;
-    
-    /** Khối 3x3 góc và ngã ba/ngã tư: */
-    public static final int FENCE_CORNER_START_COL = 1;
-    public static final int FENCE_CORNER_START_ROW = 1;
-    
     // --- Cấu hình Hitbox Collision ---
     
     /** Chiều rộng hitbox của rào (toàn bộ tile) */

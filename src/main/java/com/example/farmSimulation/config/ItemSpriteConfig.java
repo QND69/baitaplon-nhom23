@@ -27,8 +27,8 @@ public class ItemSpriteConfig {
     public static final int ITEM_EGG_COL = 16;
     public static final int ITEM_WOOL_COL = 17;
     public static final int ITEM_WOOD_COL = 18;
-    public static final int ITEM_ENERGY_DRINK_COL = 19; // Energy Drink icon
-    public static final int ITEM_SUPER_FEED_COL = 20; // Super Feed icon
+    public static final int ITEM_ENERGY_DRINK_COL = 19;
+    public static final int ITEM_SUPER_FEED_COL = 20;
 
     // Tọa độ (cột) của từng item vật nuôi trong animal_item_32x32.png
     public static final int ANIMAL_ITEM_COW_COL = 0;

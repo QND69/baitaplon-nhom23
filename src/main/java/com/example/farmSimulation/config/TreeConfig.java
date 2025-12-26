@@ -56,7 +56,7 @@ public class TreeConfig {
     /** Stage tối đa mà cây có thể phát triển (Stage 3 = cây trưởng thành) */
     public static final int TREE_MAX_GROWTH_STAGE = 3;
 
-    /** [MỚI] Stage tối thiểu để có thể chặt lấy gỗ và để lại gốc (Stage 2) */
+    /** Stage tối thiểu để có thể chặt lấy gỗ và để lại gốc (Stage 2) */
     public static final int TREE_MIN_CHOP_STAGE = 2;
 
     /** Frame index cho gốc cây (stump) trong spritesheet */

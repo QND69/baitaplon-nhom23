@@ -38,71 +38,15 @@ public class GameController {
             activeKeys.add(event.getCode()); // Thêm phím được ấn vào activeKeys
             /* event.getCode() lấy mã phím nhấn, rồi thêm vào activeKeys.
             Vì là HashSet, nếu phím đang nhấn rồi thì thêm lại cũng không ảnh hưởng (không bị trùng). */
-            //System.out.println("Các phím đang nhấn: " + activeKeys);
-            // Thêm xử lý ESC
-            if (event.getCode() == KeyCode.ESCAPE) {
-                if (gameManager != null) {
-                    gameManager.toggleSettingsMenu(); // Gọi hàm hiển thị/ẩn menu
-                }
-            }
+
+            // Xử lý các phím hệ thống luôn hoạt động (ESC)
+            handleSystemInput(event.getCode());
 
             // Block all other inputs when game is paused (Settings Menu is open)
             if (gameManager != null && gameManager.isPaused()) return;
 
-            // Xử lý phím Q để ném item từ slot mà chuột đang trỏ vào
-            if (event.getCode() == KeyCode.Q) {
-                if (gameManager != null) {
-                    // Kiểm tra xem chuột có đang ở trên hotbar không
-                    int slotIndex = gameManager.getHotbarSlotFromMouse(mouseX, mouseY);
-                    if (slotIndex >= 0) {
-                        gameManager.dropItemFromHotbar(slotIndex);
-                    }
-                }
-            }
-            // [MỚI] Xử lý phím B để bật/tắt Shop
-            if (event.getCode() == KeyCode.B) {
-                if (gameManager != null && mainGameView != null) {
-                    mainGameView.toggleShop();
-                }
-            }
-            // [MỚI] Xử lý phím M để test đổi thời tiết
-            if (event.getCode() == KeyCode.M) {
-                if (gameManager != null) {
-                    gameManager.toggleWeather(); // Test đổi thời tiết
-                }
-            }
-            // [MỚI] Xử lý phím J để bật/tắt Quest Board
-            if (event.getCode() == KeyCode.J) {
-                if (gameManager != null && mainGameView != null) {
-                    mainGameView.toggleQuestBoard();
-                }
-            }
-
-            // [MỚI] Cheat code: Bấm 'L' để thêm tiền
-            if (event.getCode() == KeyCode.L) {
-                if (gameManager != null) {
-                    gameManager.getMainPlayer().addMoney(com.example.farmSimulation.config.GameLogicConfig.CHEAT_MONEY_AMOUNT);
-                }
-            }
-
-            // Xử lý phím số (1-9, 0) để đổi hotbar
-            if (event.getCode().isDigitKey()) {
-                int slot = -1;
-                if (event.getCode() == KeyCode.DIGIT1) slot = 0;
-                else if (event.getCode() == KeyCode.DIGIT2) slot = 1;
-                else if (event.getCode() == KeyCode.DIGIT3) slot = 2;
-                else if (event.getCode() == KeyCode.DIGIT4) slot = 3;
-                else if (event.getCode() == KeyCode.DIGIT5) slot = 4;
-                else if (event.getCode() == KeyCode.DIGIT6) slot = 5;
-                else if (event.getCode() == KeyCode.DIGIT7) slot = 6;
-                else if (event.getCode() == KeyCode.DIGIT8) slot = 7;
-                else if (event.getCode() == KeyCode.DIGIT9) slot = 8;
-                else if (event.getCode() == KeyCode.DIGIT0) slot = 9;
-
-                if (slot != -1 && gameManager != null) {
-                    gameManager.changeHotbarSlot(slot);
-                }
-            }
+            // Xử lý các phím chức năng trong game
+            handleGameInput(event.getCode());
         });
 
         scene.setOnKeyReleased(event -> { // được gọi khi người chơi nhả phím.
@@ -117,9 +61,7 @@ public class GameController {
         });
 
         // Lắng nghe click chuột
-        scene.setOnMouseClicked(event -> {
-            handleMouseClick(event);
-        });
+        scene.setOnMouseClicked(this::handleMouseClick);
 
         // Lắng nghe cuộn chuột
         scene.setOnScroll(event -> {
@@ -135,6 +77,77 @@ public class GameController {
         });
     }
 
+    /**
+     * [MỚI] Xử lý phím hệ thống (Luôn lắng nghe dù game đang pause hay không)
+     */
+    private void handleSystemInput(KeyCode code) {
+        if (code == KeyCode.ESCAPE && gameManager != null) {
+            gameManager.toggleSettingsMenu(); // Gọi hàm hiển thị/ẩn menu
+        }
+    }
+
+    /**
+     * [MỚI] Xử lý các phím chức năng game (Chỉ lắng nghe khi game không pause)
+     */
+    private void handleGameInput(KeyCode code) {
+        if (gameManager == null) return;
+
+        // Xử lý phím Q để ném item từ slot mà chuột đang trỏ vào
+        if (code == KeyCode.Q) {
+            int slotIndex = gameManager.getHotbarSlotFromMouse(mouseX, mouseY);
+            if (slotIndex >= 0) {
+                gameManager.dropItemFromHotbar(slotIndex);
+            }
+        }
+
+        // [MỚI] Xử lý phím B để bật/tắt Shop
+        if (code == KeyCode.B && mainGameView != null) {
+            mainGameView.toggleShop();
+        }
+
+        // [MỚI] Xử lý phím M để test đổi thời tiết
+        if (code == KeyCode.M) {
+            gameManager.toggleWeather();
+        }
+
+        // [MỚI] Xử lý phím J để bật/tắt Quest Board
+        if (code == KeyCode.J && mainGameView != null) {
+            mainGameView.toggleQuestBoard();
+        }
+
+        // [MỚI] Cheat code: Bấm 'L' để thêm tiền
+        if (code == KeyCode.L) {
+            gameManager.getMainPlayer().addMoney(com.example.farmSimulation.config.GameLogicConfig.CHEAT_MONEY_AMOUNT);
+        }
+
+        // Xử lý phím số (1-9, 0) để đổi hotbar
+        if (code.isDigitKey()) {
+            int slot = getSlotFromDigit(code);
+            if (slot != -1) {
+                gameManager.changeHotbarSlot(slot);
+            }
+        }
+    }
+
+    /**
+     * Chuyển đổi KeyCode phím số sang chỉ số Slot (0-9)
+     */
+    private int getSlotFromDigit(KeyCode code) {
+        return switch (code) {
+            case DIGIT1 -> 0;
+            case DIGIT2 -> 1;
+            case DIGIT3 -> 2;
+            case DIGIT4 -> 3;
+            case DIGIT5 -> 4;
+            case DIGIT6 -> 5;
+            case DIGIT7 -> 6;
+            case DIGIT8 -> 7;
+            case DIGIT9 -> 8;
+            case DIGIT0 -> 9;
+            default -> -1;
+        };
+    }
+
     // Hàm để GameManager (model) kiểm tra phím có đang nhấn không
     public boolean isKeyPressed(KeyCode key) {
         return activeKeys.contains(key);
@@ -142,22 +155,20 @@ public class GameController {
 
     public void handleMouseClick(MouseEvent event) {
         // Block all mouse interactions when game is paused (Settings Menu is open)
-        if (gameManager != null && gameManager.isPaused()) return;
+        if (gameManager == null || gameManager.isPaused()) return;
 
         // Xử lý click chuột phải (SECONDARY) để mở/đóng hàng rào hoặc ăn đồ
         if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
-            if (gameManager != null) {
-                // First: Check if clicking on a Fence -> Toggle Fence
-                int tileX = gameManager.getCurrentMouseTileX();
-                int tileY = gameManager.getCurrentMouseTileY();
+            // First: Check if clicking on a Fence -> Toggle Fence
+            int tileX = gameManager.getCurrentMouseTileX();
+            int tileY = gameManager.getCurrentMouseTileY();
 
-                // Check if there's a fence at this position
-                if (gameManager.hasFenceAt(tileX, tileY)) {
-                    gameManager.toggleFence(tileX, tileY);
-                } else {
-                    // Else: If holding an edible item -> Eat food
-                    gameManager.handlePlayerEating();
-                }
+            // Check if there's a fence at this position
+            if (gameManager.hasFenceAt(tileX, tileY)) {
+                gameManager.toggleFence(tileX, tileY);
+            } else {
+                // Else: If holding an edible item -> Eat food
+                gameManager.handlePlayerEating();
             }
             return;
         }

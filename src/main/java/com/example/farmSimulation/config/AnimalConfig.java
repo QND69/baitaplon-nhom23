@@ -255,7 +255,7 @@ public class AnimalConfig {
     // 7. CẤU HÌNH SINH TRƯỞNG & SINH SẢN (BREEDING)
     // ==========================================
 
-    /** [MỚI] Bật/Tắt tính năng Cooldown sinh sản ngay khi vừa Spawn.
+    /** Bật/Tắt tính năng Cooldown sinh sản ngay khi vừa Spawn.
      * Nếu true: Động vật mới sinh/mua sẽ phải chờ hết thời gian cooldown mới đẻ được.
      */
     public static final boolean ENABLE_BREEDING_COOLDOWN_ON_SPAWN = false;

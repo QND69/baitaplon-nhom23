@@ -12,9 +12,10 @@ import java.util.List;
  * Chứa thông tin cố định như tên, asset path, kích thước, sản phẩm, v.v.
  */
 public enum AnimalType {
-    // Định nghĩa: Tên, Asset path, Kích thước sprite (để cắt ảnh), Hitbox width/height, Tốc độ, Thức ăn, Sản phẩm, Thời gian sản phẩm, Thời gian lớn, Scale (để vẽ)
+    // Định nghĩa: Tên, Asset path, Kích thước sprite (để cắt ảnh), Hitbox width/height,
+    // Tốc độ, Thức ăn, Sản phẩm, Thời gian sản phẩm, Thời gian lớn, Scale (để vẽ)
     CHICKEN("Chicken",
-            AssetPaths.CHICKEN_SHEET, // 48x48
+            AssetPaths.CHICKEN_SHEET,
             AnimalConfig.SPRITE_SIZE_CHICKEN,
             AnimalConfig.SMALL_ANIMAL_HITBOX_WIDTH,
             AnimalConfig.SMALL_ANIMAL_HITBOX_HEIGHT,

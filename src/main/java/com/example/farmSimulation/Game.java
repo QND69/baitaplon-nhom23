@@ -19,7 +19,7 @@ import javafx.stage.Stage;
  */
 public class Game {
     private Stage primaryStage;
-    private ImageManager assetManager;
+    private ImageManager imageManager;
     private Player player;
     private WorldMap worldMap;
 
@@ -27,11 +27,11 @@ public class Game {
         this.primaryStage = primaryStage;
 
         // Tải tài nguyên (Assets)
-        assetManager = new ImageManager();
-        assetManager.loadAssets();
+        imageManager = new ImageManager();
+        imageManager.loadAssets();
 
-        // Set application icon (moved here to show icon during Character Creation screen)
-        primaryStage.getIcons().add(assetManager.getTexture(AssetPaths.LOGO));
+        // Icon hiển thị game (Application Icon)
+        primaryStage.getIcons().add(imageManager.getTexture(AssetPaths.LOGO));
 
         // Khởi tạo Model (Dữ liệu) - sẽ được cập nhật với name và gender từ CharacterCreationView
         player = new Player();
@@ -71,14 +71,14 @@ public class Game {
         // Khởi tạo View (Hình ảnh)
         // PlayerView được tạo và nhận Image từ AssetManager
         PlayerView playerView = new PlayerView(
-                assetManager.getTexture(AssetPaths.PLAYER_SHEET), assetManager.getTexture(AssetPaths.PLAYER_ACTIONS_SHEET)
+                imageManager.getTexture(AssetPaths.PLAYER_SHEET), imageManager.getTexture(AssetPaths.PLAYER_ACTIONS_SHEET)
         );
 
         // Khởi tạo HotbarView
-        HotbarView hotbarView = new HotbarView(player, assetManager);
+        HotbarView hotbarView = new HotbarView(player, imageManager);
 
         // MainGameView nhận AssetManager để vẽ map
-        MainGameView mainGameView = new MainGameView(assetManager, worldMap, hotbarView);
+        MainGameView mainGameView = new MainGameView(imageManager, worldMap, hotbarView);
 
         // Khởi tạo Controller (Input)
         GameController gameController = new GameController();

@@ -137,7 +137,7 @@ public class HotbarView extends Pane {
     public void setOnSwapListener(BiConsumer<Integer, Integer> listener) {
         this.onSwapListener = listener;
     }
-    
+
     /**
      * Set callback cho item drop (including trash can deletion)
      * Callback receives: (slotIndex, scenePoint) and returns true if dropped on trash
@@ -153,11 +153,11 @@ public class HotbarView extends Pane {
         // 1. Bắt đầu nhấn chuột (Pressed)
         icon.setOnMousePressed(e -> {
             // Block drag when game is paused
-            if (player.getMainGameView() != null && player.getMainGameView().getGameManager() != null 
+            if (player.getMainGameView() != null && player.getMainGameView().getGameManager() != null
                     && player.getMainGameView().getGameManager().isPaused()) {
                 return;
             }
-            
+
             // Chỉ kéo được nếu có item và dùng chuột trái
             if (icon.getImage() != null && e.isPrimaryButtonDown()) {
                 dragSourceIndex = slotIndex;
@@ -195,11 +195,11 @@ public class HotbarView extends Pane {
         // 2. Kéo chuột (Dragged)
         icon.setOnMouseDragged(e -> {
             // Block drag when game is paused
-            if (player.getMainGameView() != null && player.getMainGameView().getGameManager() != null 
+            if (player.getMainGameView() != null && player.getMainGameView().getGameManager() != null
                     && player.getMainGameView().getGameManager().isPaused()) {
                 return;
             }
-            
+
             if (dragSourceIndex != -1 && e.isPrimaryButtonDown()) {
                 // Cập nhật vị trí Ghost Icon theo chuột
                 Point2D scenePoint = new Point2D(e.getSceneX(), e.getSceneY());
@@ -214,7 +214,7 @@ public class HotbarView extends Pane {
         // 3. Thả chuột (Released)
         icon.setOnMouseReleased(e -> {
             // Block drop when game is paused
-            if (player.getMainGameView() != null && player.getMainGameView().getGameManager() != null 
+            if (player.getMainGameView() != null && player.getMainGameView().getGameManager() != null
                     && player.getMainGameView().getGameManager().isPaused()) {
                 // Reset drag state if paused
                 if (dragSourceIndex != -1) {
@@ -224,7 +224,7 @@ public class HotbarView extends Pane {
                 }
                 return;
             }
-            
+
             if (dragSourceIndex != -1) {
                 // Khôi phục icon gốc
                 icon.setOpacity(1.0);
@@ -357,12 +357,12 @@ public class HotbarView extends Pane {
 
         this.setLayoutX((WindowConfig.SCREEN_WIDTH - totalWidth) / 2); // Tự động căn giữa
         this.setLayoutY(WindowConfig.SCREEN_HEIGHT - currentSlotSize - yOffset); // Cách đáy
-        
+
         // Cập nhật Label tên item (ở giữa, phía trên hotbar)
         double itemNameFontSize = HotbarConfig.BASE_ITEM_NAME_FONT_SIZE * scale;
         itemNameLabel.setFont(Font.font("Arial", FontWeight.BOLD, itemNameFontSize));
         itemNameLabel.setStrokeWidth(HotbarConfig.HOTBAR_TEXT_STROKE_WIDTH * scale);
-        
+
         // Tính vị trí Y của label (phía trên hotbar) - sẽ được cập nhật trong updateView()
         double itemNameY = -HotbarConfig.ITEM_NAME_Y_OFFSET * scale;
         itemNameLabel.setY(itemNameY);
@@ -373,20 +373,25 @@ public class HotbarView extends Pane {
      * Cắt ảnh từ sprite sheet items_32x32.png và cache
      */
     private void loadItemTextures(ImageManager assetManager) {
-        Image itemsSheet = assetManager.getTexture(AssetPaths.ITEMS_SHEET);
-        if (itemsSheet == null) return;
+        // [CẬP NHẬT] Tận dụng hàm getItemIcon tập trung của ImageManager để tránh lặp lại logic cắt ảnh
+        // và sửa lỗi không tìm thấy các hàm lẻ (getWoodIcon, getAnimalItemIcon...)
 
-        // Cache Items (công cụ)
-        cacheItemSprite(itemsSheet, ItemType.HOE, ItemSpriteConfig.ITEM_HOE_COL);
-        cacheItemSprite(itemsSheet, ItemType.WATERING_CAN, ItemSpriteConfig.ITEM_WATERING_CAN_COL);
-        cacheItemSprite(itemsSheet, ItemType.PICKAXE, ItemSpriteConfig.ITEM_PICKAXE_COL);
-        cacheItemSprite(itemsSheet, ItemType.SHOVEL, ItemSpriteConfig.ITEM_SHOVEL_COL);
-        cacheItemSprite(itemsSheet, ItemType.FERTILIZER, ItemSpriteConfig.ITEM_FERTILISER_COL);
-        cacheItemSprite(itemsSheet, ItemType.AXE, ItemSpriteConfig.ITEM_AXE_COL);
-        cacheItemSprite(itemsSheet, ItemType.SWORD, ItemSpriteConfig.ITEM_SWORD_COL); // Kiếm
-        cacheItemSprite(itemsSheet, ItemType.SHEARS, ItemSpriteConfig.ITEM_SCISSORS_COL); // Kéo
+        // Danh sách các Item cơ bản có trong items_32x32.png hoặc animal_item_32x32.png
+        ItemType[] basicItems = {
+                ItemType.HOE, ItemType.WATERING_CAN, ItemType.PICKAXE, ItemType.SHOVEL,
+                ItemType.FERTILIZER, ItemType.AXE, ItemType.SWORD, ItemType.SHEARS,
+                ItemType.MILK_BUCKET, ItemType.FULL_MILK_BUCKET, ItemType.MEAT_CHICKEN,
+                ItemType.MEAT_COW, ItemType.MEAT_PIG, ItemType.MEAT_SHEEP, ItemType.EGG,
+                ItemType.WOOL, ItemType.ENERGY_DRINK, ItemType.SUPER_FEED, ItemType.WOOD,
+                ItemType.ITEM_COW, ItemType.ITEM_CHICKEN, ItemType.ITEM_SHEEP, ItemType.ITEM_PIG
+        };
 
-        // Cache Seeds (Frame 0 từ crop sheet)
+        // Cache các vật phẩm cơ bản sử dụng getItemIcon
+        for (ItemType type : basicItems) {
+            cacheItemSprite(type, assetManager.getItemIcon(type));
+        }
+
+        // Cache Seeds (Lấy Frame 0 từ crop sheet - Giữ nguyên logic lấy từ crop sheet)
         cacheItemSprite(ItemType.SEEDS_STRAWBERRY, assetManager.getSeedIcon(CropType.STRAWBERRY));
         cacheItemSprite(ItemType.SEEDS_DAIKON, assetManager.getSeedIcon(CropType.DAIKON));
         cacheItemSprite(ItemType.SEEDS_POTATO, assetManager.getSeedIcon(CropType.POTATO));
@@ -397,7 +402,7 @@ public class HotbarView extends Pane {
         cacheItemSprite(ItemType.SEEDS_CORN, assetManager.getSeedIcon(CropType.CORN));
         cacheItemSprite(ItemType.SEEDS_TREE, assetManager.getTreeSeedIcon());
 
-        // Cache Harvest Items (Frame cuối từ crop sheet)
+        // Cache Harvest Items (Lấy Frame cuối từ crop sheet - Giữ nguyên logic lấy từ crop sheet)
         cacheItemSprite(ItemType.STRAWBERRY, assetManager.getHarvestIcon(CropType.STRAWBERRY));
         cacheItemSprite(ItemType.DAIKON, assetManager.getHarvestIcon(CropType.DAIKON));
         cacheItemSprite(ItemType.POTATO, assetManager.getHarvestIcon(CropType.POTATO));
@@ -406,47 +411,19 @@ public class HotbarView extends Pane {
         cacheItemSprite(ItemType.TOMATO, assetManager.getHarvestIcon(CropType.TOMATO));
         cacheItemSprite(ItemType.WHEAT, assetManager.getHarvestIcon(CropType.WHEAT));
         cacheItemSprite(ItemType.CORN, assetManager.getHarvestIcon(CropType.CORN));
-        
-        // Cache Wood (từ tree sheet)
-        cacheItemSprite(ItemType.WOOD, assetManager.getWoodIcon());
-        
-        // Cache các item mới từ items_32x32.png
-        cacheItemSprite(itemsSheet, ItemType.MILK_BUCKET, ItemSpriteConfig.ITEM_MILK_BUCKET_COL);
-        cacheItemSprite(itemsSheet, ItemType.FULL_MILK_BUCKET, ItemSpriteConfig.ITEM_FULL_MILK_BUCKET_COL);
-        cacheItemSprite(itemsSheet, ItemType.MEAT_CHICKEN, ItemSpriteConfig.ITEM_MEAT_CHICKEN_COL);
-        cacheItemSprite(itemsSheet, ItemType.MEAT_COW, ItemSpriteConfig.ITEM_MEAT_COW_COL);
-        cacheItemSprite(itemsSheet, ItemType.MEAT_PIG, ItemSpriteConfig.ITEM_MEAT_PIG_COL);
-        cacheItemSprite(itemsSheet, ItemType.MEAT_SHEEP, ItemSpriteConfig.ITEM_MEAT_SHEEP_COL);
-        cacheItemSprite(itemsSheet, ItemType.EGG, ItemSpriteConfig.ITEM_EGG_COL);
-        cacheItemSprite(itemsSheet, ItemType.WOOL, ItemSpriteConfig.ITEM_WOOL_COL);
-        cacheItemSprite(itemsSheet, ItemType.ENERGY_DRINK, ItemSpriteConfig.ITEM_ENERGY_DRINK_COL);
-        cacheItemSprite(itemsSheet, ItemType.SUPER_FEED, ItemSpriteConfig.ITEM_SUPER_FEED_COL);
-        
-        // Cache các item vật nuôi sống (sử dụng getAnimalItemIcon để lấy icon đã resize)
-        cacheItemSprite(ItemType.ITEM_COW, assetManager.getAnimalItemIcon(ItemType.ITEM_COW));
-        cacheItemSprite(ItemType.ITEM_CHICKEN, assetManager.getAnimalItemIcon(ItemType.ITEM_CHICKEN));
-        cacheItemSprite(ItemType.ITEM_SHEEP, assetManager.getAnimalItemIcon(ItemType.ITEM_SHEEP));
-        cacheItemSprite(ItemType.ITEM_PIG, assetManager.getAnimalItemIcon(ItemType.ITEM_PIG));
     }
 
     /**
-     * Hàm helper mới để vừa cắt, vừa cache vào map, vừa cache vào AssetManager
+     * [XÓA] Hàm cacheItemSprite(sheet, type, col) không còn cần thiết vì ImageManager đã làm việc này.
      */
-    private void cacheItemSprite(Image sheet, ItemType type, int col) {
-        PixelReader reader = sheet.getPixelReader();
-        WritableImage icon = new WritableImage(reader, (int) (col * ItemSpriteConfig.ITEM_SPRITE_WIDTH), 0, (int) ItemSpriteConfig.ITEM_SPRITE_WIDTH, (int) ItemSpriteConfig.ITEM_SPRITE_HEIGHT);
-        itemTextureMap.put(type, icon);
-        // Gọi cacheItemIcon
-        assetManager.cacheItemIcon(type, icon);
-    }
 
     /**
-     * Hàm helper mới để cache icon đã có sẵn (dùng cho hạt giống)
+     * Hàm helper mới để vừa nạp vào map nội bộ của Hotbar, vừa đồng bộ với cache của AssetManager
      */
     private void cacheItemSprite(ItemType type, Image icon) {
         if (icon != null) {
             itemTextureMap.put(type, icon);
-            // Gọi cacheItemIcon
+            // Đồng bộ lại vào assetManager (thực tế ImageManager thường đã cache rồi, nhưng gọi thêm để đảm bảo)
             assetManager.cacheItemIcon(type, icon);
         }
     }
@@ -460,7 +437,7 @@ public class HotbarView extends Pane {
         // Tính bar width max cho tính toán tỉ lệ
         double slotSize = HotbarConfig.BASE_SLOT_SIZE * currentScale;
         double maxBarWidth = slotSize * HotbarConfig.DURABILITY_BAR_WIDTH_RATIO;
-        
+
         // Cập nhật Label tên item đang cầm
         ItemStack currentItem = player.getCurrentItem();
         if (currentItem != null) {
@@ -549,12 +526,12 @@ public class HotbarView extends Pane {
     public int getSlotIndexFromMouse(double mouseX, double mouseY) {
         double slotSize = HotbarConfig.BASE_SLOT_SIZE * currentScale;
         double spacing = HotbarConfig.BASE_SLOT_SPACING * currentScale;
-        
+
         // Kiểm tra xem chuột có nằm trong vùng hotbar không (theo chiều cao)
         if (mouseY < 0 || mouseY > slotSize) {
             return -1; // Chuột không nằm trong hotbar
         }
-        
+
         // Tính slot index từ tọa độ X
         for (int i = 0; i < HotbarConfig.HOTBAR_SLOT_COUNT; i++) {
             double slotX = i * (slotSize + spacing);
@@ -562,10 +539,10 @@ public class HotbarView extends Pane {
                 return i; // Tìm thấy slot
             }
         }
-        
+
         return -1; // Không tìm thấy slot
     }
-    
+
     public Point2D getSlotCenter(int slotIndex) {
         if (slotIndex < 0 || slotIndex >= HotbarConfig.HOTBAR_SLOT_COUNT) return null;
 
