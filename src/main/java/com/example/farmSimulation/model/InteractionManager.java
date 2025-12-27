@@ -507,7 +507,7 @@ public class InteractionManager {
             // Nếu độ bền <= 0 hoặc item không có độ bền, sẽ dùng max durability khi tạo ItemStack
             // Nếu có độ bền > 0, dùng độ bền đó
 
-            // [FIX] Thay vì dùng mainPlayer.addItem (thêm ngay), chỉ dùng canAddItem để kiểm tra
+            // Thay vì dùng mainPlayer.addItem (thêm ngay), chỉ dùng canAddItem để kiểm tra
             // ActionManager sẽ xử lý việc thêm item sau khi animation kết thúc để tránh lỗi x2 item
             boolean success = canAddItem(mainPlayer, groundItemType, groundItemAmount);
 

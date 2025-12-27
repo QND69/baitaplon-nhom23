@@ -4,8 +4,8 @@ package com.example.farmSimulation.config;
 public final class AssetPaths {
 
     // Player
-    public static final String PLAYER_SHEET = "/assets/images/entities/player/player_scaled_4x.png";
-    public static final String PLAYER_ACTIONS_SHEET = "/assets/images/entities/player/player_action_merged.png";
+    public static final String PLAYER_SHEET = "/assets/images/entities/player/player_128x128.png";
+    public static final String PLAYER_ACTIONS_SHEET = "/assets/images/entities/player/player_action_192x192.png";
 
     // World Tiles
     public static final String GRASS = "/assets/images/world/grass5.png";

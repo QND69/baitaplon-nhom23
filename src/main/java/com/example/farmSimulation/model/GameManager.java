@@ -45,9 +45,12 @@ public class GameManager {
     private int currentMouseTileX = 0;
     private int currentMouseTileY = 0;
 
-    // [MỚI] Tọa độ chuột thực tế trong thế giới
+    // Tọa độ chuột thực tế trong thế giới
     private double currentMouseWorldX = 0;
     private double currentMouseWorldY = 0;
+
+    // [MỚI] Callback để quay về Main Menu
+    private Runnable onReturnToMainMenuHandler;
 
     // Constructor nhận tất cả các thành phần cốt lõi
     public GameManager(Player player, WorldMap worldMap, MainGameView mainGameView,
@@ -199,7 +202,7 @@ public class GameManager {
         // Cập nhật vẽ động vật
         mainGameView.updateAnimals(animalManager.getAnimals(), camera.getWorldOffsetX(), camera.getWorldOffsetY());
 
-        // [MỚI] Cập nhật thời tiết
+        // Cập nhật thời tiết
         weatherManager.updateWeather(now);
         mainGameView.updateWeather(weatherManager.isRaining());
 
@@ -218,7 +221,7 @@ public class GameManager {
         // Cập nhật collision hitbox (debug mode)
         updateCollisionHitbox();
 
-        // [MỚI] Cập nhật hiển thị tiền
+        // Cập nhật hiển thị tiền
         mainGameView.updateMoneyDisplay(mainPlayer.getMoney());
     }
 
@@ -440,7 +443,7 @@ public class GameManager {
             return; // Dừng lại ở đây
         }
 
-        // [MỚI] Nếu đặt động vật thành công (trả về null và không lỗi), cần cập nhật Hotbar
+        // Nếu đặt động vật thành công (trả về null và không lỗi), cần cập nhật Hotbar
         // Kiểm tra xem có phải vừa đặt động vật không?
         // Nếu InteractionManager.processAnimalInteraction trả về null, nó có thể là "không làm gì" HOẶC "thành công".
         // Để chắc chắn, ta gọi updateHotbar() ở đây để đồng bộ Item
@@ -583,7 +586,7 @@ public class GameManager {
     }
 
     /**
-     * [MỚI] Toggle thời tiết (dùng cho test)
+     * Toggle thời tiết (dùng cho test)
      */
     public void toggleWeather() {
         if (weatherManager != null) {
@@ -596,14 +599,14 @@ public class GameManager {
     }
 
     /**
-     * [MỚI] Getter cho ShopManager
+     * Getter cho ShopManager
      */
     public ShopManager getShopManager() {
         return shopManager;
     }
 
     /**
-     * [MỚI] Getter cho WeatherManager
+     * Getter cho WeatherManager
      */
     public WeatherManager getWeatherManager() {
         return weatherManager;
@@ -781,41 +784,41 @@ public class GameManager {
     }
 
     /**
-     * Restart the game - reset player and hide Game Over UI
+     * [SỬA ĐỔI] Thay vì Reset nóng, hàm này sẽ dọn dẹp và gọi callback để về Main Menu
      */
-    public void restartGame() {
+    public void returnToMainMenu() {
         // Hide Game Over UI
         if (mainGameView != null) {
             mainGameView.hideGameOverUI();
         }
 
-        // Reset Player: Full Stamina, State IDLE, Position (0,0)
-        mainPlayer.setCurrentStamina(mainPlayer.getMaxStamina());
-        mainPlayer.setState(PlayerView.PlayerState.IDLE);
-        mainPlayer.setTileX(GameLogicConfig.PLAYER_START_X);
-        mainPlayer.setTileY(GameLogicConfig.PLAYER_START_Y);
-        mainPlayer.setTimeOfDeath(0); // Reset time of death
-        mainPlayer.setDirection(PlayerView.Direction.DOWN); // Reset direction
+        // Stop Game Loop
+        if (gameLoop != null) {
+            gameLoop.stop();
+        }
 
-        // Reset Game Over sequence flag
+        // Stop Audio
+        if (audioManager != null) {
+            audioManager.pauseMusic();
+        }
+
+        // Gọi callback nếu đã được set (Main Class sẽ xử lý chuyển cảnh)
+        if (onReturnToMainMenuHandler != null) {
+            onReturnToMainMenuHandler.run();
+        } else {
+            System.err.println("Chưa set Handler cho returnToMainMenu! Game sẽ bị kẹt.");
+        }
+
+        // Reset flag
         isGameOverSequenceTriggered = false;
-
-        // Reset player view state
-        if (playerView != null) {
-            playerView.setState(PlayerView.PlayerState.IDLE, PlayerView.Direction.DOWN);
-        }
-
-        // Update camera position
-        camera.initializePosition(mainPlayer, playerView);
-
-        // Update map
-        if (mainGameView != null) {
-            mainGameView.updateMap(camera.getWorldOffsetX(), camera.getWorldOffsetY(), true);
-        }
-
-        // Resume game if paused
         isPaused = false;
     }
+
+    // [MỚI] Setter cho Handler về Main Menu
+    public void setOnReturnToMainMenuHandler(Runnable handler) {
+        this.onReturnToMainMenuHandler = handler;
+    }
+
     // --- THÊM MỚI: Logic Lưu Game (HOÀN CHỈNH) ---
     public void saveGameData() {
         GameSaveState state = new GameSaveState();
@@ -857,17 +860,7 @@ public class GameManager {
 
             // Cách tốt nhất: Cập nhật WorldMap để trả về EntrySet để lấy key (tọa độ)
             // NHƯNG, do TileData không lưu tọa độ, mà ta cần lưu tọa độ vào file save.
-            // Giải pháp: Ta sẽ duyệt qua một vùng map đủ lớn hoặc sửa WorldMap một chút.
-            // Tuy nhiên, vì yêu cầu không sửa code cũ nếu không cần thiết, ta dùng `worldMap.getAllTileData()` và
-            // KHÔNG LẤY ĐƯỢC TỌA ĐỘ nếu TileData không chứa nó.
-
-            // --> KIỂM TRA LẠI: WorldMap.java dùng HashMap<Long, TileData>.
-            // Ta cần truy cập key để decode ra col/row.
-            // Do đó ta sẽ dùng reflection hoặc sửa WorldMap để lấy entrySet.
-            // Ở đây tôi sẽ dùng cách đơn giản: Sửa WorldMap để trả về Map.Entry hoặc dùng reflection field trong TileData.
-            // À, chờ đã, tôi có thể ép kiểu TileData để thêm col/row transient? Không.
-
-            // QUYẾT ĐỊNH: Ta sẽ dùng một vòng lặp quét qua vùng map khả thi (ví dụ 100x100)
+            // Giải pháp: Ta sẽ dùng một vòng lặp quét qua vùng map khả thi (ví dụ 100x100)
             // hoặc truy cập trực tiếp vào tileDataMap thông qua getter mới nếu được.
             // Nhưng tốt nhất là sửa `WorldMap` để có method `getTileDataMap()` trả về HashMap gốc.
             // Vì tôi đang sửa GameManager, tôi sẽ giả định WorldMap có method `getTileDataMap()` hoặc tôi sẽ dùng EntrySet từ `getAllTileData()` nếu nó trả về Map.

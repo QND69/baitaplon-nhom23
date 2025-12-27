@@ -26,14 +26,24 @@ public class Game {
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
 
-        // Tải tài nguyên (Assets)
+        // Tải tài nguyên (Assets) - Chỉ tải 1 lần khi ứng dụng bắt đầu
         imageManager = new ImageManager();
         imageManager.loadAssets();
 
         // Icon hiển thị game (Application Icon)
         primaryStage.getIcons().add(imageManager.getTexture(AssetPaths.LOGO));
 
-        // Khởi tạo Model (Dữ liệu) - sẽ được cập nhật với name và gender từ CharacterCreationView
+        // Hiển thị Main Menu
+        showMainMenu();
+    }
+
+    /**
+     * [MỚI] Hàm hiển thị màn hình chính (Character Creation / Menu)
+     * Được tách ra để có thể gọi lại khi Game Over
+     */
+    private void showMainMenu() {
+        // Khởi tạo Model (Dữ liệu) mới cho phiên chơi mới
+        // Điều này đảm bảo khi start game mới, dữ liệu cũ không còn tồn đọng
         player = new Player();
         worldMap = new WorldMap();
 
@@ -50,7 +60,7 @@ public class Game {
             initializeAndStartGame(false);
         });
 
-        // [MỚI] Set callback khi người chơi click "Load Game"
+        // Set callback khi người chơi click "Load Game"
         characterCreationView.setOnLoadGame(() -> {
             // Khởi tạo game và chuyển sang MainGameView (chế độ Load Game)
             initializeAndStartGame(true);
@@ -104,9 +114,11 @@ public class Game {
             gameManager.swapHotbarItems(indexA, indexB);
         });
 
-        // Liên kết callback cho item drop (including trash can deletion)
-        // Note: This needs to be set after mainGameView.setGameManager() is called
-        // We'll set it in a separate call after setGameManager
+        // [QUAN TRỌNG - SỬA LỖI] Đăng ký Handler để quay về Main Menu
+        // Khi GameManager gọi returnToMainMenu(), hàm này sẽ chạy
+        gameManager.setOnReturnToMainMenuHandler(() -> {
+            showMainMenu();
+        });
 
         // Khởi tạo UI (Truyền các thành phần cần thiết)
         // UI cần Controller (để lắng nghe input) và PlayerSprite (để vẽ)
@@ -123,7 +135,7 @@ public class Game {
         // Liên kết GameManager vào View
         mainGameView.setGameManager(gameManager);
 
-        // [MỚI] Nếu là Load Game, thực hiện load dữ liệu TRƯỚC khi start game loop
+        // Nếu là Load Game, thực hiện load dữ liệu TRƯỚC khi start game loop
         if (loadFromSave) {
             gameManager.loadGameData();
         }

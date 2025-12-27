@@ -1,6 +1,5 @@
 package com.example.farmSimulation.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,8 +14,7 @@ public class ItemStack {
     public ItemStack(ItemType itemType, int quantity) {
         this.itemType = itemType;
         this.quantity = quantity;
-        // Khởi tạo độ bền đầy
-        this.currentDurability = itemType.getMaxDurability();
+        this.currentDurability = itemType.getMaxDurability(); // Khởi tạo độ bền đầy
     }
 
     /**
@@ -64,14 +62,5 @@ public class ItemStack {
 
         // Trả về true nếu hết độ bền (hỏng/hết nước)
         return this.currentDurability == 0;
-    }
-
-    /**
-     * Hồi phục độ bền (Dùng cho fill nước)
-     */
-    public void refillDurability() {
-        if (itemType.hasDurability()) {
-            this.currentDurability = itemType.getMaxDurability();
-        }
     }
 }

@@ -45,16 +45,16 @@ public class MainGameView {
     private HotbarView hotbarView;
     private ShopView shopView; // Giao diện shop
     private QuestBoardView questBoardView; // Giao diện quest board
-    
+
     // Pane tĩnh chứa các thực thể động (Animals)
     private Pane entityPane;
-    
+
     // Pane hiệu ứng thời tiết (mưa)
     private WeatherEffectView weatherEffectView;
 
     // [MỚI] Manager quản lý hiệu ứng
     private final VisualEffectManager visualEffectManager;
-    
+
     // Game Over UI Overlay
     private javafx.scene.layout.StackPane gameOverOverlay;
 
@@ -88,10 +88,10 @@ public class MainGameView {
         // Hoặc truyền gameManager vào sau
         // Chúng ta sẽ truyền gameManager vào đây:
         this.settingsMenu = new SettingsMenuView(this.gameManager);
-        
+
         // [MỚI] Khởi tạo weatherEffectView (hiệu ứng mưa)
         this.weatherEffectView = new WeatherEffectView();
-        
+
         // Create Game Over UI Overlay
         createGameOverOverlay();
 
@@ -108,7 +108,7 @@ public class MainGameView {
                 settingsMenu,                   // Lớp 7: Menu (hiện đang ẩn)
                 gameOverOverlay                 // Lớp 8: Game Over Overlay (hiện đang ẩn)
         );
-        
+
         // [MỚI] ShopView sẽ được thêm sau khi gameManager được set (trong setGameManager)
 
         // Đặt nhân vật (nhận từ bên ngoài) vào giữa màn hình
@@ -126,7 +126,7 @@ public class MainGameView {
 
             // Ghim tâm chấm vào "Tâm Logic" (đã scale)
             double logicCenterX = scaledWidth / 2;
-            
+
             // [SỬA] Cộng thêm INTERACTION_CENTER_Y_OFFSET để hiển thị tâm debug đúng vị trí mới
             double logicCenterY = (scaledHeight / 2) + PlayerSpriteConfig.INTERACTION_CENTER_Y_OFFSET;
 
@@ -136,7 +136,7 @@ public class MainGameView {
             // Ghim Vòng tròn Range
             debugRangeCircle.layoutXProperty().bind(playerSpriteContainer.layoutXProperty().add(logicCenterX));
             debugRangeCircle.layoutYProperty().bind(playerSpriteContainer.layoutYProperty().add(logicCenterY));
-            
+
             // Collision hitbox sẽ được cập nhật động trong updateCollisionHitbox()
         }
         // --- Hết phần Debug ---
@@ -162,7 +162,7 @@ public class MainGameView {
     public void updateSelector(int tileSelectedX, int tileSelectedY, double worldOffsetX, double worldOffsetY) {
         worldRenderer.updateSelector(tileSelectedX, tileSelectedY, worldOffsetX, worldOffsetY);
     }
-    
+
     // Hàm cập nhật ghost placement
     public void updateCollisionHitbox(double playerWorldX, double playerWorldY, double worldOffsetX, double worldOffsetY, javafx.scene.shape.Rectangle debugCollisionHitbox) {
         if (debugCollisionHitbox != null && PlayerSpriteConfig.DEBUG_PLAYER_BOUNDS) {
@@ -175,26 +175,26 @@ public class MainGameView {
             // 2. Tính toán vị trí trên màn hình
             double screenX = playerWorldX + worldOffsetX;
             double screenY = playerWorldY + worldOffsetY;
-            
+
             // 3. Căn chỉnh (ĐÃ SỬA LẠI CÔNG THỨC):
             // Player gốc rộng 192x192, nhưng đã Scale 0.6
             // => Kích thước thực tế hiển thị = 192 * 0.6 = 115.2
-            
+
             double scaledPlayerWidth = PlayerSpriteConfig.BASE_PLAYER_FRAME_WIDTH * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
             double scaledPlayerHeight = PlayerSpriteConfig.BASE_PLAYER_FRAME_HEIGHT * PlayerSpriteConfig.BASE_PLAYER_FRAME_SCALE;
-            
+
             // Offset X: Căn giữa hitbox theo chiều ngang của nhân vật đã scale
             double offsetX = (scaledPlayerWidth - PlayerSpriteConfig.COLLISION_BOX_WIDTH) / 2;
-            
+
             // Offset Y: Căn xuống dưới chân (chân nằm ở cuối ảnh đã scale)
             // Logic: (Chiều cao đã scale) - (Cao hitbox) - (Padding đáy)
-            double offsetY = scaledPlayerHeight 
-                             - PlayerSpriteConfig.COLLISION_BOX_HEIGHT 
-                             - PlayerSpriteConfig.COLLISION_BOX_BOTTOM_PADDING; 
+            double offsetY = scaledPlayerHeight
+                    - PlayerSpriteConfig.COLLISION_BOX_HEIGHT
+                    - PlayerSpriteConfig.COLLISION_BOX_BOTTOM_PADDING;
 
             debugCollisionHitbox.setLayoutX(screenX + offsetX);
             debugCollisionHitbox.setLayoutY(screenY + offsetY);
-            
+
             debugCollisionHitbox.setVisible(true);
         } else if (debugCollisionHitbox != null) {
             debugCollisionHitbox.setVisible(false);
@@ -240,7 +240,7 @@ public class MainGameView {
             worldRenderer.updateGhostPlacement(tileX, tileY, worldOffsetX, worldOffsetY, currentItem);
         }
     }
-    
+
     /**
      * Cập nhật vẽ động vật
      */
@@ -310,21 +310,21 @@ public class MainGameView {
 
         return selectedSlot; // Fallback về slot đang chọn
     }
-    
+
     /**
      * Set GameManager (được gọi từ Game.java sau khi khởi tạo)
      * Dùng để khởi tạo ShopView (cần ShopManager từ GameManager)
      */
     public void setGameManager(GameManager gameManager) {
         this.gameManager = gameManager;
-        
+
         // Set references cho HudView
         if (hudView != null) {
             hudView.setGameManager(gameManager);
             hudView.setMainGameView(this);
             hudView.setAssetManager(assetManager); // Set ImageManager để load GUI icons
         }
-        
+
         // Set callback cho HotbarView item drop (for trash can deletion)
         if (hotbarView != null) {
             hotbarView.setOnItemDropListener((slotIndex, scenePoint) -> {
@@ -343,12 +343,12 @@ public class MainGameView {
                 return false; // Not dropped on trash
             });
         }
-        
+
         // Set GameManager cho SettingsMenuView (để Resume và Brightness hoạt động đúng)
         if (settingsMenu != null) {
             settingsMenu.setGameManager(gameManager);
         }
-        
+
         // [MỚI] Khởi tạo ShopView sau khi có gameManager
         if (gameManager != null && gameManager.getShopManager() != null) {
             this.shopView = new ShopView(gameManager.getShopManager(), assetManager);
@@ -363,7 +363,7 @@ public class MainGameView {
             // Đảm bảo shopView ở trên cùng (z-index cao nhất) khi được thêm vào
             shopView.toFront();
         }
-        
+
         // [MỚI] Khởi tạo QuestBoardView sau khi có gameManager
         if (gameManager != null && gameManager.getQuestManager() != null && gameManager.getMainPlayer() != null) {
             this.questBoardView = new QuestBoardView(gameManager.getQuestManager(), gameManager.getMainPlayer());
@@ -376,7 +376,7 @@ public class MainGameView {
             questBoardView.toFront();
         }
     }
-    
+
     /**
      * Cập nhật hiển thị số tiền
      */
@@ -385,7 +385,7 @@ public class MainGameView {
             hudView.updateMoney(amount);
         }
     }
-    
+
     /**
      * Cập nhật hiệu ứng thời tiết
      */
@@ -393,23 +393,23 @@ public class MainGameView {
         if (weatherEffectView != null) {
             // Chỉ setRaining khi trạng thái thay đổi (trong setRaining đã có check)
             weatherEffectView.setRaining(isRaining);
-            
+
             // Luôn cập nhật animation mưa mỗi frame nếu đang mưa
             if (isRaining) {
                 weatherEffectView.updateRain();
             }
         }
-        
+
         // [MỚI] Làm tối màn hình một chút khi mưa
         if (hudView != null) {
             double currentIntensity = 1.0 - hudView.getDarknessOverlay().getOpacity();
             double rainDarkness = isRaining ? com.example.farmSimulation.config.WeatherConfig.RAIN_DARKNESS_OPACITY : 0.0;
-            double newOpacity = Math.min(1.0 - currentIntensity + rainDarkness, 
-                com.example.farmSimulation.config.GameLogicConfig.MAX_DARKNESS_OPACITY);
+            double newOpacity = Math.min(1.0 - currentIntensity + rainDarkness,
+                    com.example.farmSimulation.config.GameLogicConfig.MAX_DARKNESS_OPACITY);
             hudView.getDarknessOverlay().setOpacity(newOpacity);
         }
     }
-    
+
     /**
      * Toggle shop (bật/tắt shop)
      * Tự động đóng Settings Menu nếu đang mở để tránh overlap
@@ -418,7 +418,7 @@ public class MainGameView {
         if (shopView != null) {
             boolean wasVisible = shopView.isShopVisible();
             shopView.toggle();
-            
+
             // Nếu shop được mở, đóng Settings Menu nếu đang mở
             if (!wasVisible && shopView.isShopVisible()) {
                 // Đóng Settings Menu nếu đang mở để tránh overlap
@@ -433,19 +433,19 @@ public class MainGameView {
                     }
                 }
             }
-            
+
             // Đảm bảo shop hiển thị ở lớp trên cùng khi mở
             // (toFront() được gọi trong ShopView.toggle() khi mở)
         }
     }
-    
+
     /**
      * Kiểm tra shop có đang hiển thị không
      */
     public boolean isShopVisible() {
         return shopView != null && shopView.isShopVisible();
     }
-    
+
     /**
      * Toggle Quest Board
      */
@@ -453,7 +453,7 @@ public class MainGameView {
         if (questBoardView != null) {
             boolean wasVisible = questBoardView.isQuestBoardVisible();
             questBoardView.toggle();
-            
+
             // Nếu quest board được mở, đóng Settings Menu và Shop nếu đang mở
             if (!wasVisible && questBoardView.isQuestBoardVisible()) {
                 if (settingsMenu != null && settingsMenu.isVisible()) {
@@ -464,18 +464,18 @@ public class MainGameView {
                 }
                 // Quest Board KHÔNG pause game - game tiếp tục chạy trong background
             }
-            
+
             questBoardView.toFront();
         }
     }
-    
+
     /**
      * Kiểm tra quest board có đang hiển thị không
      */
     public boolean isQuestBoardVisible() {
         return questBoardView != null && questBoardView.isQuestBoardVisible();
     }
-    
+
     /**
      * Create Game Over UI Overlay
      */
@@ -483,49 +483,50 @@ public class MainGameView {
         gameOverOverlay = new StackPane();
         gameOverOverlay.setPrefSize(WindowConfig.SCREEN_WIDTH, WindowConfig.SCREEN_HEIGHT);
         gameOverOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.8);"); // Dark, semi-transparent background
-        
+
         // Content VBox centered in overlay
         VBox contentBox = new VBox(30);
         contentBox.setAlignment(Pos.CENTER);
         contentBox.setMaxWidth(400);
-        
+
         // "GAME OVER" Label (Large, Red/White font)
         Label gameOverLabel = new Label("GAME OVER");
         gameOverLabel.setFont(Font.font("Arial", FontWeight.BOLD, 48));
         gameOverLabel.setTextFill(Color.WHITE);
         gameOverLabel.setStyle("-fx-effect: dropshadow(one-pass-box, red, 5, 0, 0, 0);");
-        
+
         // HBox with two buttons: RESTART and QUIT
         HBox buttonBox = new HBox(20);
         buttonBox.setAlignment(Pos.CENTER);
-        
-        // RESTART Button
-        Button restartButton = new Button("RESTART");
+
+        // [SỬA] Đổi nút RESTART thành MAIN MENU
+        Button restartButton = new Button("MAIN MENU");
         restartButton.setPrefSize(150, 50);
         restartButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         restartButton.setStyle("-fx-background-color: #2ecc71; -fx-text-fill: white;");
         restartButton.setOnAction(e -> {
             if (gameManager != null) {
-                gameManager.restartGame();
+                // Thay vì restartGame(), gọi returnToMainMenu()
+                gameManager.returnToMainMenu();
             }
         });
-        
+
         // QUIT Button
         Button quitButton = new Button("QUIT");
         quitButton.setPrefSize(150, 50);
         quitButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         quitButton.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white;");
         quitButton.setOnAction(e -> Platform.exit());
-        
+
         buttonBox.getChildren().addAll(restartButton, quitButton);
         contentBox.getChildren().addAll(gameOverLabel, buttonBox);
-        
+
         gameOverOverlay.getChildren().add(contentBox);
-        
+
         // Hide by default
         gameOverOverlay.setVisible(false);
     }
-    
+
     /**
      * Show Game Over UI
      */
@@ -535,7 +536,7 @@ public class MainGameView {
             gameOverOverlay.toFront(); // Ensure it's on top
         }
     }
-    
+
     /**
      * Hide Game Over UI
      */

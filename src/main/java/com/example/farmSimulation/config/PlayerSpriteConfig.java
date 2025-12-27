@@ -16,7 +16,7 @@ public class PlayerSpriteConfig {
         ACTION_LOOP             // Lặp khi state active (HOE)
     }
 
-    // --- Cấu hình Player Sprite (player_scaled_4x.png) ---
+    // --- Cấu hình Player Sprite (player_128x128.png) ---
     public static final double PLAYER_FRAME_WIDTH = 128;
     public static final double PLAYER_FRAME_HEIGHT = 128;
     public static final long ANIMATION_SPEED = 120; // Tốc độ mỗi khung hình (ms/frame)
@@ -35,7 +35,7 @@ public class PlayerSpriteConfig {
     public static final double BASE_PLAYER_SPRITE_OFFSET_X = (BASE_PLAYER_FRAME_WIDTH - PLAYER_FRAME_WIDTH) / 2;
     public static final double BASE_PLAYER_SPRITE_OFFSET_Y = (BASE_PLAYER_FRAME_HEIGHT - PLAYER_FRAME_HEIGHT) / 2;
 
-    // [MỚI] Cấu hình Tâm Hoạt Động (Interaction Center) gốc
+    // Cấu hình Tâm Hoạt Động (Interaction Center) gốc
     // Dịch chuyển tâm hoạt động xuống dưới so với tâm hình học (Giữa ảnh)
     // Giá trị dương = dịch xuống dưới (về phía chân), Giá trị âm = dịch lên trên
     // Ví dụ: 35.0 pixel (ở tỉ lệ gốc 1.0)
@@ -69,21 +69,21 @@ public class PlayerSpriteConfig {
 
     // --- DỮ LIỆU ANIMATION ---
 
-    // IDLE (player_scaled_4x.png)
+    // IDLE (player_128x128.png)
     public static final int IDLE_DOWN_ROW = 0;
     public static final int IDLE_RIGHT_ROW = 1;
     public static final int IDLE_LEFT_ROW = 1; // Dùng chung ảnh với RIGHT
     public static final int IDLE_UP_ROW = 2;
     public static final int IDLE_FRAMES = 6; // Số frame của hành động
 
-    // WALK (player_scaled_4x.png)
+    // WALK (player_128x128.png)
     public static final int WALK_DOWN_ROW = 3;
     public static final int WALK_RIGHT_ROW = 4;
     public static final int WALK_LEFT_ROW = 4; // Dùng chung ảnh với RIGHT
     public static final int WALK_UP_ROW = 5;
     public static final int WALK_FRAMES = 6; // Số frame của hành động
 
-    // ATTACK (player_scaled_4x.png)
+    // ATTACK (player_128x128.png)
     public static final int ATTACK_DOWN_ROW = 6;
     public static final int ATTACK_RIGHT_ROW = 7;
     public static final int ATTACK_LEFT_ROW = 7; // Dùng chung ảnh với RIGHT
@@ -126,15 +126,15 @@ public class PlayerSpriteConfig {
     public static final int FERTILZED_RIGHT_ROW = 20;
     public static final int FERTILZED_LEFT_ROW = 20;
 
-    // AXE (Chặt cây bằng rìu) - Dùng player_action_merged.png
+    // AXE (Chặt cây bằng rìu) - Dùng player_action_192x192.png
     public static final int AXE_FRAMES = 2; // Số frame của hành động
-    public static final int AXE_DOWN_ROW = 4; // Row 8 trong player_action_merged.png
-    public static final int AXE_UP_ROW = 5; // Row 9 trong player_action_merged.png
-    public static final int AXE_RIGHT_ROW = 3; // Row 10 trong player_action_merged.png
-    public static final int AXE_LEFT_ROW = 3; // Row 11 trong player_action_merged.png
+    public static final int AXE_DOWN_ROW = 4; // Row 8 trong player_action_192x192.png
+    public static final int AXE_UP_ROW = 5; // Row 9 trong player_action_192x192.png
+    public static final int AXE_RIGHT_ROW = 3; // Row 10 trong player_action_192x192.png
+    public static final int AXE_LEFT_ROW = 3; // Row 11 trong player_action_192x192.png
     public static final long AXE_SPEED = 100; // Tốc độ chặt cây (ms/frame)
 
-    // DEAD (Ngất) - Dùng player_scaled_4x.png
+    // DEAD (Ngất) - Dùng player_128x128.png
     public static final int DEAD_ROW = 9; // The last row, index 7
     public static final int DEAD_FRAMES = 4; // Số frame của hành động death
     public static final long DEAD_SPEED = 200; // Tốc độ animation death (ms/frame)

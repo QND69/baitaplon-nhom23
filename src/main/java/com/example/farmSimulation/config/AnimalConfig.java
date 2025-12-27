@@ -15,7 +15,7 @@ public class AnimalConfig {
     /** Kích thước sprite Gà (Chicken) - từ file PNG 48x48 */
     public static final double SPRITE_SIZE_CHICKEN = 48.0;
 
-    /** [MỚI] Kích thước sprite Gà con và Trứng - từ file PNG 32x32 */
+    /** Kích thước sprite Gà con và Trứng - từ file PNG 32x32 */
     public static final double SPRITE_SIZE_BABY_CHICKEN_EGG = 32.0;
 
     /** Kích thước sprite Bò (Cow) - từ file PNG 96x96 */
@@ -39,24 +39,24 @@ public class AnimalConfig {
     public static final double SCALE_SHEEP = 1.0;
 
     // Scale cho con non (khi dùng chung sheet với con trưởng thành)
-    public static final double SCALE_BABY_COW = 0.5; // 96 -> 48
-    public static final double SCALE_BABY_PIG = 0.5; // 96 -> 48
-    public static final double SCALE_BABY_SHEEP = 0.5; // 64 -> 32
+    public static final double SCALE_BABY_COW = 0.5;
+    public static final double SCALE_BABY_PIG = 0.5;
+    public static final double SCALE_BABY_SHEEP = 0.5;
 
     // --- Offsets Visual ---
 
     /** Offset Y để vẽ động vật (để căn chỉnh với tile) */
     public static final double ANIMAL_Y_OFFSET = 0.0;
 
-    /** [MỚI] Offset Y cho icon trạng thái chung (đã cũ, có thể giữ để fallback) */
+    /** Offset Y cho icon trạng thái chung (đã cũ, có thể giữ để fallback) */
     public static final double ANIMAL_ICON_Y_OFFSET = 10.0;
 
-    /** [MỚI] Offset điều chỉnh vị trí icon nội dung (Super Feed/Sản phẩm) bên trong khung nền.
+    /** Offset điều chỉnh vị trí icon nội dung (Super Feed/Sản phẩm) bên trong khung nền.
      * Giá trị ÂM -> Đẩy icon lên trên (để bù trừ cho phần đuôi nhọn của bong bóng).
      */
     public static final double ICON_CONTENT_Y_OFFSET = -6.0;
 
-    /** [MỚI] Offset Y riêng cho từng loại động vật.
+    /** Offset Y riêng cho từng loại động vật.
      * Công thức tính: Y_Vẽ = (Chân_Con_Vật - Chiều_Cao_Sprite) - Chiều_Cao_Icon - OFFSET
      * -> Giá trị càng LỚN: Icon càng bay CAO.
      * -> Giá trị càng NHỎ (hoặc ÂM): Icon càng THẤP (gần đầu con vật hơn).
@@ -97,16 +97,16 @@ public class AnimalConfig {
     // Số càng lớn thì animation càng chậm
 
     /** Tốc độ animation đi bộ của Gà (ms/frame) */
-    public static final int ANIM_SPEED_CHICKEN_WALK = 200; // Tăng lên để đi chậm lại
+    public static final int ANIM_SPEED_CHICKEN_WALK = 300; // Tăng lên để đi chậm lại
 
     /** Tốc độ animation đứng yên của Gà (ms/frame) */
-    public static final int ANIM_SPEED_CHICKEN_IDLE = 300; // Tăng lên để mổ/nhìn chậm lại
+    public static final int ANIM_SPEED_CHICKEN_IDLE = 150; // Tăng lên để mổ/nhìn chậm lại
 
     /** Tốc độ animation đi bộ của thú thường (Bò, Lợn, Cừu) (ms/frame) */
-    public static final int ANIM_SPEED_STANDARD_WALK = 250; // Tăng lên
+    public static final int ANIM_SPEED_STANDARD_WALK = 200; // Tăng lên để đi chậm lại
 
     /** Tốc độ animation đứng yên của thú thường (ms/frame) */
-    public static final int ANIM_SPEED_STANDARD_IDLE = 500; // Tăng lên để chớp mắt/đuôi chậm thôi
+    public static final int ANIM_SPEED_STANDARD_IDLE = 150; // Tăng lên để chớp mắt/đuôi chậm thôi
 
     // --- Sprite Sheet Layout ---
 
@@ -167,7 +167,7 @@ public class AnimalConfig {
     /** Khoảng cách tối đa động vật có thể di chuyển từ vị trí spawn (tiles) */
     public static final double MAX_WANDER_DISTANCE = 10.0;
 
-    // [MỚI] Cấu hình hành vi theo đuổi (Follow Food)
+    // Cấu hình hành vi theo đuổi (Follow Food)
     /** Khoảng cách động vật nhìn thấy thức ăn trên tay người chơi (tiles) */
     public static final double PLAYER_FOLLOW_DETECTION_RANGE = 5.0 * 64.0; // 5 tiles
 
@@ -227,7 +227,7 @@ public class AnimalConfig {
     /** Mức đói để hiển thị icon đói (< mức này) */
     public static final double HUNGER_WARNING_THRESHOLD = 30.0;
 
-    // [MỚI] Lượng đói hồi phục khi cho ăn
+    // Lượng đói hồi phục khi cho ăn
     public static final double HUNGER_RECOVER_PER_FEED = 50.0;
 
     // ==========================================
@@ -279,7 +279,7 @@ public class AnimalConfig {
     /** Khoảng cách phát hiện bạn đời để bắt đầu đi tới (pixels) - Lớn hơn 1 tile */
     public static final double BREEDING_DETECTION_RANGE = 6.0 * 64.0; // tiles (tầm nhìn xa để tìm nhau)
 
-    /** [MỚI] Thời gian 2 con vật đứng yên bên cạnh nhau trước khi sinh con (ms) */
+    /** Thời gian 2 con vật đứng yên bên cạnh nhau trước khi sinh con (ms) */
     public static final long BREEDING_ANIMATION_DURATION_MS = 3_000; // Thời gian "tán tỉnh"
 
     /** Thời gian hồi chiêu sinh sản (ms) - bao lâu mới đẻ tiếp được */
@@ -288,14 +288,14 @@ public class AnimalConfig {
     /** Lượng đói bị trừ sau khi sinh sản (tiêu tốn năng lượng) */
     public static final double BREEDING_HUNGER_COST = 50.0;
 
-    // [MỚI] Mức no tối thiểu để CÓ THỂ bắt đầu sinh sản
+    // Mức no tối thiểu để CÓ THỂ bắt đầu sinh sản
     // Phải lớn hơn chi phí sinh sản để đảm bảo đẻ xong không bị chết đói ngay
     // Ví dụ: Cần 80, đẻ xong mất 50 -> còn 30 (vẫn an toàn)
     public static final double MIN_HUNGER_FOR_BREEDING = 80.0;
 
-    // [MỚI] Cấu hình vị trí khi sinh sản
+    // Cấu hình vị trí khi sinh sản
     /** Khoảng cách tách ra từ tâm khi 2 con đứng đối diện nhau để sinh sản (pixel) */
-    public static final double BREEDING_ALIGNMENT_OFFSET = 24.0; // [SỬA] Đổi tên để dùng chung cho cả X và Y
+    public static final double BREEDING_ALIGNMENT_OFFSET = 24.0; // Đổi tên để dùng chung cho cả X và Y
 
     /** Tốc độ di chuyển về vị trí sinh sản (Lerp factor: 0.0 - 1.0) */
     public static final double BREEDING_ALIGNMENT_SPEED = 0.05;

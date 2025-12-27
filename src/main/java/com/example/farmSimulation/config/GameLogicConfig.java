@@ -125,16 +125,16 @@ public class GameLogicConfig {
     // Số lượng tiles tối đa được update mỗi frame trong CropManager (để tránh lag spike)
     public static final int MAX_CROPS_UPDATE_PER_FRAME = 100;
 
-    // [MỚI] Bán kính tìm kiếm ô trống để rơi item (1 = tìm trong 3x3 xung quanh)
+    // Bán kính tìm kiếm ô trống để rơi item (1 = tìm trong 3x3 xung quanh)
     public static final int ITEM_DROP_SEARCH_RADIUS = 1;
 
-    // [MỚI] Độ phân tán ngẫu nhiên khi rơi item (pixel) - để item không bị dính chặt vào giữa ô
+    // Độ phân tán ngẫu nhiên khi rơi item (pixel) - để item không bị dính chặt vào giữa ô
     public static final double ITEM_DROP_SCATTER_RANGE = 24.0;
 
     // Game Over
     public static final double GAME_OVER_DELAY_SECONDS = 3.0; // Delay before showing Game Over UI after death
 
-    // [MỚI] Cấu hình Cheat code
+    // Cấu hình Cheat code
     public static final double CHEAT_MONEY_AMOUNT = 10000.0;
 
     private GameLogicConfig() {}

@@ -2,6 +2,7 @@ package com.example.farmSimulation.model;
 
 import com.example.farmSimulation.config.GameLogicConfig;
 import com.example.farmSimulation.config.HotbarConfig;
+import com.example.farmSimulation.view.MainGameView;
 import com.example.farmSimulation.view.PlayerView;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +12,7 @@ import lombok.Setter;
 
 public class Player {
     private String name;
-    private String gender; // Gender của người chơi (Male/Female)
+    private String gender; // Giới tính của người chơi
     private double money;
     private double currentXP; // XP hiện tại
     private double xpToNextLevel; // XP cần để lên level tiếp theo
@@ -33,7 +34,7 @@ public class Player {
     private int selectedHotbarSlot;
 
     // Tham chiếu đến MainGameView để hiển thị thông báo level up
-    private com.example.farmSimulation.view.MainGameView mainGameView;
+    private MainGameView mainGameView;
 
     // Time of death for death animation timing
     private long timeOfDeath = 0;
@@ -79,17 +80,20 @@ public class Player {
         return hotbarItems[selectedHotbarSlot];
     }
 
-    // Hàm thêm vật phẩm vào túi (Dùng cho thu hoạch)
+    // Hàm thêm vật phẩm vào túi
     public boolean addItem(ItemType type, int amount) {
         boolean addedAny = false;
 
-        // Stack vào ô có sẵn
-        for (ItemStack stack : hotbarItems) {
-            if (stack != null && stack.getItemType() == type) {
-                int remaining = stack.add(amount);
-                if (remaining < amount) addedAny = true; // Đã thêm được ít nhất 1
-                if (remaining == 0) return true;
-                amount = remaining;
+        // [SỬA LOGIC] Chỉ kiểm tra stack nếu item cho phép stack (MaxStackSize > 1)
+        if (type.getMaxStackSize() > 1) {
+            // Stack vào ô có sẵn
+            for (ItemStack stack : hotbarItems) {
+                if (stack != null && stack.getItemType() == type) {
+                    int remaining = stack.add(amount);
+                    if (remaining < amount) addedAny = true; // Đã thêm được ít nhất 1
+                    if (remaining == 0) return true;
+                    amount = remaining;
+                }
             }
         }
 
@@ -114,18 +118,21 @@ public class Player {
     public boolean addItem(ItemType type, int amount, int durability) {
         boolean addedAny = false;
 
-        // Stack vào ô có sẵn (chỉ stack được nếu cùng loại và không có độ bền, hoặc cùng độ bền)
-        for (ItemStack stack : hotbarItems) {
-            if (stack != null && stack.getItemType() == type) {
-                // Chỉ stack được nếu cả hai đều không có độ bền, hoặc cùng độ bền
-                boolean canStack = !type.hasDurability() ||
-                        (stack.getCurrentDurability() == (durability > 0 ? durability : type.getMaxDurability()));
+        // [SỬA LOGIC] Chỉ kiểm tra stack nếu item cho phép stack (MaxStackSize > 1)
+        if (type.getMaxStackSize() > 1) {
+            // Stack vào ô có sẵn (chỉ stack được nếu cùng loại và không có độ bền, hoặc cùng độ bền)
+            for (ItemStack stack : hotbarItems) {
+                if (stack != null && stack.getItemType() == type) {
+                    // Chỉ stack được nếu cả hai đều không có độ bền, hoặc cùng độ bền
+                    boolean canStack = !type.hasDurability() ||
+                            (stack.getCurrentDurability() == (durability > 0 ? durability : type.getMaxDurability()));
 
-                if (canStack) {
-                    int remaining = stack.add(amount);
-                    if (remaining < amount) addedAny = true;
-                    if (remaining == 0) return true;
-                    amount = remaining;
+                    if (canStack) {
+                        int remaining = stack.add(amount);
+                        if (remaining < amount) addedAny = true;
+                        if (remaining == 0) return true;
+                        amount = remaining;
+                    }
                 }
             }
         }
